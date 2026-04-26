@@ -37,13 +37,13 @@ export function StartScreen() {
   }, []);
 
   return (
-    <main className="screen">
+    <main className="screen min-h-dvh w-full">
       <button className="menu-button" type="button" aria-label="Открыть меню">
         <img src="/icons/menu.PNG" alt="" aria-hidden="true" className="menu-icon" />
       </button>
 
-      <div className="app">
-        <section className="center" aria-label="Стартовый экран">
+      <div className="app grid">
+        <section className="center w-full" aria-label="Стартовый экран">
           <div className="hero">
             <img src="/icons/applogo.PNG" alt="" className="logo" />
             <p className="eyebrow">Чат для SWGOH</p>
