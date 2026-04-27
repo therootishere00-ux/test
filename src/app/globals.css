@@ -3,13 +3,9 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: dark;
-  --bg: #0b0e14;
-  --accent: #00d1ff;
-  --panel: #161b22;
-  --line: #35414f;
-  --text: #e6eef8;
-  --muted: #a9b7c6;
+  color-scheme: light;
+  --bg: #f5f3ee;
+  --text: #171717;
 }
 
 * {
@@ -64,12 +60,12 @@ button {
 }
 
 ::selection {
-  background: rgba(0, 209, 255, 0.18);
+  background: rgba(23, 23, 23, 0.14);
 }
 
 .prompt-strip {
   scrollbar-width: thin;
-  scrollbar-color: #334153 transparent;
+  scrollbar-color: #d6d0c6 transparent;
 }
 
 .prompt-strip::-webkit-scrollbar {
@@ -82,5 +78,5 @@ button {
 
 .prompt-strip::-webkit-scrollbar-thumb {
   border-radius: 999px;
-  background: #334153;
+  background: #d6d0c6;
 }
