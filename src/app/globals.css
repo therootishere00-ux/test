@@ -10,6 +10,7 @@
 
 * {
   box-sizing: border-box;
+  scrollbar-width: none;
 }
 
 html,
@@ -59,24 +60,15 @@ button {
   color: inherit;
 }
 
+*::-webkit-scrollbar {
+  display: none;
+}
+
 ::selection {
   background: rgba(23, 23, 23, 0.14);
 }
 
-.prompt-strip {
-  scrollbar-width: thin;
-  scrollbar-color: #d6d0c6 transparent;
-}
-
-.prompt-strip::-webkit-scrollbar {
-  height: 6px;
-}
-
-.prompt-strip::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.prompt-strip::-webkit-scrollbar-thumb {
-  border-radius: 999px;
-  background: #d6d0c6;
+.hide-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
