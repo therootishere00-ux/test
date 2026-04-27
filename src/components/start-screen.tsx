@@ -9,9 +9,9 @@ const promptLibrary = [
   "Разбери мои слабые места по модам",
   "Кого качать следующим из текущего ростера",
   "Собери эффективный флот для ранней игры",
-  "Какие омеги и зеты сейчас важнее всего",
+  "Какие омеги и зеты важнее всего сейчас",
   "Как ускорить фарм ключевых команд",
-  "Какие герои лучше для Conquest",
+  "Какие герои сильнее для Conquest",
   "Как выжать максимум из текущего инвентаря",
   "Проведи аудит ресурсов и узких мест",
   "Подбери составы под Territory War"
@@ -22,7 +22,7 @@ const sidebarItems = ["История", "Настройки", "Профиль", 
 function getTelegramName() {
   const webApp = typeof window !== "undefined" ? window.Telegram?.WebApp : undefined;
   const firstName = webApp?.initDataUnsafe?.user?.first_name?.trim();
-  return firstName || "друг";
+  return firstName || "Артем";
 }
 
 function pickFivePrompts(source: string[]) {
@@ -44,11 +44,7 @@ export function StartScreen() {
   const [prompts, setPrompts] = useState(() => promptLibrary.slice(0, 5));
 
   useEffect(() => {
-    const telegramName = getTelegramName();
-
-    if (telegramName) {
-      setName(telegramName);
-    }
+    setName(getTelegramName());
   }, []);
 
   const greeting = useMemo(() => `Ну привет, ${name}`, [name]);
@@ -60,14 +56,12 @@ export function StartScreen() {
   };
 
   return (
-    <main className="relative min-h-dvh overflow-hidden bg-[#0B0E14] text-[#F3F7FB] select-none">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.05),_transparent_40%)]" />
-
+    <main className="relative min-h-dvh overflow-hidden bg-[#F5F3EE] text-[#171717] select-none">
       <button
         type="button"
         aria-label="Открыть меню"
         onClick={() => setSidebarOpen(true)}
-        className="absolute left-4 top-4 z-20 grid h-11 w-11 place-items-center rounded-full border border-[#1E2632] bg-[#121722] text-[#F3F7FB]"
+        className="absolute left-4 top-4 z-20 grid h-11 w-11 place-items-center rounded-[12px] border border-[#E5E2DA] bg-[#FFFFFF]"
       >
         <img src="/icons/menu.PNG" alt="" aria-hidden="true" className="h-[18px] w-[18px]" />
       </button>
@@ -76,22 +70,20 @@ export function StartScreen() {
         type="button"
         aria-label="Закрыть меню"
         onClick={() => setSidebarOpen(false)}
-        className={`absolute inset-0 z-30 bg-[#02050A]/70 transition-opacity duration-200 ${
-          sidebarOpen ? "opacity-100" : "pointer-events-none opacity-0"
-        }`}
+        className={`absolute inset-0 z-30 bg-[#111111]/8 ${sidebarOpen ? "opacity-100" : "pointer-events-none opacity-0"}`}
       />
 
       <aside
-        className={`absolute left-0 top-0 z-40 h-dvh w-4/5 border-r border-[#1F2733] bg-[#11161F] transition-transform duration-300 ease-out ${
+        className={`absolute left-0 top-0 z-40 h-dvh w-4/5 max-w-[320px] border-r border-[#E3DED5] bg-[#FBFAF7] ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         <div className="flex h-full flex-col gap-3 px-4 pb-5 pt-6">
-          <div className="rounded-[20px] border border-[#1F2733] bg-[#0E131B] px-4 py-5">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.32em] text-[#7D8A9D]">
+          <div className="rounded-[18px] border border-[#E7E1D8] bg-[#FFFFFF] px-4 py-5">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[#8F877A]">
               swgoh.ai
             </div>
-            <div className="mt-2 text-lg font-semibold text-[#F3F7FB]">Голографический терминал</div>
+            <div className="mt-2 text-lg font-semibold text-[#171717]">Голографический терминал</div>
           </div>
 
           <div className="grid gap-3">
@@ -99,7 +91,7 @@ export function StartScreen() {
               <button
                 key={item}
                 type="button"
-                className="flex h-14 items-center rounded-[16px] border border-[#202A38] bg-[#151B25] px-4 text-left text-sm font-medium text-[#F3F7FB]"
+                className="flex h-14 items-center rounded-[14px] border border-[#E7E1D8] bg-[#FFFFFF] px-4 text-left text-sm font-medium text-[#242424]"
               >
                 {item}
               </button>
@@ -108,101 +100,85 @@ export function StartScreen() {
         </div>
       </aside>
 
-      <div className="flex min-h-dvh flex-col px-4 pb-5 pt-16">
+      <div className="flex min-h-dvh flex-col px-4 pb-5 pt-20">
         <section className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center">
-          <div className="rounded-[28px] border border-[#1B2330] bg-[#10151D] px-5 py-6">
-            <div className="space-y-6">
-              <div className="space-y-1 text-center">
-                <h1 className="text-[32px] font-semibold leading-[1.05] tracking-[-0.04em] text-[#F7FAFD]">
-                  {greeting}
-                </h1>
-                <p className="text-[32px] font-semibold leading-[1.05] tracking-[-0.04em] text-[#F7FAFD]">
-                  С чем тебе помочь?
-                </p>
-              </div>
+          <div className="space-y-6">
+            <div className="space-y-1 text-left">
+              <h1 className="text-[38px] font-semibold leading-[0.98] tracking-[-0.05em] text-[#171717]">
+                {greeting}
+              </h1>
+              <p className="text-[38px] font-semibold leading-[0.98] tracking-[-0.05em] text-[#171717]">
+                С чем тебе помочь?
+              </p>
+            </div>
 
-              <div className="space-y-3">
-                <p className="text-sm font-medium text-[#98A5B7]">Быстрые промпты</p>
+            <div className="space-y-3">
+              <p className="text-sm font-medium text-[#8C867D]">Быстрые промпты</p>
 
-                <div className="prompt-strip flex gap-2 overflow-x-auto pb-1 pr-2">
-                  {prompts.map((prompt) => (
-                    <button
-                      key={prompt}
-                      type="button"
-                      className="shrink-0 rounded-[18px] border border-[#1E2836] bg-[#0B0E14] px-4 py-3 text-left text-sm leading-snug text-[#D7DFEA]"
-                    >
-                      {prompt}
-                    </button>
-                  ))}
-                </div>
-
-                <div className="flex justify-end">
+              <div className="prompt-strip flex gap-3 overflow-x-auto pb-1 pr-2">
+                {prompts.map((prompt) => (
                   <button
+                    key={prompt}
                     type="button"
-                    onClick={handleShuffle}
-                    className="inline-flex items-center gap-2 rounded-full border border-[#1E2836] bg-[#0B0E14] px-3 py-2 text-sm font-medium text-[#98A5B7]"
+                    className="shrink-0 rounded-[14px] border border-[#E6E0D7] bg-[#FBFAF7] px-4 py-3 text-left text-sm leading-snug text-[#2A2A2A]"
                   >
-                    <img
-                      src="/icons/refresh.PNG"
-                      alt=""
-                      aria-hidden="true"
-                      className="h-[15px] w-[15px]"
-                    />
-                    Перемешать
+                    {prompt}
                   </button>
-                </div>
+                ))}
               </div>
 
-              <form
-                className="rounded-[22px] border border-[#1C2532] bg-[#0B0E14] p-3"
-                onSubmit={(event) => event.preventDefault()}
+              <button
+                type="button"
+                onClick={handleShuffle}
+                className="inline-flex items-center gap-2 text-sm font-medium text-[#8C867D]"
               >
-                <textarea
-                  value={message}
-                  onChange={(event) => setMessage(event.target.value)}
-                  placeholder="Спроси про состав, моды или план развития"
-                  aria-label="Ввести сообщение"
-                  rows={3}
-                  className="min-h-[96px] w-full resize-none bg-transparent text-[15px] leading-6 text-[#F3F7FB] outline-none placeholder:text-[#657489]"
-                />
+                <img src="/icons/refresh.PNG" alt="" aria-hidden="true" className="h-[15px] w-[15px]" />
+                Перемешать
+              </button>
+            </div>
 
-                <div className="mt-3 flex items-end justify-between gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setAnalysisEnabled((value) => !value)}
-                    className={`inline-flex h-11 items-center gap-3 rounded-[14px] border px-3 ${
-                      analysisEnabled
-                        ? "border-[#00D1FF] bg-[#102333] text-[#F4FBFF]"
-                        : "border-[#1E2836] bg-[#111722] text-[#A1AFBF]"
+            <form
+              className="rounded-[18px] border border-[#E6E0D7] bg-[#FFFFFF] px-4 pb-3 pt-4"
+              onSubmit={(event) => event.preventDefault()}
+            >
+              <textarea
+                value={message}
+                onChange={(event) => setMessage(event.target.value)}
+                placeholder="Спроси про состав, моды или план развития"
+                aria-label="Ввести сообщение"
+                rows={3}
+                className="min-h-[92px] w-full resize-none bg-transparent text-[15px] leading-6 text-[#171717] outline-none placeholder:text-[#A09A90]"
+              />
+
+              <div className="mt-3 flex items-end justify-between gap-3">
+                <button
+                  type="button"
+                  onClick={() => setAnalysisEnabled((value) => !value)}
+                  className={`inline-flex h-10 items-center gap-2 rounded-[12px] border px-3 ${
+                    analysisEnabled
+                      ? "border-[#171717] bg-[#171717] text-[#FFFFFF]"
+                      : "border-[#E3DED5] bg-[#F7F4EE] text-[#6F6A61]"
+                  }`}
+                >
+                  <span
+                    className={`grid h-6 w-6 place-items-center rounded-[7px] ${
+                      analysisEnabled ? "bg-[#FFFFFF]/14" : "bg-[#FFFFFF]"
                     }`}
                   >
-                    <span
-                      className={`grid h-7 w-7 place-items-center rounded-[8px] border ${
-                        analysisEnabled
-                          ? "border-[#00D1FF] bg-[#00D1FF]/10"
-                          : "border-[#293444] bg-[#0B0E14]"
-                      }`}
-                    >
-                      <img
-                        src="/icons/firemode.PNG"
-                        alt=""
-                        aria-hidden="true"
-                        className="h-4 w-4"
-                      />
-                    </span>
-                    <span className="text-sm font-medium">Анализ</span>
-                  </button>
+                    <img src="/icons/firemode.PNG" alt="" aria-hidden="true" className="h-4 w-4" />
+                  </span>
+                  <span className="text-sm font-medium">Анализ</span>
+                </button>
 
-                  <button
-                    type="submit"
-                    aria-label="Отправить сообщение"
-                    className="grid h-11 w-11 place-items-center rounded-full border border-[#00D1FF] bg-[#00D1FF] text-[#08111A]"
-                  >
-                    <img src="/icons/send.PNG" alt="" aria-hidden="true" className="h-[18px] w-[18px]" />
-                  </button>
-                </div>
-              </form>
-            </div>
+                <button
+                  type="submit"
+                  aria-label="Отправить сообщение"
+                  className="grid h-10 w-10 place-items-center rounded-[12px] border border-[#171717] bg-[#171717] text-[#FFFFFF]"
+                >
+                  <img src="/icons/send.PNG" alt="" aria-hidden="true" className="h-[17px] w-[17px]" />
+                </button>
+              </div>
+            </form>
           </div>
         </section>
       </div>
