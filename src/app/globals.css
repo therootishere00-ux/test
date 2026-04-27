@@ -33,6 +33,7 @@ body {
 
 body {
   min-height: 100dvh;
+  font-feature-settings: "cv11", "ss01";
 }
 
 img,
@@ -64,4 +65,22 @@ button {
 
 ::selection {
   background: rgba(0, 209, 255, 0.18);
+}
+
+.prompt-strip {
+  scrollbar-width: thin;
+  scrollbar-color: #334153 transparent;
+}
+
+.prompt-strip::-webkit-scrollbar {
+  height: 6px;
+}
+
+.prompt-strip::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.prompt-strip::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: #334153;
 }
