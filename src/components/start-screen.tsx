@@ -34,12 +34,27 @@ function pickFivePrompts(source: string[]) {
   return items.slice(0, 5);
 }
 
+function isEmojiOnly(value: string) {
+  const normalized = value.trim();
+
+  if (!normalized) {
+    return false;
+  }
+
+  const withoutEmoji = normalized
+    .replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}\uFE0F]/gu, "")
+    .replace(/\s/gu, "");
+
+  return withoutEmoji.length === 0;
+}
+
 export function StartScreen() {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const [name, setName] = useState("Артем");
   const [message, setMessage] = useState("");
   const [analysisEnabled, setAnalysisEnabled] = useState(false);
   const [prompts, setPrompts] = useState(() => promptLibrary.slice(0, 5));
+  const [infoOpen, setInfoOpen] = useState(false);
 
   useEffect(() => {
     setName(getTelegramName());
@@ -66,6 +81,14 @@ export function StartScreen() {
     });
   };
 
+  const normalizedMessage = message.trim();
+  const sendDisabled =
+    normalizedMessage.length < 2 || isEmojiOnly(normalizedMessage);
+  const rateLimit = analysisEnabled ? "0/5" : "0/10";
+  const rateLimitText = analysisEnabled
+    ? "Это твой лимит сообщений в минуту для анализа"
+    : "Это твой лимит сообщений в минуту";
+
   const analysisIconStyle = analysisEnabled
     ? {
         filter:
@@ -76,7 +99,7 @@ export function StartScreen() {
   return (
     <main className="min-h-dvh overflow-hidden bg-[#F5F3EE] text-[#171717] select-none">
       <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-4 pb-6 pt-6">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center">
           <button
             type="button"
             aria-label="Меню"
@@ -85,22 +108,22 @@ export function StartScreen() {
             <img src="/icons/menu.PNG" alt="" aria-hidden="true" className="h-[18px] w-[18px]" />
             <span>Меню</span>
           </button>
-
-          <button
-            type="button"
-            aria-label="Профиль"
-            className="grid h-11 w-11 place-items-center rounded-[14px] border border-[#E4DED4] bg-[#FFFFFF]"
-          >
-            <span className="h-5 w-5 rounded-[8px] border border-[#D9D2C8] bg-[#F3EFE8]" />
-          </button>
         </div>
 
         <section className="flex flex-1 flex-col justify-center">
           <div className="space-y-6">
             <div className="space-y-1 text-left">
-              <h1 className="text-[38px] font-semibold leading-[0.98] tracking-[-0.05em] text-[#171717]">
-                Ну привет, {name}
-              </h1>
+              <div className="flex items-center gap-3">
+                <img
+                  src="/icons/applogo.PNG"
+                  alt=""
+                  aria-hidden="true"
+                  className="h-9 w-9 rounded-[10px] object-cover"
+                />
+                <h1 className="text-[38px] font-semibold leading-[0.98] tracking-[-0.05em] text-[#171717]">
+                  Ну привет, {name}
+                </h1>
+              </div>
               <p className="text-[38px] font-semibold leading-[0.98] tracking-[-0.05em] text-[#171717]">
                 С чем тебе помочь?
               </p>
@@ -166,18 +189,40 @@ export function StartScreen() {
                     <span className="text-sm font-medium">Анализ</span>
                   </button>
 
-                  <button
-                    type="submit"
-                    aria-label="Отправить сообщение"
-                    className="grid h-9 w-9 place-items-center rounded-[12px] border border-[#171717] bg-[#171717]"
-                  >
-                    <img
-                      src="/icons/send.PNG"
-                      alt=""
-                      aria-hidden="true"
-                      className="h-[16px] w-[16px] brightness-0 invert"
-                    />
-                  </button>
+                  <div className="relative flex items-center gap-3">
+                    <button
+                      type="button"
+                      aria-label="Информация о лимите"
+                      onClick={() => setInfoOpen((value) => !value)}
+                      className="inline-flex items-center gap-1.5 text-xs font-medium text-[#8C867D]"
+                    >
+                      <img src="/icons/info.PNG" alt="" aria-hidden="true" className="h-[13px] w-[13px]" />
+                      <span>{rateLimit}</span>
+                    </button>
+
+                    {infoOpen ? (
+                      <div className="absolute right-0 top-[calc(100%+12px)] z-10 w-[220px] rounded-[14px] bg-[#171717] px-3 py-2 text-xs leading-5 text-[#F7F7F5]">
+                        <div className="absolute right-8 top-[-6px] h-3 w-3 rotate-45 bg-[#171717]" />
+                        {rateLimitText}
+                      </div>
+                    ) : null}
+
+                    <button
+                      type="submit"
+                      aria-label="Отправить сообщение"
+                      disabled={sendDisabled}
+                      className={`grid h-9 w-9 place-items-center rounded-[12px] border border-[#171717] ${
+                        sendDisabled ? "bg-[#171717]/35 opacity-55" : "bg-[#171717]"
+                      }`}
+                    >
+                      <img
+                        src="/icons/send.PNG"
+                        alt=""
+                        aria-hidden="true"
+                        className="h-[16px] w-[16px] brightness-0 invert"
+                      />
+                    </button>
+                  </div>
                 </div>
               </form>
 
