@@ -7,7 +7,7 @@
   --bg: #f5f3ee;
   --text: #171717;
   --font-display: "General Sans", Inter, sans-serif;
-  --font-menu: Gotham, "General Sans", Inter, sans-serif;
+  --font-menu: Gothic, Gotham, "General Sans", Inter, sans-serif;
 }
 
 * {
@@ -81,7 +81,26 @@ button {
 
 .chat-word {
   display: inline-block;
-  animation: chatWordIn 140ms ease-out both;
+  animation: chatWordIn 120ms ease-out both;
+}
+
+.visible-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(23, 23, 23, 0.22) transparent;
+}
+
+.visible-scrollbar::-webkit-scrollbar {
+  display: block;
+  width: 6px;
+}
+
+.visible-scrollbar::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(23, 23, 23, 0.22);
+}
+
+.visible-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 @keyframes chatMessageIn {
