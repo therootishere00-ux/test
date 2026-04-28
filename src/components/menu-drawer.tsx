@@ -33,7 +33,7 @@ export function MenuDrawer({ open, onClose }: MenuDrawerProps) {
               />
               <span
                 className="text-[24px] font-bold tracking-[-0.04em] text-[#39704E]"
-                style={{ fontFamily: "var(--font-display)" }}
+                style={{ fontFamily: "var(--font-menu)" }}
               >
                 <span>swgoh</span>
                 <span className="opacity-65">.ai</span>

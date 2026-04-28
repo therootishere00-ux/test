@@ -1,13 +1,8 @@
 "use client";
 
 import { startTransition, useEffect, useRef, useState } from "react";
+import { ChatThread, type ChatMessage } from "@/components/chat-thread";
 import { MenuDrawer } from "@/components/menu-drawer";
-
-type ChatMessage = {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-};
 
 const promptLibrary = [
   "Собери план прокачки аккаунта на 30 дней",
@@ -60,7 +55,6 @@ function isEmojiOnly(value: string) {
 
 export function StartScreen() {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
-  const chatScrollRef = useRef<HTMLDivElement | null>(null);
   const modelRef = useRef<HTMLDivElement | null>(null);
   const [name, setName] = useState("Артем");
   const [message, setMessage] = useState("");
@@ -90,14 +84,6 @@ export function StartScreen() {
     textarea.style.height = `${nextHeight}px`;
     textarea.style.overflowY = textarea.scrollHeight > 120 ? "auto" : "hidden";
   }, [message]);
-
-  useEffect(() => {
-    if (!chatScrollRef.current) {
-      return;
-    }
-
-    chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
-  }, [messages]);
 
   useEffect(() => {
     if (!modelOpen) {
@@ -165,6 +151,110 @@ export function StartScreen() {
     }, 260);
   };
 
+  const renderComposer = () => (
+    <div className="space-y-3">
+      <form
+        className="rounded-[18px] border border-[#E6E0D7] bg-[#FFFFFF] px-4 pb-3 pt-3"
+        onSubmit={(event) => {
+          event.preventDefault();
+          submitMessage();
+        }}
+      >
+        <textarea
+          ref={textareaRef}
+          value={message}
+          onChange={(event) => setMessage(event.target.value)}
+          placeholder={inputPlaceholder}
+          aria-label="Ввести сообщение"
+          rows={1}
+          className="hide-scrollbar min-h-[24px] w-full resize-none bg-transparent py-1 text-[15px] leading-6 text-[#171717] outline-none placeholder:text-[#A09A90]"
+        />
+
+        <div className="mt-3 flex items-center justify-between gap-3">
+          <button
+            type="button"
+            onClick={() => setAnalysisEnabled((value) => !value)}
+            className={`inline-flex h-9 items-center gap-2 rounded-[12px] border px-3 ${
+              analysisEnabled
+                ? "border-[#CFE1D6] bg-[#EDF5F0] text-[#39704E]"
+                : "border-[#E3DED5] bg-[#F7F4EE] text-[#6F6A61]"
+            }`}
+          >
+            <img
+              src="/icons/firemode.PNG"
+              alt=""
+              aria-hidden="true"
+              className="h-4 w-4"
+              style={analysisIconStyle}
+            />
+            <span className="text-sm font-medium">Анализ</span>
+          </button>
+
+          <div className="flex items-center gap-3 pl-3">
+            <div ref={modelRef} className="relative">
+              <button
+                type="button"
+                aria-label="Выбрать модель"
+                onClick={() => setModelOpen((value) => !value)}
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-[#6F6A61]"
+              >
+                <span>{modelName}</span>
+                <img
+                  src="/icons/right.PNG"
+                  alt=""
+                  aria-hidden="true"
+                  className={`h-[14px] w-[14px] transition-transform duration-150 ${
+                    modelOpen ? "rotate-90" : "rotate-0"
+                  }`}
+                />
+              </button>
+
+              <div
+                className={`absolute bottom-[calc(100%+10px)] right-0 flex flex-col items-end gap-1 text-sm font-medium text-[#6F6A61] transition-all duration-150 ${
+                  modelOpen
+                    ? "pointer-events-auto translate-y-0 opacity-100"
+                    : "pointer-events-none translate-y-1 opacity-0"
+                }`}
+              >
+                {["Yota 4.5", "Yota 2.5"].map((option) => (
+                  <button
+                    key={option}
+                    type="button"
+                    onClick={() => {
+                      setModelName(option);
+                      setModelOpen(false);
+                    }}
+                    className="text-right text-sm font-medium text-[#6F6A61]"
+                  >
+                    {option}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              aria-label="Отправить сообщение"
+              disabled={sendDisabled}
+              className={`grid h-9 w-9 place-items-center rounded-[12px] border border-[#171717] transition-all duration-150 ${
+                sendDisabled ? "bg-[#171717]/35 opacity-55" : "bg-[#171717] opacity-100"
+              }`}
+            >
+              <img
+                src="/icons/send.PNG"
+                alt=""
+                aria-hidden="true"
+                className="h-[16px] w-[16px] brightness-0 invert"
+              />
+            </button>
+          </div>
+        </div>
+      </form>
+
+      <p className="text-center text-xs text-[#9A948A]">Это ИИ, он может допускать ошибки</p>
+    </div>
+  );
+
   return (
     <main className="relative min-h-dvh overflow-hidden bg-[#F5F3EE] text-[#171717] select-none">
       <MenuDrawer open={menuOpen} onClose={() => setMenuOpen(false)} />
@@ -183,13 +273,13 @@ export function StartScreen() {
 
         <section className="relative flex flex-1 flex-col">
           <div
-            className={`transition-all duration-300 ${
+            className={`flex flex-1 flex-col justify-center transition-all duration-300 ${
               chatStarted
                 ? "pointer-events-none max-h-0 -translate-y-3 overflow-hidden opacity-0"
-                : "max-h-[520px] translate-y-0 opacity-100"
+                : "max-h-[640px] translate-y-0 opacity-100"
             }`}
           >
-            <div className="space-y-6 pt-8">
+            <div className="space-y-6">
               <div className="space-y-1 text-left">
                 <div className="flex items-center gap-3">
                   <img
@@ -237,141 +327,25 @@ export function StartScreen() {
                   Перемешать
                 </button>
               </div>
+
+              {renderComposer()}
             </div>
           </div>
 
           <div
-            ref={chatScrollRef}
             className={`hide-scrollbar flex-1 overflow-y-auto transition-all duration-300 ${
               chatStarted ? "mt-6 opacity-100" : "pointer-events-none mt-0 opacity-0"
             }`}
           >
-            <div className="space-y-5 pb-6 pt-2">
-              {messages.map((entry) => (
-                <div
-                  key={entry.id}
-                  className={`flex ${entry.role === "user" ? "justify-end" : "justify-start"}`}
-                >
-                  {entry.role === "user" ? (
-                    <div className="max-w-[84%] rounded-[18px] border border-[#E2DCCE] bg-[#FFFFFF] px-4 py-3 text-[15px] leading-6 text-[#171717]">
-                      {entry.content}
-                    </div>
-                  ) : (
-                    <div className="max-w-[88%] px-1 text-[15px] leading-7 text-[#2E2E2E]">
-                      {entry.content}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
+            {chatStarted ? <ChatThread messages={messages} /> : null}
           </div>
 
           <div
             className={`transition-all duration-300 ${
-              chatStarted ? "mt-auto translate-y-0" : "my-auto translate-y-0"
+              chatStarted ? "mt-auto translate-y-0 opacity-100" : "pointer-events-none max-h-0 translate-y-3 overflow-hidden opacity-0"
             }`}
           >
-            <div className="space-y-3">
-              <form
-                className="rounded-[18px] border border-[#E6E0D7] bg-[#FFFFFF] px-4 pb-3 pt-3"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  submitMessage();
-                }}
-              >
-                <textarea
-                  ref={textareaRef}
-                  value={message}
-                  onChange={(event) => setMessage(event.target.value)}
-                  placeholder={inputPlaceholder}
-                  aria-label="Ввести сообщение"
-                  rows={1}
-                  className="hide-scrollbar min-h-[24px] w-full resize-none bg-transparent py-1 text-[15px] leading-6 text-[#171717] outline-none placeholder:text-[#A09A90]"
-                />
-
-                <div className="mt-3 flex items-center justify-between gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setAnalysisEnabled((value) => !value)}
-                    className={`inline-flex h-9 items-center gap-2 rounded-[12px] border px-3 ${
-                      analysisEnabled
-                        ? "border-[#CFE1D6] bg-[#EDF5F0] text-[#39704E]"
-                        : "border-[#E3DED5] bg-[#F7F4EE] text-[#6F6A61]"
-                    }`}
-                  >
-                    <img
-                      src="/icons/firemode.PNG"
-                      alt=""
-                      aria-hidden="true"
-                      className="h-4 w-4"
-                      style={analysisIconStyle}
-                    />
-                    <span className="text-sm font-medium">Анализ</span>
-                  </button>
-
-                  <div className="flex items-center gap-3 pl-3">
-                    <div ref={modelRef} className="relative">
-                      <button
-                        type="button"
-                        aria-label="Выбрать модель"
-                        onClick={() => setModelOpen((value) => !value)}
-                        className="inline-flex items-center gap-1.5 text-sm font-medium text-[#6F6A61]"
-                      >
-                        <span>{modelName}</span>
-                        <img
-                          src="/icons/right.PNG"
-                          alt=""
-                          aria-hidden="true"
-                          className={`h-[14px] w-[14px] transition-transform duration-150 ${
-                            modelOpen ? "rotate-90" : "rotate-0"
-                          }`}
-                        />
-                      </button>
-
-                      <div
-                        className={`absolute bottom-[calc(100%+10px)] right-0 flex flex-col items-end gap-1 text-sm font-medium text-[#6F6A61] transition-all duration-150 ${
-                          modelOpen
-                            ? "pointer-events-auto translate-y-0 opacity-100"
-                            : "pointer-events-none translate-y-1 opacity-0"
-                        }`}
-                      >
-                        {["Yota 4.5", "Yota 2.5"].map((option) => (
-                          <button
-                            key={option}
-                            type="button"
-                            onClick={() => {
-                              setModelName(option);
-                              setModelOpen(false);
-                            }}
-                            className="text-right text-sm font-medium text-[#6F6A61]"
-                          >
-                            {option}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    <button
-                      type="submit"
-                      aria-label="Отправить сообщение"
-                      disabled={sendDisabled}
-                      className={`grid h-9 w-9 place-items-center rounded-[12px] border border-[#171717] transition-all duration-150 ${
-                        sendDisabled ? "bg-[#171717]/35 opacity-55" : "bg-[#171717] opacity-100"
-                      }`}
-                    >
-                      <img
-                        src="/icons/send.PNG"
-                        alt=""
-                        aria-hidden="true"
-                        className="h-[16px] w-[16px] brightness-0 invert"
-                      />
-                    </button>
-                  </div>
-                </div>
-              </form>
-
-              <p className="text-center text-xs text-[#9A948A]">Это ИИ, он может допускать ошибки</p>
-            </div>
+            {renderComposer()}
           </div>
         </section>
       </div>
