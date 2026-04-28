@@ -54,7 +54,7 @@ export function MenuDrawer({ open, onClose }: MenuDrawerProps) {
             <p className="text-sm font-medium text-[#9A948A]">Чатов нет</p>
           </div>
 
-          <div className="rounded-[18px] border border-[#E6E0D7] bg-[#FFFFFF] p-3">
+          <div className="mt-auto rounded-[18px] bg-[#FFFFFF] p-3">
             <div className="space-y-2">
               <button
                 type="button"

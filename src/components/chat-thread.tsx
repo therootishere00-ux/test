@@ -49,7 +49,7 @@ export function ChatThread({ messages }: ChatThreadProps) {
         ...current,
         [pendingAssistant.id]: Math.min((current[pendingAssistant.id] ?? 0) + 1, words.length)
       }));
-    }, 42);
+    }, 28);
 
     return () => {
       window.clearTimeout(timeoutId);
@@ -57,7 +57,7 @@ export function ChatThread({ messages }: ChatThreadProps) {
   }, [messages, revealedWords]);
 
   return (
-    <div ref={viewportRef} className="hide-scrollbar flex-1 overflow-y-auto">
+    <div ref={viewportRef} className="visible-scrollbar flex-1 overflow-y-auto pr-1">
       <div className="space-y-5 pb-6 pt-2">
         {messages.map((entry) => {
           if (entry.role === "user") {
@@ -78,8 +78,7 @@ export function ChatThread({ messages }: ChatThreadProps) {
               <div className="max-w-[88%] px-1 text-[15px] leading-7 text-[#2E2E2E]">
                 {words.slice(0, visibleCount).map((word, index) => (
                   <span key={`${entry.id}-${index}-${word}`} className="chat-word">
-                    {word}
-                    {index < visibleCount - 1 ? " " : ""}
+                    {index < visibleCount - 1 ? `${word}\u00A0` : word}
                   </span>
                 ))}
               </div>

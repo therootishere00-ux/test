@@ -191,46 +191,50 @@ export function StartScreen() {
           </button>
 
           <div className="flex items-center gap-3 pl-3">
-            <div ref={modelRef} className="relative">
-              <button
-                type="button"
-                aria-label="Выбрать модель"
-                onClick={() => setModelOpen((value) => !value)}
-                className="inline-flex items-center gap-1.5 text-sm font-medium text-[#6F6A61]"
-              >
-                <span>{modelName}</span>
-                <img
-                  src="/icons/right.PNG"
-                  alt=""
-                  aria-hidden="true"
-                  className={`h-[14px] w-[14px] transition-transform duration-150 ${
-                    modelOpen ? "rotate-90" : "rotate-0"
-                  }`}
-                />
-              </button>
+            {chatStarted ? (
+              <span className="text-sm font-medium text-[#6F6A61]/65">{modelName}</span>
+            ) : (
+              <div ref={modelRef} className="relative">
+                <button
+                  type="button"
+                  aria-label="Выбрать модель"
+                  onClick={() => setModelOpen((value) => !value)}
+                  className="inline-flex items-center gap-1 text-sm font-medium text-[#6F6A61]"
+                >
+                  <span>{modelName}</span>
+                  <img
+                    src="/icons/right.PNG"
+                    alt=""
+                    aria-hidden="true"
+                    className={`h-[12px] w-[12px] opacity-75 transition-transform duration-150 ${
+                      modelOpen ? "rotate-90" : "rotate-0"
+                    }`}
+                  />
+                </button>
 
-              <div
-                className={`absolute bottom-[calc(100%+10px)] right-0 flex flex-col items-end gap-1 text-sm font-medium text-[#6F6A61] transition-all duration-150 ${
-                  modelOpen
-                    ? "pointer-events-auto translate-y-0 opacity-100"
-                    : "pointer-events-none translate-y-1 opacity-0"
-                }`}
-              >
-                {["Yota 4.5", "Yota 2.5"].map((option) => (
-                  <button
-                    key={option}
-                    type="button"
-                    onClick={() => {
-                      setModelName(option);
-                      setModelOpen(false);
-                    }}
-                    className="text-right text-sm font-medium text-[#6F6A61]"
-                  >
-                    {option}
-                  </button>
-                ))}
+                <div
+                  className={`absolute left-0 top-[calc(100%+8px)] flex flex-col gap-1 text-sm font-medium text-[#6F6A61] transition-all duration-150 ${
+                    modelOpen
+                      ? "pointer-events-auto translate-y-0 opacity-100"
+                      : "pointer-events-none -translate-y-1 opacity-0"
+                  }`}
+                >
+                  {["Yota 4.5", "Yota 2.5"].map((option) => (
+                    <button
+                      key={option}
+                      type="button"
+                      onClick={() => {
+                        setModelName(option);
+                        setModelOpen(false);
+                      }}
+                      className="text-left text-sm font-medium text-[#6F6A61]"
+                    >
+                      {option}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             <button
               type="submit"
@@ -259,8 +263,8 @@ export function StartScreen() {
     <main className="relative min-h-dvh overflow-hidden bg-[#F5F3EE] text-[#171717] select-none">
       <MenuDrawer open={menuOpen} onClose={() => setMenuOpen(false)} />
 
-      <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-4 pb-6 pt-6">
-        <div className="flex items-center">
+      <div className="relative mx-auto flex min-h-dvh w-full max-w-md flex-col px-4 pb-6 pt-6">
+        <div className="absolute left-4 top-6 z-10 flex items-center">
           <button
             type="button"
             aria-label="Меню"
