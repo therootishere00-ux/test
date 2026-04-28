@@ -6,6 +6,7 @@
   color-scheme: light;
   --bg: #f5f3ee;
   --text: #171717;
+  --font-display: "General Sans", Inter, sans-serif;
 }
 
 * {
