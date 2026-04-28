@@ -7,6 +7,7 @@
   --bg: #f5f3ee;
   --text: #171717;
   --font-display: "General Sans", Inter, sans-serif;
+  --font-menu: Gotham, "General Sans", Inter, sans-serif;
 }
 
 * {
@@ -72,4 +73,37 @@ button {
 .hide-scrollbar {
   scrollbar-width: none;
   -ms-overflow-style: none;
+}
+
+.chat-message-in {
+  animation: chatMessageIn 180ms ease-out both;
+}
+
+.chat-word {
+  display: inline-block;
+  animation: chatWordIn 140ms ease-out both;
+}
+
+@keyframes chatMessageIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes chatWordIn {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 8px, 0);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
 }
