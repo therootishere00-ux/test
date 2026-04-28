@@ -55,7 +55,7 @@ export function StartScreen() {
   const [message, setMessage] = useState("");
   const [analysisEnabled, setAnalysisEnabled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [prompts, setPrompts] = useState(() => pickPrompts(promptLibrary, 3));
+  const [prompts, setPrompts] = useState(() => pickPrompts(promptLibrary, 5));
 
   useEffect(() => {
     setName(getTelegramName());
@@ -78,9 +78,15 @@ export function StartScreen() {
 
   useEffect(() => {
     startTransition(() => {
-      setPrompts(pickPrompts(promptLibrary, 3));
+      setPrompts(pickPrompts(promptLibrary, 5));
     });
   }, []);
+
+  const handleShuffle = () => {
+    startTransition(() => {
+      setPrompts(pickPrompts(promptLibrary, 5));
+    });
+  };
 
   const sendDisabled = message.trim().length < 2 || isEmojiOnly(message.trim());
 
@@ -128,20 +134,29 @@ export function StartScreen() {
             </div>
 
             <div className="space-y-3">
-              <p className="text-sm font-medium text-[#8C867D]">Начать можно так</p>
+              <p className="text-sm font-medium text-[#8C867D]">Быстрые промпты</p>
 
-              <div className="space-y-3">
+              <div className="hide-scrollbar flex gap-3 overflow-x-auto pb-1 pr-2">
                 {prompts.map((prompt) => (
                   <button
                     key={prompt}
                     type="button"
                     onClick={() => setMessage(prompt)}
-                    className="flex w-full rounded-[14px] border border-[#E6E0D7] bg-[#FBFAF7] px-4 py-3 text-left text-sm leading-snug text-[#2A2A2A]"
+                    className="shrink-0 rounded-[14px] border border-[#E6E0D7] bg-[#FBFAF7] px-4 py-3 text-left text-sm leading-snug text-[#2A2A2A]"
                   >
                     {prompt}
                   </button>
                 ))}
               </div>
+
+              <button
+                type="button"
+                onClick={handleShuffle}
+                className="inline-flex items-center gap-2 text-sm font-medium text-[#8C867D]"
+              >
+                <img src="/icons/refresh.PNG" alt="" aria-hidden="true" className="h-[15px] w-[15px]" />
+                Перемешать
+              </button>
             </div>
 
             <div className="space-y-3">
@@ -179,21 +194,23 @@ export function StartScreen() {
                     <span className="text-sm font-medium">Анализ</span>
                   </button>
 
-                  <button
-                    type="submit"
-                    aria-label="Отправить сообщение"
-                    disabled={sendDisabled}
-                    className={`grid h-9 w-9 place-items-center rounded-[12px] border border-[#171717] transition-all duration-150 ${
-                      sendDisabled ? "bg-[#171717]/35 opacity-55" : "bg-[#171717] opacity-100"
-                    }`}
-                  >
-                    <img
-                      src="/icons/send.PNG"
-                      alt=""
-                      aria-hidden="true"
-                      className="h-[16px] w-[16px] brightness-0 invert"
-                    />
-                  </button>
+                  <div className="pl-3">
+                    <button
+                      type="submit"
+                      aria-label="Отправить сообщение"
+                      disabled={sendDisabled}
+                      className={`grid h-9 w-9 place-items-center rounded-[12px] border border-[#171717] transition-all duration-150 ${
+                        sendDisabled ? "bg-[#171717]/35 opacity-55" : "bg-[#171717] opacity-100"
+                      }`}
+                    >
+                      <img
+                        src="/icons/send.PNG"
+                        alt=""
+                        aria-hidden="true"
+                        className="h-[16px] w-[16px] brightness-0 invert"
+                      />
+                    </button>
+                  </div>
                 </div>
               </form>
 
