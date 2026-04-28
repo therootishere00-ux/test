@@ -107,10 +107,9 @@ export function StartScreen() {
             type="button"
             aria-label="Меню"
             onClick={() => setMenuOpen(true)}
-            className="inline-flex h-11 items-center gap-2 rounded-[14px] border border-[#E4DED4] bg-[#FFFFFF] px-4 text-sm font-medium text-[#171717]"
+            className="grid h-9 w-9 place-items-center text-[#171717]"
           >
-            <img src="/icons/menu.PNG" alt="" aria-hidden="true" className="h-[18px] w-[18px]" />
-            <span>Меню</span>
+            <img src="/icons/menu.PNG" alt="" aria-hidden="true" className="h-[20px] w-[20px]" />
           </button>
         </div>
 
