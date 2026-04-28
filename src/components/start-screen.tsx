@@ -3,6 +3,12 @@
 import { startTransition, useEffect, useRef, useState } from "react";
 import { MenuDrawer } from "@/components/menu-drawer";
 
+type ChatMessage = {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+};
+
 const promptLibrary = [
   "Собери план прокачки аккаунта на 30 дней",
   "Подбери контр-пики под текущий GAC",
@@ -17,6 +23,9 @@ const promptLibrary = [
   "Проведи аудит ресурсов и узких мест",
   "Подбери составы под Territory War"
 ];
+
+const demoReply =
+  "Понял. В демо-режиме я пока не анализирую данные SWGOH, но структура чата уже готова: здесь будут ответы ассистента, рекомендации и разбор состава.";
 
 function getTelegramName() {
   const webApp = typeof window !== "undefined" ? window.Telegram?.WebApp : undefined;
@@ -51,11 +60,17 @@ function isEmojiOnly(value: string) {
 
 export function StartScreen() {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const chatScrollRef = useRef<HTMLDivElement | null>(null);
+  const modelRef = useRef<HTMLDivElement | null>(null);
   const [name, setName] = useState("Артем");
   const [message, setMessage] = useState("");
   const [analysisEnabled, setAnalysisEnabled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [prompts, setPrompts] = useState(() => pickPrompts(promptLibrary, 5));
+  const [chatStarted, setChatStarted] = useState(false);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [modelOpen, setModelOpen] = useState(false);
+  const [modelName, setModelName] = useState("Yota 3.5");
 
   useEffect(() => {
     setName(getTelegramName());
@@ -77,10 +92,30 @@ export function StartScreen() {
   }, [message]);
 
   useEffect(() => {
-    startTransition(() => {
-      setPrompts(pickPrompts(promptLibrary, 5));
-    });
-  }, []);
+    if (!chatScrollRef.current) {
+      return;
+    }
+
+    chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
+  }, [messages]);
+
+  useEffect(() => {
+    if (!modelOpen) {
+      return;
+    }
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!modelRef.current?.contains(event.target as Node)) {
+        setModelOpen(false);
+      }
+    };
+
+    window.addEventListener("pointerdown", handlePointerDown);
+
+    return () => {
+      window.removeEventListener("pointerdown", handlePointerDown);
+    };
+  }, [modelOpen]);
 
   const handleShuffle = () => {
     startTransition(() => {
@@ -89,6 +124,9 @@ export function StartScreen() {
   };
 
   const sendDisabled = message.trim().length < 2 || isEmojiOnly(message.trim());
+  const inputPlaceholder = analysisEnabled
+    ? "Что стоит анализировать.."
+    : "Спросите Yota...";
 
   const analysisIconStyle = analysisEnabled
     ? {
@@ -96,6 +134,36 @@ export function StartScreen() {
           "brightness(0) saturate(100%) invert(39%) sepia(18%) saturate(892%) hue-rotate(94deg) brightness(94%) contrast(88%)"
       }
     : undefined;
+
+  const submitMessage = () => {
+    const normalized = message.trim();
+
+    if (normalized.length < 2 || isEmojiOnly(normalized)) {
+      return;
+    }
+
+    const userMessage: ChatMessage = {
+      id: `user-${Date.now()}`,
+      role: "user",
+      content: normalized
+    };
+
+    setChatStarted(true);
+    setMessages((current) => [...current, userMessage]);
+    setMessage("");
+
+    window.setTimeout(() => {
+      setMessages((current) => {
+        const assistantMessage: ChatMessage = {
+          id: `assistant-${Date.now()}`,
+          role: "assistant",
+          content: demoReply
+        };
+
+        return [...current, assistantMessage];
+      });
+    }, 260);
+  };
 
   return (
     <main className="relative min-h-dvh overflow-hidden bg-[#F5F3EE] text-[#171717] select-none">
@@ -113,61 +181,109 @@ export function StartScreen() {
           </button>
         </div>
 
-        <section className="flex flex-1 flex-col justify-center">
-          <div className="space-y-6">
-            <div className="space-y-1 text-left">
-              <div className="flex items-center gap-3">
-                <img
-                  src="/icons/applogo.PNG"
-                  alt=""
-                  aria-hidden="true"
-                  className="h-9 w-9 rounded-[10px] object-cover"
-                />
-                <h1 className="text-[38px] font-semibold leading-[0.98] tracking-[-0.05em] text-[#171717]">
-                  Ну привет, {name}
-                </h1>
-              </div>
-              <p className="text-[38px] font-semibold leading-[0.98] tracking-[-0.05em] text-[#171717]">
-                С чем тебе помочь?
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              <p className="text-sm font-medium text-[#8C867D]">Быстрые промпты</p>
-
-              <div className="hide-scrollbar flex gap-3 overflow-x-auto pb-1 pr-2">
-                {prompts.map((prompt) => (
-                  <button
-                    key={prompt}
-                    type="button"
-                    onClick={() => setMessage(prompt)}
-                    className="shrink-0 rounded-[14px] border border-[#E6E0D7] bg-[#FBFAF7] px-4 py-3 text-left text-sm leading-snug text-[#2A2A2A]"
-                  >
-                    {prompt}
-                  </button>
-                ))}
+        <section className="relative flex flex-1 flex-col">
+          <div
+            className={`transition-all duration-300 ${
+              chatStarted
+                ? "pointer-events-none max-h-0 -translate-y-3 overflow-hidden opacity-0"
+                : "max-h-[520px] translate-y-0 opacity-100"
+            }`}
+          >
+            <div className="space-y-6 pt-8">
+              <div className="space-y-1 text-left">
+                <div className="flex items-center gap-3">
+                  <img
+                    src="/icons/applogo.PNG"
+                    alt=""
+                    aria-hidden="true"
+                    className="h-9 w-9 rounded-[10px] object-cover"
+                  />
+                  <h1 className="text-[38px] font-semibold leading-[0.98] tracking-[-0.05em] text-[#171717]">
+                    Ну привет, {name}
+                  </h1>
+                </div>
+                <p className="text-[38px] font-semibold leading-[0.98] tracking-[-0.05em] text-[#171717]">
+                  С чем тебе помочь?
+                </p>
               </div>
 
-              <button
-                type="button"
-                onClick={handleShuffle}
-                className="inline-flex items-center gap-2 text-sm font-medium text-[#8C867D]"
-              >
-                <img src="/icons/refresh.PNG" alt="" aria-hidden="true" className="h-[15px] w-[15px]" />
-                Перемешать
-              </button>
-            </div>
+              <div className="space-y-3">
+                <p className="text-sm font-medium text-[#8C867D]">Начать можно так</p>
 
+                <div className="hide-scrollbar flex gap-3 overflow-x-auto pb-1 pr-2">
+                  {prompts.map((prompt) => (
+                    <button
+                      key={prompt}
+                      type="button"
+                      onClick={() => setMessage(prompt)}
+                      className="shrink-0 rounded-[14px] border border-[#E6E0D7] bg-[#FBFAF7] px-4 py-3 text-left text-sm leading-snug text-[#2A2A2A]"
+                    >
+                      {prompt}
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleShuffle}
+                  className="inline-flex items-center gap-2 text-sm font-medium text-[#8C867D]"
+                >
+                  <img
+                    src="/icons/refresh.PNG"
+                    alt=""
+                    aria-hidden="true"
+                    className="h-[15px] w-[15px]"
+                  />
+                  Перемешать
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div
+            ref={chatScrollRef}
+            className={`hide-scrollbar flex-1 overflow-y-auto transition-all duration-300 ${
+              chatStarted ? "mt-6 opacity-100" : "pointer-events-none mt-0 opacity-0"
+            }`}
+          >
+            <div className="space-y-5 pb-6 pt-2">
+              {messages.map((entry) => (
+                <div
+                  key={entry.id}
+                  className={`flex ${entry.role === "user" ? "justify-end" : "justify-start"}`}
+                >
+                  {entry.role === "user" ? (
+                    <div className="max-w-[84%] rounded-[18px] border border-[#E2DCCE] bg-[#FFFFFF] px-4 py-3 text-[15px] leading-6 text-[#171717]">
+                      {entry.content}
+                    </div>
+                  ) : (
+                    <div className="max-w-[88%] px-1 text-[15px] leading-7 text-[#2E2E2E]">
+                      {entry.content}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div
+            className={`transition-all duration-300 ${
+              chatStarted ? "mt-auto translate-y-0" : "my-auto translate-y-0"
+            }`}
+          >
             <div className="space-y-3">
               <form
                 className="rounded-[18px] border border-[#E6E0D7] bg-[#FFFFFF] px-4 pb-3 pt-3"
-                onSubmit={(event) => event.preventDefault()}
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  submitMessage();
+                }}
               >
                 <textarea
                   ref={textareaRef}
                   value={message}
                   onChange={(event) => setMessage(event.target.value)}
-                  placeholder="Спроси про состав, моды или план развития..."
+                  placeholder={inputPlaceholder}
                   aria-label="Ввести сообщение"
                   rows={1}
                   className="hide-scrollbar min-h-[24px] w-full resize-none bg-transparent py-1 text-[15px] leading-6 text-[#171717] outline-none placeholder:text-[#A09A90]"
@@ -193,7 +309,48 @@ export function StartScreen() {
                     <span className="text-sm font-medium">Анализ</span>
                   </button>
 
-                  <div className="pl-3">
+                  <div className="flex items-center gap-3 pl-3">
+                    <div ref={modelRef} className="relative">
+                      <button
+                        type="button"
+                        aria-label="Выбрать модель"
+                        onClick={() => setModelOpen((value) => !value)}
+                        className="inline-flex items-center gap-1.5 text-sm font-medium text-[#6F6A61]"
+                      >
+                        <span>{modelName}</span>
+                        <img
+                          src="/icons/right.PNG"
+                          alt=""
+                          aria-hidden="true"
+                          className={`h-[14px] w-[14px] transition-transform duration-150 ${
+                            modelOpen ? "rotate-90" : "rotate-0"
+                          }`}
+                        />
+                      </button>
+
+                      <div
+                        className={`absolute bottom-[calc(100%+10px)] right-0 flex flex-col items-end gap-1 text-sm font-medium text-[#6F6A61] transition-all duration-150 ${
+                          modelOpen
+                            ? "pointer-events-auto translate-y-0 opacity-100"
+                            : "pointer-events-none translate-y-1 opacity-0"
+                        }`}
+                      >
+                        {["Yota 4.5", "Yota 2.5"].map((option) => (
+                          <button
+                            key={option}
+                            type="button"
+                            onClick={() => {
+                              setModelName(option);
+                              setModelOpen(false);
+                            }}
+                            className="text-right text-sm font-medium text-[#6F6A61]"
+                          >
+                            {option}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
                     <button
                       type="submit"
                       aria-label="Отправить сообщение"

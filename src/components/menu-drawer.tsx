@@ -18,37 +18,47 @@ export function MenuDrawer({ open, onClose }: MenuDrawerProps) {
       />
 
       <aside
-        className={`absolute left-0 top-0 z-40 h-dvh w-[84%] max-w-[340px] border-r border-[#E6E0D7] bg-[#F5F3EE] px-5 pb-6 pt-4 transition-transform duration-200 ${
+        className={`absolute left-0 top-0 z-40 h-dvh w-[84%] max-w-[340px] border-r border-[#E6E0D7] bg-[#F5F3EE] px-5 pb-6 pt-6 transition-transform duration-200 ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         <div className="flex h-full flex-col">
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-3 pt-1">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
               <img
                 src="/icons/applogo.PNG"
                 alt=""
                 aria-hidden="true"
                 className="h-7 w-7 object-contain"
               />
-              <span className="text-[24px] font-semibold tracking-[-0.04em] text-[#39704E]">swgoh.ai</span>
+              <span
+                className="text-[24px] font-bold tracking-[-0.04em] text-[#39704E]"
+                style={{ fontFamily: "var(--font-display)" }}
+              >
+                <span>swgoh</span>
+                <span className="opacity-65">.ai</span>
+              </span>
             </div>
 
             <button
               type="button"
               aria-label="Закрыть меню"
               onClick={onClose}
-              className="grid h-9 w-9 place-items-center rounded-[12px] border border-[#E4DED4] bg-[#FFFFFF]"
+              className="grid h-9 w-9 place-items-center text-[#171717]"
             >
-              <img src="/icons/close.PNG" alt="" aria-hidden="true" className="h-[14px] w-[14px]" />
+              <img src="/icons/cross.PNG" alt="" aria-hidden="true" className="h-[20px] w-[20px]" />
             </button>
           </div>
 
-          <div className="pt-8">
-            <div className="space-y-2.5">
+          <div className="flex flex-1 items-center justify-center">
+            <p className="text-sm font-medium text-[#9A948A]">Чатов нет</p>
+          </div>
+
+          <div className="rounded-[18px] border border-[#E6E0D7] bg-[#FFFFFF] p-3">
+            <div className="space-y-2">
               <button
                 type="button"
-                className="flex h-11 w-full items-center rounded-[14px] border border-[#E6E0D7] bg-[#FFFFFF] px-3.5 text-left text-[13px] font-medium text-[#232323]"
+                className="flex h-11 w-full items-center rounded-[12px] px-3 text-left text-[13px] font-medium text-[#232323]"
               >
                 <span className="flex items-center gap-3">
                   <span className="h-5 w-5 rounded-[7px] border border-[#D8D1C7] bg-[#F3EFE8]" />
@@ -58,7 +68,7 @@ export function MenuDrawer({ open, onClose }: MenuDrawerProps) {
 
               <button
                 type="button"
-                className="flex h-11 w-full items-center rounded-[14px] border border-[#E6E0D7] bg-[#FFFFFF] px-3.5 text-left text-[13px] font-medium text-[#232323]"
+                className="flex h-11 w-full items-center rounded-[12px] px-3 text-left text-[13px] font-medium text-[#232323]"
               >
                 <span className="flex items-center gap-3">
                   <img
@@ -71,10 +81,6 @@ export function MenuDrawer({ open, onClose }: MenuDrawerProps) {
                 </span>
               </button>
             </div>
-          </div>
-
-          <div className="flex flex-1 items-center justify-center">
-            <p className="text-sm font-medium text-[#9A948A]">Чатов нет</p>
           </div>
         </div>
       </aside>
