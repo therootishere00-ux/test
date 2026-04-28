@@ -1,6 +1,7 @@
 "use client";
 
 import { startTransition, useEffect, useRef, useState } from "react";
+import { MenuDrawer } from "@/components/menu-drawer";
 
 const promptLibrary = [
   "Собери план прокачки аккаунта на 30 дней",
@@ -23,7 +24,7 @@ function getTelegramName() {
   return firstName || "Артем";
 }
 
-function pickFivePrompts(source: string[]) {
+function pickPrompts(source: string[], amount: number) {
   const items = [...source];
 
   for (let index = items.length - 1; index > 0; index -= 1) {
@@ -31,7 +32,7 @@ function pickFivePrompts(source: string[]) {
     [items[index], items[nextIndex]] = [items[nextIndex], items[index]];
   }
 
-  return items.slice(0, 5);
+  return items.slice(0, amount);
 }
 
 function isEmojiOnly(value: string) {
@@ -50,12 +51,11 @@ function isEmojiOnly(value: string) {
 
 export function StartScreen() {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
-  const infoRef = useRef<HTMLDivElement | null>(null);
   const [name, setName] = useState("Артем");
   const [message, setMessage] = useState("");
   const [analysisEnabled, setAnalysisEnabled] = useState(false);
-  const [prompts, setPrompts] = useState(() => promptLibrary.slice(0, 5));
-  const [infoOpen, setInfoOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [prompts, setPrompts] = useState(() => pickPrompts(promptLibrary, 3));
 
   useEffect(() => {
     setName(getTelegramName());
@@ -77,41 +77,12 @@ export function StartScreen() {
   }, [message]);
 
   useEffect(() => {
-    if (!infoOpen) {
-      return;
-    }
-
-    const timeoutId = window.setTimeout(() => {
-      setInfoOpen(false);
-    }, 3000);
-
-    const handlePointerDown = (event: PointerEvent) => {
-      if (!infoRef.current?.contains(event.target as Node)) {
-        setInfoOpen(false);
-      }
-    };
-
-    window.addEventListener("pointerdown", handlePointerDown);
-
-    return () => {
-      window.clearTimeout(timeoutId);
-      window.removeEventListener("pointerdown", handlePointerDown);
-    };
-  }, [infoOpen]);
-
-  const handleShuffle = () => {
     startTransition(() => {
-      setPrompts(pickFivePrompts(promptLibrary));
+      setPrompts(pickPrompts(promptLibrary, 3));
     });
-  };
+  }, []);
 
-  const normalizedMessage = message.trim();
-  const sendDisabled =
-    normalizedMessage.length < 2 || isEmojiOnly(normalizedMessage);
-  const rateLimit = analysisEnabled ? "0/5" : "0/10";
-  const rateLimitText = analysisEnabled
-    ? "Это твой лимит сообщений в минуту для анализа"
-    : "Это твой лимит сообщений в минуту";
+  const sendDisabled = message.trim().length < 2 || isEmojiOnly(message.trim());
 
   const analysisIconStyle = analysisEnabled
     ? {
@@ -121,12 +92,15 @@ export function StartScreen() {
     : undefined;
 
   return (
-    <main className="min-h-dvh overflow-hidden bg-[#F5F3EE] text-[#171717] select-none">
+    <main className="relative min-h-dvh overflow-hidden bg-[#F5F3EE] text-[#171717] select-none">
+      <MenuDrawer open={menuOpen} onClose={() => setMenuOpen(false)} />
+
       <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-4 pb-6 pt-6">
         <div className="flex items-center">
           <button
             type="button"
             aria-label="Меню"
+            onClick={() => setMenuOpen(true)}
             className="inline-flex h-11 items-center gap-2 rounded-[14px] border border-[#E4DED4] bg-[#FFFFFF] px-4 text-sm font-medium text-[#171717]"
           >
             <img src="/icons/menu.PNG" alt="" aria-hidden="true" className="h-[18px] w-[18px]" />
@@ -154,28 +128,20 @@ export function StartScreen() {
             </div>
 
             <div className="space-y-3">
-              <p className="text-sm font-medium text-[#8C867D]">Быстрые промпты</p>
+              <p className="text-sm font-medium text-[#8C867D]">Начать можно так</p>
 
-              <div className="hide-scrollbar flex gap-3 overflow-x-auto pb-1 pr-2">
+              <div className="space-y-3">
                 {prompts.map((prompt) => (
                   <button
                     key={prompt}
                     type="button"
-                    className="shrink-0 rounded-[14px] border border-[#E6E0D7] bg-[#FBFAF7] px-4 py-3 text-left text-sm leading-snug text-[#2A2A2A]"
+                    onClick={() => setMessage(prompt)}
+                    className="flex w-full rounded-[14px] border border-[#E6E0D7] bg-[#FBFAF7] px-4 py-3 text-left text-sm leading-snug text-[#2A2A2A]"
                   >
                     {prompt}
                   </button>
                 ))}
               </div>
-
-              <button
-                type="button"
-                onClick={handleShuffle}
-                className="inline-flex items-center gap-2 text-sm font-medium text-[#8C867D]"
-              >
-                <img src="/icons/refresh.PNG" alt="" aria-hidden="true" className="h-[15px] w-[15px]" />
-                Перемешать
-              </button>
             </div>
 
             <div className="space-y-3">
@@ -213,47 +179,21 @@ export function StartScreen() {
                     <span className="text-sm font-medium">Анализ</span>
                   </button>
 
-                  <div ref={infoRef} className="relative flex items-center gap-3">
-                    <button
-                      type="button"
-                      aria-label="Информация о лимите"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        setInfoOpen((value) => !value);
-                      }}
-                      className="inline-flex items-center gap-1.5 text-sm font-medium text-[#8C867D]"
-                    >
-                      <img src="/icons/info.PNG" alt="" aria-hidden="true" className="h-[14px] w-[14px]" />
-                      <span>{rateLimit}</span>
-                    </button>
-
-                    <div
-                      className={`absolute right-0 top-[calc(100%+12px)] z-10 w-[220px] rounded-[14px] bg-[#171717] px-3 py-2 text-xs leading-5 text-[#F7F7F5] transition-all duration-150 ${
-                        infoOpen
-                          ? "pointer-events-auto translate-y-0 opacity-100"
-                          : "pointer-events-none -translate-y-1 opacity-0"
-                      }`}
-                    >
-                      <div className="absolute left-[16px] top-[-6px] h-3 w-3 rotate-45 bg-[#171717]" />
-                      {rateLimitText}
-                    </div>
-
-                    <button
-                      type="submit"
-                      aria-label="Отправить сообщение"
-                      disabled={sendDisabled}
-                      className={`grid h-9 w-9 place-items-center rounded-[12px] border border-[#171717] transition-all duration-150 ${
-                        sendDisabled ? "bg-[#171717]/35 opacity-55" : "bg-[#171717] opacity-100"
-                      }`}
-                    >
-                      <img
-                        src="/icons/send.PNG"
-                        alt=""
-                        aria-hidden="true"
-                        className="h-[16px] w-[16px] brightness-0 invert"
-                      />
-                    </button>
-                  </div>
+                  <button
+                    type="submit"
+                    aria-label="Отправить сообщение"
+                    disabled={sendDisabled}
+                    className={`grid h-9 w-9 place-items-center rounded-[12px] border border-[#171717] transition-all duration-150 ${
+                      sendDisabled ? "bg-[#171717]/35 opacity-55" : "bg-[#171717] opacity-100"
+                    }`}
+                  >
+                    <img
+                      src="/icons/send.PNG"
+                      alt=""
+                      aria-hidden="true"
+                      className="h-[16px] w-[16px] brightness-0 invert"
+                    />
+                  </button>
                 </div>
               </form>
 
