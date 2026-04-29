@@ -61,12 +61,13 @@ export function StartScreen() {
 
   const handleShuffle = () => {
     setIsRefreshing(true);
+    // Анимация вращения через CSS класс animate-spin-smooth
     setTimeout(() => {
       startTransition(() => {
         setPrompts(pickPrompts(promptLibrary, 5));
         setIsRefreshing(false);
       });
-    }, 200);
+    }, 600);
   };
 
   const submitMessage = () => {
@@ -84,7 +85,7 @@ export function StartScreen() {
   };
 
   const renderComposer = () => (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3 w-full">
       <form
         className="rounded-[22px] border border-[#E6E0D7] bg-[#FFFFFF] px-4 pb-3 pt-3 shadow-sm"
         onSubmit={(e) => { e.preventDefault(); submitMessage(); }}
@@ -127,10 +128,9 @@ export function StartScreen() {
     <main className="relative flex h-dvh flex-col bg-[#F5F3EE] text-[#171717] select-none overflow-hidden">
       <MenuDrawer open={menuOpen} onClose={() => setMenuOpen(false)} />
 
-      {/* Контент с фиксированным pb-[15px] для прижатия к низу */}
       <div className="relative mx-auto flex h-full w-full max-w-md flex-col px-4 pt-6 pb-[15px]">
         {/* Header */}
-        <div className="mb-8 flex items-center justify-between">
+        <div className="mb-8 flex items-center justify-between flex-shrink-0">
           <button onClick={() => setMenuOpen(true)} className="p-1">
             <img src="/icons/menu.PNG" alt="" className="h-5 w-5" />
           </button>
@@ -144,42 +144,45 @@ export function StartScreen() {
         </div>
 
         <section className="relative flex flex-1 flex-col overflow-hidden">
-          {/* Start Screen Center */}
-          {!chatStarted && (
-            <div className="flex flex-1 flex-col justify-center">
-              <div className="space-y-7">
-                <div className="space-y-1">
-                  <h2 className="text-[38px] font-semibold tracking-tight leading-[1.05]">Ну привет, {name}</h2>
-                  <p className="text-[38px] font-semibold tracking-tight leading-[1.05]">С чем тебе помочь?</p>
+          {/* Start Screen Content */}
+          <div className={`flex flex-1 flex-col justify-center transition-all duration-500 ${chatStarted ? "pointer-events-none opacity-0 scale-95 absolute inset-0" : "opacity-100 scale-100"}`}>
+            <div className="space-y-7">
+              <div className="space-y-1">
+                <h2 className="text-[38px] font-semibold tracking-tight leading-[1.05]">Ну привет, {name}</h2>
+                <p className="text-[38px] font-semibold tracking-tight leading-[1.05]">С чем тебе помочь?</p>
+              </div>
+              <div className="space-y-3">
+                <p className="text-sm font-medium text-[#8C867D]">Начать можно так</p>
+                <div className={`flex flex-col gap-2 transition-opacity duration-300 ${isRefreshing ? "opacity-0" : "opacity-100"}`}>
+                  {prompts.map((p) => (
+                    <button key={p} onClick={() => setMessage(p)} className="flex items-center justify-between rounded-2xl border border-[#E6E0D7] bg-[#FBFAF7] px-4 py-3.5 text-left text-[14px] hover:bg-[#F0EEE9] active:scale-[0.98] transition-all">
+                      <span>{p}</span>
+                      <img src="/icons/right.PNG" alt="" className="h-3 w-3 opacity-50" />
+                    </button>
+                  ))}
                 </div>
-                <div className="space-y-3">
-                  <p className="text-sm font-medium text-[#8C867D]">Начать можно так</p>
-                  <div className={`flex flex-col gap-2 transition-opacity duration-200 ${isRefreshing ? "opacity-0" : "opacity-100"}`}>
-                    {prompts.map((p) => (
-                      <button key={p} onClick={() => setMessage(p)} className="flex items-center justify-between rounded-2xl border border-[#E6E0D7] bg-[#FBFAF7] px-4 py-3.5 text-left text-[14px]">
-                        <span>{p}</span>
-                        <img src="/icons/right.PNG" alt="" className="h-3 w-3 opacity-50" />
-                      </button>
-                    ))}
-                  </div>
-                  <button onClick={handleShuffle} className="flex items-center gap-2 text-sm font-medium text-[#8C867D]">
-                    <img src="/icons/refresh.PNG" alt="" className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
-                    Перемешать
-                  </button>
-                </div>
+                <button 
+                  onClick={handleShuffle} 
+                  className="flex items-center gap-2 text-sm font-medium text-[#8C867D] hover:text-[#171717] transition-colors"
+                >
+                  <img 
+                    src="/icons/refresh.PNG" 
+                    alt="" 
+                    className={`h-4 w-4 ${isRefreshing ? "animate-spin-smooth" : ""}`} 
+                  />
+                  Перемешать
+                </button>
               </div>
             </div>
-          )}
+          </div>
 
           {/* Chat area */}
-          {chatStarted && (
-            <div className="flex-1 overflow-hidden flex flex-col mb-4">
-              <ChatThread messages={messages} />
-            </div>
-          )}
+          <div className={`flex-1 overflow-hidden flex flex-col transition-all duration-500 ${chatStarted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4 pointer-events-none"}`}>
+            {chatStarted && <ChatThread messages={messages} />}
+          </div>
 
-          {/* Bottom Composer - Always pinned to bottom with 15px margin */}
-          <div className="mt-auto">
+          {/* Bottom Composer - Pinned 15px from bottom */}
+          <div className="mt-auto flex-shrink-0 pt-4">
             {renderComposer()}
           </div>
         </section>
