@@ -33,7 +33,8 @@ export function StartScreen() {
   const [message, setMessage] = useState("");
   const [analysisEnabled, setAnalysisEnabled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [prompts, setPrompts] = useState(() => pickPrompts(promptLibrary, 5));
+  // Оставляем 3 случайные подсказки
+  const [prompts, setPrompts] = useState(() => pickPrompts(promptLibrary, 3));
   const [chatStarted, setChatStarted] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -42,18 +43,21 @@ export function StartScreen() {
     // getTelegramName() можно использовать при необходимости
   }, []);
 
+  // Правильная логика изменения высоты (рост вверх и сужение вниз)
   useEffect(() => {
     const textarea = textareaRef.current;
     if (!textarea) return;
-    textarea.style.height = "0px";
-    textarea.style.height = `${Math.min(textarea.scrollHeight, 120)}px`;
+    // Сбрасываем высоту до минимальной, чтобы scrollHeight пересчитался корректно при стирании
+    textarea.style.height = "24px"; 
+    const nextHeight = Math.min(textarea.scrollHeight, 120);
+    textarea.style.height = `${nextHeight}px`;
   }, [message]);
 
   const handleShuffle = () => {
     setIsRefreshing(true);
     setTimeout(() => {
       startTransition(() => {
-        setPrompts(pickPrompts(promptLibrary, 5));
+        setPrompts(pickPrompts(promptLibrary, 3));
         setIsRefreshing(false);
       });
     }, 400);
@@ -69,21 +73,18 @@ export function StartScreen() {
       id: assistantId, 
       role: "assistant", 
       content: "", 
-      status: "loading", 
-      header: "Подумать Йоде нужно…" 
+      status: "loading" 
     };
 
     setChatStarted(true);
     setMessages(prev => [...prev, userMsg, loadingMsg]);
     setMessage("");
 
-    // Имитация API запроса (переменная для ключа)
     const GROQ_KEY = process.env.NEXT_PUBLIC_GROQ_KEY || "dummy_key";
 
     try {
-      // Гонка: ожидание ответа или таймаут через 1 минуту
       await Promise.race([
-        new Promise(resolve => setTimeout(resolve, 2500)), // Заглушка демо-ответа (2.5 сек)
+        new Promise(resolve => setTimeout(resolve, 2500)),
         new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 60000))
       ]);
 
@@ -91,10 +92,10 @@ export function StartScreen() {
         msg.id === assistantId 
           ? { 
               ...msg, 
-              content: "", // пусто, так как текст идет в заголовок
+              content: "", 
               status: "done", 
               header: "Йода занят сейчас. Позже приходи, хм", 
-              hideActions: true // Убираем лайк/дизлайк
+              hideActions: true
             } 
           : msg
       ));
@@ -118,7 +119,7 @@ export function StartScreen() {
       <MenuDrawer open={menuOpen} onClose={() => setMenuOpen(false)} />
 
       <div className="relative mx-auto flex h-full w-full max-w-md flex-col px-4 pt-6 pb-[15px]">
-        {/* Хедер: ai с прозрачностью 0.65 */}
+        {/* Хедер */}
         <div className="mb-8 flex items-center justify-between z-20">
           <button onClick={() => setMenuOpen(true)} className="active:scale-95 transition-transform">
             <img src="/icons/menu.PNG" alt="" className="h-5 w-5" />
@@ -136,19 +137,16 @@ export function StartScreen() {
           {/* Пустой экран */}
           <div className={`flex flex-1 flex-col justify-center transition-all duration-500 ${chatStarted ? "pointer-events-none opacity-0 scale-95 absolute inset-0" : "opacity-100 scale-100"}`}>
             
-            {/* Пятно градиента по центру за текстом */}
             <div className="absolute top-1/2 left-1/2 h-[260px] w-[260px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#39704E]/15 blur-[65px] animate-blob pointer-events-none -z-10" />
 
             <div className="space-y-7 relative z-10">
               <div className="space-y-1">
-                {/* Обновленный заголовок без подзаголовка */}
                 <h2 className="text-[38px] font-semibold tracking-tight leading-[1.05]">Чем помочь тебе, хм?</h2>
               </div>
               <div className="space-y-3">
                 <p className="text-sm font-medium text-[#8C867D]">Начать можно так</p>
                 <div className={`flex flex-col gap-2 transition-opacity duration-150 ${isRefreshing ? "opacity-0" : "opacity-100"}`}>
                   {prompts.map((p) => (
-                    // Убрали border, оставили только фон
                     <button key={p} onClick={() => setMessage(p)} className="flex items-center justify-between rounded-2xl bg-[#FBFAF7] px-4 py-3.5 text-left text-[14px] active:scale-[0.98] transition-transform">
                       <span>{p}</span>
                       <img src="/icons/right.PNG" alt="" className="h-3 w-3 opacity-40" />
@@ -197,8 +195,9 @@ export function StartScreen() {
                   <button
                     type="submit"
                     disabled={message.trim().length < 2}
+                    // Убрана тень, теперь просто bg и opacity
                     className={`grid h-9 w-9 place-items-center rounded-xl transition-all ${
-                      message.trim().length >= 2 ? "bg-[#39704E] opacity-100 active:scale-90 shadow-md shadow-[#39704E]/20" : "bg-[#171717]/30 opacity-100"
+                      message.trim().length >= 2 ? "bg-[#39704E] opacity-100 active:scale-90" : "bg-[#171717]/30 opacity-100"
                     }`}
                   >
                     <img src="/icons/send.PNG" alt="" className="h-4 w-4 brightness-0 invert" />
