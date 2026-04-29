@@ -1,128 +1,142 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+"use client";
 
-:root {
-  color-scheme: light;
-  --bg: #f5f3ee;
-  --text: #171717;
-  --font-display: "General Sans", Inter, sans-serif;
-  --font-menu: Gothic, Gotham, "General Sans", Inter, sans-serif;
+import { useEffect, useRef, useState } from "react";
+
+export type ChatMessage = {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+};
+
+type ChatThreadProps = {
+  messages: ChatMessage[];
+};
+
+function splitWords(content: string) {
+  return content.split(/\s+/).filter(Boolean);
 }
 
-* {
-  box-sizing: border-box;
-  scrollbar-width: none;
-}
+export function ChatThread({ messages }: ChatThreadProps) {
+  const viewportRef = useRef<HTMLDivElement | null>(null);
+  const [revealedWords, setRevealedWords] = useState<Record<string, number>>({});
+  const [ratings, setRatings] = useState<Record<string, "like" | "dislike" | null>>({});
+  const [spinningId, setSpinningId] = useState<string | null>(null);
 
-html,
-body {
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  overflow: hidden;
-  background: var(--bg);
-  color: var(--text);
-  -webkit-user-select: none;
-  user-select: none;
-  -webkit-touch-callout: none;
-  -webkit-tap-highlight-color: transparent;
-  overscroll-behavior: none;
-}
+  useEffect(() => {
+    if (!viewportRef.current) return;
+    viewportRef.current.scrollTop = viewportRef.current.scrollHeight;
+  }, [messages, revealedWords]);
 
-body {
-  min-height: 100dvh;
-  font-feature-settings: "cv11", "ss01";
-}
+  useEffect(() => {
+    const pendingAssistant = [...messages]
+      .reverse()
+      .find((entry) => entry.role === "assistant");
 
-img,
-svg {
-  display: block;
-  pointer-events: none;
-  -webkit-user-drag: none;
-  user-drag: none;
-}
+    if (!pendingAssistant) return;
 
-input,
-textarea {
-  -webkit-user-select: text;
-  user-select: text;
-}
+    const words = splitWords(pendingAssistant.content);
+    const revealedCount = revealedWords[pendingAssistant.id] ?? 0;
 
-button,
-input,
-textarea {
-  font: inherit;
-}
+    if (revealedCount >= words.length) return;
 
-button {
-  appearance: none;
-  border: 0;
-  background: transparent;
-  color: inherit;
-}
+    const timeoutId = window.setTimeout(() => {
+      setRevealedWords((current) => ({
+        ...current,
+        [pendingAssistant.id]: Math.min((current[pendingAssistant.id] ?? 0) + 1, words.length)
+      }));
+    }, 28);
 
-*::-webkit-scrollbar {
-  display: none;
-}
+    return () => window.clearTimeout(timeoutId);
+  }, [messages, revealedWords]);
 
-::selection {
-  background: rgba(23, 23, 23, 0.14);
-}
+  const toggleRating = (msgId: string, type: "like" | "dislike") => {
+    setRatings(prev => ({
+      ...prev,
+      [msgId]: prev[msgId] === type ? null : type
+    }));
+  };
 
-.hide-scrollbar {
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
+  const handleRegenerate = (msgId: string) => {
+    setSpinningId(msgId);
+    setTimeout(() => setSpinningId(null), 800);
+    // TODO: Интеграция с API для повторной генерации
+  };
 
-.chat-message-in {
-  animation: chatMessageIn 180ms ease-out both;
-}
+  return (
+    <div ref={viewportRef} className="visible-scrollbar flex-1 overflow-y-auto pr-1">
+      <div className="space-y-8 pb-4 pt-2">
+        {messages.map((entry) => {
+          if (entry.role === "user") {
+            const isLongUserText = entry.content.length > 180;
+            return (
+              <div key={entry.id} className="flex flex-col items-end gap-2">
+                <div className="chat-message-in max-w-[85%] rounded-[20px] bg-[#39704E]/15 px-4 py-3 text-[15px] leading-6 text-[#274333]">
+                  {entry.content}
+                </div>
+                {isLongUserText && (
+                  <button type="button" className="flex items-center gap-1.5 px-1 opacity-60 active:opacity-100 transition-opacity">
+                    <span className="text-[12px] font-medium text-[#8C867D]">Больше</span>
+                    <img src="/icons/more.PNG" alt="" className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
+            );
+          }
 
-.chat-word {
-  display: inline-block;
-  animation: chatWordIn 120ms ease-out both;
-}
+          const words = splitWords(entry.content);
+          const visibleCount = revealedWords[entry.id] ?? 0;
 
-.visible-scrollbar {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(23, 23, 23, 0.22) transparent;
-}
+          return (
+            <div key={entry.id} className="flex flex-col gap-3">
+              {/* Заголовок ответа Yota */}
+              <div className="flex items-center gap-2.5 px-1">
+                <img src="/icons/applogo.PNG" alt="" className="h-[18px] w-[18px] object-contain" />
+                <span className="text-[15px] font-bold tracking-tight text-[#171717]">Yota 2.5</span>
+              </div>
 
-.visible-scrollbar::-webkit-scrollbar {
-  display: block;
-  width: 6px;
-}
+              <div className="flex justify-start">
+                <div className="flex max-w-[92%] flex-col gap-4">
+                  <div className="px-1 text-[15px] leading-7 text-[#2E2E2E]">
+                    {words.slice(0, visibleCount).map((word, index) => (
+                      <span key={`${entry.id}-${index}`} className="chat-word">
+                        {index < visibleCount - 1 ? `${word}\u00A0` : word}
+                      </span>
+                    ))}
+                  </div>
 
-.visible-scrollbar::-webkit-scrollbar-thumb {
-  border-radius: 999px;
-  background: rgba(23, 23, 23, 0.22);
-}
-
-.visible-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-@keyframes chatMessageIn {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes chatWordIn {
-  from {
-    opacity: 0;
-    transform: translate3d(0, 8px, 0);
-  }
-
-  to {
-    opacity: 1;
-    transform: translate3d(0, 0, 0);
-  }
+                  {/* Блок действий под ответом */}
+                  <div className="flex items-center gap-5 px-1">
+                    <button 
+                      onClick={() => handleRegenerate(entry.id)}
+                      className="opacity-40 hover:opacity-100 transition-opacity"
+                    >
+                      <img 
+                        src="/icons/refresh.PNG" 
+                        alt="Regenerate" 
+                        className={`h-4 w-4 ${spinningId === entry.id ? 'animate-spin-once' : ''}`} 
+                      />
+                    </button>
+                    <button 
+                      onClick={() => toggleRating(entry.id, 'like')}
+                      className={`transition-all ${ratings[entry.id] === 'like' ? 'opacity-100' : 'opacity-40 grayscale'}`}
+                      style={ratings[entry.id] === 'like' ? { filter: 'invert(39%) sepia(18%) saturate(892%) hue-rotate(94deg)' } : {}}
+                    >
+                      <img src="/icons/like.PNG" alt="Like" className="h-4 w-4" />
+                    </button>
+                    <button 
+                      onClick={() => toggleRating(entry.id, 'dislike')}
+                      className={`transition-all ${ratings[entry.id] === 'dislike' ? 'opacity-100' : 'opacity-40 grayscale'}`}
+                      style={ratings[entry.id] === 'dislike' ? { filter: 'invert(39%) sepia(18%) saturate(892%) hue-rotate(94deg)' } : {}}
+                    >
+                      <img src="/icons/dislike.PNG" alt="Dislike" className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
