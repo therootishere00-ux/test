@@ -1,142 +1,114 @@
-"use client";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-import { useEffect, useRef, useState } from "react";
-
-export type ChatMessage = {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-};
-
-type ChatThreadProps = {
-  messages: ChatMessage[];
-};
-
-function splitWords(content: string) {
-  return content.split(/\s+/).filter(Boolean);
+:root {
+  --foreground-rgb: 23, 23, 23;
+  --background-start-rgb: 245, 243, 238;
+  --background-end-rgb: 245, 243, 238;
 }
 
-export function ChatThread({ messages }: ChatThreadProps) {
-  const viewportRef = useRef<HTMLDivElement | null>(null);
-  const [revealedWords, setRevealedWords] = useState<Record<string, number>>({});
-  const [ratings, setRatings] = useState<Record<string, "like" | "dislike" | null>>({});
-  const [spinningId, setSpinningId] = useState<string | null>(null);
+@layer base {
+  body {
+    color: rgb(var(--foreground-rgb));
+    background: rgb(var(--background-start-rgb));
+    -webkit-tap-highlight-color: transparent;
+    font-feature-settings: "ss01", "ss02", "cv01", "cv11";
+  }
+}
 
-  useEffect(() => {
-    if (!viewportRef.current) return;
-    viewportRef.current.scrollTop = viewportRef.current.scrollHeight;
-  }, [messages, revealedWords]);
+@layer utilities {
+  /* Скрытие скроллбара при сохранении функционала */
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
 
-  useEffect(() => {
-    const pendingAssistant = [...messages]
-      .reverse()
-      .find((entry) => entry.role === "assistant");
+  .visible-scrollbar::-webkit-scrollbar {
+    width: 4px;
+  }
+  .visible-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .visible-scrollbar::-webkit-scrollbar-thumb {
+    background: #e6e0d7;
+    border-radius: 10px;
+  }
 
-    if (!pendingAssistant) return;
+  /* Нативные быстрые анимации Apple/iOS */
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
 
-    const words = splitWords(pendingAssistant.content);
-    const revealedCount = revealedWords[pendingAssistant.id] ?? 0;
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
 
-    if (revealedCount >= words.length) return;
+  /* Вращение refresh как в системных аппах (быстрое, без лишней тягучести) */
+  @keyframes spin-smooth {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
 
-    const timeoutId = window.setTimeout(() => {
-      setRevealedWords((current) => ({
-        ...current,
-        [pendingAssistant.id]: Math.min((current[pendingAssistant.id] ?? 0) + 1, words.length)
-      }));
-    }, 28);
+  .animate-slide-in {
+    animation: slideIn 0.25s cubic-bezier(0.2, 0, 0, 1) forwards;
+  }
 
-    return () => window.clearTimeout(timeoutId);
-  }, [messages, revealedWords]);
+  .animate-fade-in {
+    animation: fadeIn 0.2s ease-out forwards;
+  }
 
-  const toggleRating = (msgId: string, type: "like" | "dislike") => {
-    setRatings(prev => ({
-      ...prev,
-      [msgId]: prev[msgId] === type ? null : type
-    }));
-  };
+  .animate-spin-smooth {
+    /* 0.5s - оптимально для мобилок: быстро и четко */
+    animation: spin-smooth 0.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  }
 
-  const handleRegenerate = (msgId: string) => {
-    setSpinningId(msgId);
-    setTimeout(() => setSpinningId(null), 800);
-    // TODO: Интеграция с API для повторной генерации
-  };
+  .chat-word {
+    display: inline-block;
+    animation: fadeIn 0.15s ease-out forwards;
+    will-change: opacity;
+  }
 
-  return (
-    <div ref={viewportRef} className="visible-scrollbar flex-1 overflow-y-auto pr-1">
-      <div className="space-y-8 pb-4 pt-2">
-        {messages.map((entry) => {
-          if (entry.role === "user") {
-            const isLongUserText = entry.content.length > 180;
-            return (
-              <div key={entry.id} className="flex flex-col items-end gap-2">
-                <div className="chat-message-in max-w-[85%] rounded-[20px] bg-[#39704E]/15 px-4 py-3 text-[15px] leading-6 text-[#274333]">
-                  {entry.content}
-                </div>
-                {isLongUserText && (
-                  <button type="button" className="flex items-center gap-1.5 px-1 opacity-60 active:opacity-100 transition-opacity">
-                    <span className="text-[12px] font-medium text-[#8C867D]">Больше</span>
-                    <img src="/icons/more.PNG" alt="" className="h-3.5 w-3.5" />
-                  </button>
-                )}
-              </div>
-            );
-          }
+  /* Полный запрет на изменения цвета/яркости при наведении (Apple Style) */
+  .no-hover-effects {
+    @apply transition-none;
+  }
+  
+  /* Только обратная связь по нажатию */
+  .active-scale:active {
+    transform: scale(0.96);
+  }
+}
 
-          const words = splitWords(entry.content);
-          const visibleCount = revealedWords[entry.id] ?? 0;
+/* Стили для текстового поля */
+textarea {
+  transition: height 0.1s ease-out;
+}
 
-          return (
-            <div key={entry.id} className="flex flex-col gap-3">
-              {/* Заголовок ответа Yota */}
-              <div className="flex items-center gap-2.5 px-1">
-                <img src="/icons/applogo.PNG" alt="" className="h-[18px] w-[18px] object-contain" />
-                <span className="text-[15px] font-bold tracking-tight text-[#171717]">Yota 2.5</span>
-              </div>
+/* Геометрия бабблов и текста */
+.chat-message-in {
+  word-break: break-word;
+  hyphens: auto;
+}
 
-              <div className="flex justify-start">
-                <div className="flex max-w-[92%] flex-col gap-4">
-                  <div className="px-1 text-[15px] leading-7 text-[#2E2E2E]">
-                    {words.slice(0, visibleCount).map((word, index) => (
-                      <span key={`${entry.id}-${index}`} className="chat-word">
-                        {index < visibleCount - 1 ? `${word}\u00A0` : word}
-                      </span>
-                    ))}
-                  </div>
+/* Убираем любые системные тени, оставляем только чистый flat дизайн */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
 
-                  {/* Блок действий под ответом */}
-                  <div className="flex items-center gap-5 px-1">
-                    <button 
-                      onClick={() => handleRegenerate(entry.id)}
-                      className="opacity-40 hover:opacity-100 transition-opacity"
-                    >
-                      <img 
-                        src="/icons/refresh.PNG" 
-                        alt="Regenerate" 
-                        className={`h-4 w-4 ${spinningId === entry.id ? 'animate-spin-once' : ''}`} 
-                      />
-                    </button>
-                    <button 
-                      onClick={() => toggleRating(entry.id, 'like')}
-                      className={`transition-all ${ratings[entry.id] === 'like' ? 'opacity-100' : 'opacity-40 grayscale'}`}
-                      style={ratings[entry.id] === 'like' ? { filter: 'invert(39%) sepia(18%) saturate(892%) hue-rotate(94deg)' } : {}}
-                    >
-                      <img src="/icons/like.PNG" alt="Like" className="h-4 w-4" />
-                    </button>
-                    <button 
-                      onClick={() => toggleRating(entry.id, 'dislike')}
-                      className={`transition-all ${ratings[entry.id] === 'dislike' ? 'opacity-100' : 'opacity-40 grayscale'}`}
-                      style={ratings[entry.id] === 'dislike' ? { filter: 'invert(39%) sepia(18%) saturate(892%) hue-rotate(94deg)' } : {}}
-                    >
-                      <img src="/icons/dislike.PNG" alt="Dislike" className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
+/* Иконки под ответом ИИ - плавное появление после текста */
+.feedback-icons-appear {
+  animation: slideIn 0.3s cubic-bezier(0.2, 0, 0, 1) 0.1s both;
 }
