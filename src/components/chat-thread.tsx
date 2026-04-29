@@ -11,112 +11,180 @@ export type ChatMessage = {
   hideActions?: boolean;
 };
 
-// Новый лоадер: точки одного размера, вращаются по-разному
+type ChatThreadProps = {
+  messages: ChatMessage[];
+  onRetry?: () => void;
+};
+
+function splitWords(content: string) {
+  return content.split(/\s+/).filter(Boolean);
+}
+
+// Крупный лоадер: вырастает из центра, точки одинакового размера, разные скорости
 const YodaLoader = () => (
-  <div className="relative h-5 w-5 animate-grow-center">
-    <div className="absolute inset-0 spin-fast">
-      <div className="h-1 w-1 rounded-full bg-[#39704E]" />
+  <div className="relative h-6 w-6 flex-shrink-0 animate-scale-from-center flex items-center justify-center">
+    <div className="absolute w-full h-full animate-[spin_0.7s_linear_infinite]">
+      <div className="w-[3.5px] h-[3.5px] bg-[#39704E] rounded-full absolute top-0 left-1/2 -translate-x-1/2" />
     </div>
-    <div className="absolute inset-[3px] spin-medium">
-      <div className="h-1 w-1 rounded-full bg-[#39704E]/60" />
+    <div className="absolute w-full h-full animate-[spin_1.2s_linear_infinite]">
+      <div className="w-[3.5px] h-[3.5px] bg-[#39704E] rounded-full absolute right-0 top-1/2 -translate-y-1/2" />
     </div>
-    <div className="absolute inset-[6px] spin-slow">
-      <div className="h-1 w-1 rounded-full bg-[#39704E]/30" />
+    <div className="absolute w-full h-full animate-[spin_1.8s_linear_infinite]">
+      <div className="w-[3.5px] h-[3.5px] bg-[#39704E] rounded-full absolute bottom-0 left-1/2 -translate-x-1/2" />
     </div>
   </div>
 );
 
-export function ChatThread({ messages, onRetry }: { messages: ChatMessage[], onRetry?: () => void }) {
+export function ChatThread({ messages, onRetry }: ChatThreadProps) {
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const [revealedWords, setRevealedWords] = useState<Record<string, number>>({});
-  
+  const [ratings, setRatings] = useState<Record<string, "like" | "dislike" | null>>({});
+  const [spinningId, setSpinningId] = useState<string | null>(null);
+
   useEffect(() => {
-    if (viewportRef.current) {
-      viewportRef.current.scrollTop = viewportRef.current.scrollHeight;
-    }
+    if (!viewportRef.current) return;
+    viewportRef.current.scrollTop = viewportRef.current.scrollHeight;
   }, [messages, revealedWords]);
 
   useEffect(() => {
-    const lastMsg = messages[messages.length - 1];
-    if (lastMsg?.role === "assistant" && lastMsg.status === "done") {
-      const words = lastMsg.content.split(/\s+/);
-      const revealedCount = revealedWords[lastMsg.id] ?? 0;
-      if (revealedCount < words.length) {
-        const t = setTimeout(() => {
-          setRevealedWords(prev => ({ ...prev, [lastMsg.id]: revealedCount + 1 }));
-        }, 20);
-        return () => clearTimeout(t);
-      }
-    }
+    const pendingAssistant = [...messages]
+      .reverse()
+      .find((entry) => entry.role === "assistant" && entry.status !== "loading");
+
+    if (!pendingAssistant) return;
+
+    const words = splitWords(pendingAssistant.content);
+    const revealedCount = revealedWords[pendingAssistant.id] ?? 0;
+
+    if (revealedCount >= words.length) return;
+
+    const timeoutId = window.setTimeout(() => {
+      setRevealedWords((current) => ({
+        ...current,
+        [pendingAssistant.id]: Math.min((current[pendingAssistant.id] ?? 0) + 1, words.length)
+      }));
+    }, 16);
+
+    return () => window.clearTimeout(timeoutId);
   }, [messages, revealedWords]);
+
+  const toggleRating = (msgId: string, type: "like" | "dislike") => {
+    setRatings(prev => ({
+      ...prev,
+      [msgId]: prev[msgId] === type ? null : type
+    }));
+  };
 
   return (
-    <div ref={viewportRef} className="flex-1 overflow-y-auto hide-scrollbar pr-1">
+    <div ref={viewportRef} className="visible-scrollbar flex-1 overflow-y-auto pr-1">
       <div className="space-y-8 pb-4 pt-2">
         {messages.map((entry) => {
-          const isLoading = entry.status === "loading";
-          const isError = entry.status === "error";
-
           if (entry.role === "user") {
+            const isLongUserText = entry.content.length > 180;
             return (
-              <div key={entry.id} className="flex flex-col items-end animate-message-appear">
+              // Сообщения появляются с быстрым выцветанием
+              <div key={entry.id} className="flex flex-col items-end gap-2 animate-fade-in">
                 <div className="max-w-[85%] rounded-[20px] bg-[#39704E]/15 px-4 py-3 text-[15px] leading-6 text-[#274333]">
                   {entry.content}
                 </div>
+                {isLongUserText && (
+                  <div className="flex items-center gap-1.5 px-1 opacity-60">
+                    <span className="text-[12px] font-medium">Больше</span>
+                    <img src="/icons/more.PNG" alt="" className="h-3.5 w-3.5" />
+                  </div>
+                )}
               </div>
             );
           }
 
+          const words = splitWords(entry.content);
+          const visibleCount = revealedWords[entry.id] ?? 0;
+          // Если текст пустой (ошибка/загрузка), считаем это стейтом "Done" для отображения кнопок
+          const isDone = words.length === 0 || visibleCount === words.length;
+          const isLoading = entry.status === "loading";
+          const isErrorState = entry.status === "error" || entry.header?.includes("занят");
+
           return (
             <div key={entry.id} className="flex flex-col gap-3">
-              {/* Шапка с анимацией перехода */}
+              {/* Плавная смена шапки (Текст сверху вниз, иконка в центр) */}
               <div className="flex items-center gap-3 px-1">
-                <div className="relative h-5 w-5 flex-shrink-0">
-                  {isLoading ? (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <YodaLoader />
-                    </div>
-                  ) : (
-                    <div className="absolute inset-0 flex items-center justify-center animate-grow-center">
-                      <img src="/icons/applogo.PNG" alt="" className="h-5 w-5" />
-                    </div>
-                  )}
+                {/* Анимация иконки: уходит в центр и приходит из него */}
+                <div className="relative h-6 w-6 flex-shrink-0 flex items-center justify-center">
+                  <div className={`absolute transition-all duration-300 ease-out ${isLoading ? 'scale-100 opacity-100' : 'scale-0 opacity-0 pointer-events-none'}`}>
+                    <YodaLoader />
+                  </div>
+                  <div className={`absolute transition-all duration-300 ease-out ${isLoading ? 'scale-0 opacity-0 pointer-events-none' : 'scale-100 opacity-100'}`}>
+                    <img src="/icons/applogo.PNG" alt="" className="h-[18px] w-[18px] object-contain" />
+                  </div>
                 </div>
 
-                <div className="relative h-[22px] flex-1 overflow-hidden">
-                   <span className={`absolute inset-0 text-[16px] font-bold text-[#171717] flex items-center ${isLoading ? 'header-text-enter' : 'header-text-exit pointer-events-none'}`}>
-                      Подумать Йоде нужно…
-                   </span>
-                   {!isLoading && (
-                     <span className="absolute inset-0 text-[16px] font-bold text-[#171717] flex items-center header-text-enter">
-                       {entry.header || "Yota 2.5"}
-                     </span>
-                   )}
+                {/* Анимация текста: один уходит вниз, другой сверху приходит */}
+                <div className="relative flex-1 h-[24px] overflow-hidden">
+                  <span className={`absolute left-0 top-0 flex h-full items-center text-[16px] font-bold tracking-tight text-[#171717] transition-all duration-300 ease-out ${isLoading ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0 pointer-events-none'}`}>
+                    Подумать Йоде нужно…
+                  </span>
+                  <span className={`absolute left-0 top-0 flex h-full items-center text-[16px] font-bold tracking-tight text-[#171717] transition-all duration-300 ease-out ${isLoading ? '-translate-y-full opacity-0 pointer-events-none' : 'translate-y-0 opacity-100'}`}>
+                    {entry.header || "Yota 2.5"}
+                  </span>
                 </div>
               </div>
 
-              {/* Тело и кнопки */}
-              <div className={`transition-all duration-300 ${isLoading ? 'opacity-0' : 'opacity-100'}`}>
-                <div className="text-[15px] leading-7 text-[#2E2E2E] px-1">
-                  {entry.content.split(/\s+/).slice(0, revealedWords[entry.id] || 999).join(" ")}
-                </div>
+              {/* Тело ответа */}
+              <div className={`w-full px-1 transition-all duration-500 ${isLoading ? 'opacity-0 max-h-0 overflow-hidden' : 'opacity-100 max-h-[2000px]'}`}>
+                {entry.content && (
+                  <div className="text-[15px] leading-7 text-[#2E2E2E] w-full">
+                    {words.slice(0, visibleCount).map((word, index) => (
+                      <span key={`${entry.id}-${index}`} className="chat-word">
+                        {index < visibleCount - 1 ? `${word}\u00A0` : word}
+                      </span>
+                    ))}
+                  </div>
+                )}
 
-                {/* Подвал ответа */}
-                {!isLoading && (
-                  <div className="mt-4 flex items-center gap-5 animate-fade-quick">
-                    {isError ? (
+                {/* Кнопки оценки — плавное появление из выцветания */}
+                {!entry.hideActions && (
+                  <div className={`mt-5 flex items-center gap-6 transition-all duration-300 ${isDone ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1 pointer-events-none'}`}>
+                    {isErrorState ? (
+                      // Состояние ошибки/занятости — иконка и текст «Попробовать снова»
                       <button 
-                        onClick={onRetry}
-                        className="flex items-center gap-2 rounded-full py-1 active:scale-95 transition-transform"
+                        onClick={() => onRetry?.()}
+                        className="flex items-center gap-2 active:scale-90 transition-transform"
                       >
-                        <img src="/icons/refresh.PNG" alt="" className="h-4 w-4 opacity-60" />
-                        <span className="text-[14px] font-medium text-[#39704E]">Попробовать снова</span>
+                        <img src="/icons/refresh.PNG" alt="" className="h-4 w-4 opacity-40" />
+                        <span className="text-sm font-medium text-[#8C867D]">Попробовать снова</span>
                       </button>
                     ) : (
+                      // Обычное состояние ответа
                       <>
-                        <button className="active:scale-90 transition-transform"><img src="/icons/refresh.PNG" alt="" className="h-4 w-4 opacity-40" /></button>
-                        <button className="active:scale-90 transition-transform"><img src="/icons/like.PNG" alt="" className="h-4 w-4 opacity-40" /></button>
-                        <button className="active:scale-90 transition-transform"><img src="/icons/dislike.PNG" alt="" className="h-4 w-4 opacity-40" /></button>
+                        <button 
+                          onClick={() => {
+                            setSpinningId(entry.id);
+                            setTimeout(() => setSpinningId(null), 600);
+                          }}
+                          className="active:scale-90 transition-transform"
+                        >
+                          <img src="/icons/refresh.PNG" alt="" className={`h-4 w-4 opacity-40 ${spinningId === entry.id ? 'animate-spin-smooth' : ''}`} />
+                        </button>
+                        <button 
+                          onClick={() => toggleRating(entry.id, 'like')}
+                          className="active:scale-90 transition-transform"
+                        >
+                          <img 
+                            src="/icons/like.PNG" alt="" 
+                            className={`h-4 w-4 transition-all ${ratings[entry.id] === 'like' ? 'opacity-100' : 'opacity-40 grayscale'}`}
+                            style={ratings[entry.id] === 'like' ? { filter: 'invert(39%) sepia(18%) saturate(892%) hue-rotate(94deg)' } : {}}
+                          />
+                        </button>
+                        <button 
+                          onClick={() => toggleRating(entry.id, 'dislike')}
+                          className="active:scale-90 transition-transform"
+                        >
+                          <img 
+                            src="/icons/dislike.PNG" alt="" 
+                            className={`h-4 w-4 transition-all ${ratings[entry.id] === 'dislike' ? 'opacity-100' : 'opacity-40 grayscale'}`}
+                            style={ratings[entry.id] === 'dislike' ? { filter: 'invert(39%) sepia(18%) saturate(892%) hue-rotate(94deg)' } : {}}
+                          />
+                        </button>
                       </>
                     )}
                   </div>
