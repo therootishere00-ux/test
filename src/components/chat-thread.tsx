@@ -44,7 +44,7 @@ export function ChatThread({ messages }: ChatThreadProps) {
         ...current,
         [pendingAssistant.id]: Math.min((current[pendingAssistant.id] ?? 0) + 1, words.length)
       }));
-    }, 28);
+    }, 16); // Ускорили печать (было 28)
 
     return () => window.clearTimeout(timeoutId);
   }, [messages, revealedWords]);
@@ -56,12 +56,6 @@ export function ChatThread({ messages }: ChatThreadProps) {
     }));
   };
 
-  const handleRegenerate = (msgId: string) => {
-    setSpinningId(msgId);
-    setTimeout(() => setSpinningId(null), 800);
-    // Здесь будет вызов функции регенерации ответа через ИИ
-  };
-
   return (
     <div ref={viewportRef} className="visible-scrollbar flex-1 overflow-y-auto pr-1">
       <div className="space-y-8 pb-4 pt-2">
@@ -70,14 +64,14 @@ export function ChatThread({ messages }: ChatThreadProps) {
             const isLongUserText = entry.content.length > 180;
             return (
               <div key={entry.id} className="flex flex-col items-end gap-2">
-                <div className="chat-message-in max-w-[85%] rounded-[20px] bg-[#39704E]/15 px-4 py-3 text-[15px] leading-6 text-[#274333]">
+                <div className="max-w-[85%] rounded-[20px] bg-[#39704E]/15 px-4 py-3 text-[15px] leading-6 text-[#274333]">
                   {entry.content}
                 </div>
                 {isLongUserText && (
-                  <button type="button" className="flex items-center gap-1.5 px-1 opacity-60 active:opacity-100 transition-opacity">
+                  <div className="flex items-center gap-1.5 px-1 opacity-60">
                     <span className="text-[12px] font-medium">Больше</span>
                     <img src="/icons/more.PNG" alt="" className="h-3.5 w-3.5" />
-                  </button>
+                  </div>
                 )}
               </div>
             );
@@ -85,50 +79,63 @@ export function ChatThread({ messages }: ChatThreadProps) {
 
           const words = splitWords(entry.content);
           const visibleCount = revealedWords[entry.id] ?? 0;
+          const isDone = visibleCount === words.length;
 
           return (
             <div key={entry.id} className="flex flex-col gap-3">
+              {/* Хедер ответа */}
               <div className="flex items-center gap-2.5 px-1">
                 <img src="/icons/applogo.PNG" alt="" className="h-[18px] w-[18px] object-contain" />
                 <span className="text-[15px] font-bold tracking-tight text-[#171717]">Yota 2.5</span>
               </div>
 
-              <div className="flex justify-start">
-                <div className="flex max-w-[92%] flex-col gap-4">
-                  <div className="px-1 text-[15px] leading-7 text-[#2E2E2E]">
-                    {words.slice(0, visibleCount).map((word, index) => (
-                      <span key={`${entry.id}-${index}`} className="chat-word">
-                        {index < visibleCount - 1 ? `${word}\u00A0` : word}
-                      </span>
-                    ))}
-                  </div>
+              {/* Тело ответа - теперь симметричное */}
+              <div className="w-full px-1">
+                <div className="text-[15px] leading-7 text-[#2E2E2E] w-full">
+                  {words.slice(0, visibleCount).map((word, index) => (
+                    <span key={`${entry.id}-${index}`} className="chat-word">
+                      {index < visibleCount - 1 ? `${word}\u00A0` : word}
+                    </span>
+                  ))}
+                </div>
 
-                  <div className="flex items-center gap-5 px-1">
-                    <button 
-                      onClick={() => handleRegenerate(entry.id)}
-                      className="opacity-40 hover:opacity-100 transition-opacity"
-                    >
-                      <img 
-                        src="/icons/refresh.PNG" 
-                        alt="" 
-                        className={`h-4 w-4 ${spinningId === entry.id ? 'animate-spin-once' : ''}`} 
-                      />
-                    </button>
-                    <button 
-                      onClick={() => toggleRating(entry.id, 'like')}
-                      className={`transition-all ${ratings[entry.id] === 'like' ? 'opacity-100' : 'opacity-40 grayscale'}`}
+                {/* Иконки под ответом - появляются плавно после завершения текста */}
+                <div className={`mt-5 flex items-center gap-6 transition-all duration-300 ${isDone ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1 pointer-events-none'}`}>
+                  <button 
+                    onClick={() => {
+                      setSpinningId(entry.id);
+                      setTimeout(() => setSpinningId(null), 600);
+                    }}
+                    className="active:scale-90 transition-transform"
+                  >
+                    <img 
+                      src="/icons/refresh.PNG" 
+                      alt="" 
+                      className={`h-4 w-4 opacity-40 ${spinningId === entry.id ? 'animate-spin-smooth' : ''}`} 
+                    />
+                  </button>
+                  <button 
+                    onClick={() => toggleRating(entry.id, 'like')}
+                    className="active:scale-90 transition-transform"
+                  >
+                    <img 
+                      src="/icons/like.PNG" 
+                      alt="" 
+                      className={`h-4 w-4 transition-all ${ratings[entry.id] === 'like' ? 'opacity-100' : 'opacity-40 grayscale'}`}
                       style={ratings[entry.id] === 'like' ? { filter: 'invert(39%) sepia(18%) saturate(892%) hue-rotate(94deg)' } : {}}
-                    >
-                      <img src="/icons/like.PNG" alt="" className="h-4 w-4" />
-                    </button>
-                    <button 
-                      onClick={() => toggleRating(entry.id, 'dislike')}
-                      className={`transition-all ${ratings[entry.id] === 'dislike' ? 'opacity-100' : 'opacity-40 grayscale'}`}
+                    />
+                  </button>
+                  <button 
+                    onClick={() => toggleRating(entry.id, 'dislike')}
+                    className="active:scale-90 transition-transform"
+                  >
+                    <img 
+                      src="/icons/dislike.PNG" 
+                      alt="" 
+                      className={`h-4 w-4 transition-all ${ratings[entry.id] === 'dislike' ? 'opacity-100' : 'opacity-40 grayscale'}`}
                       style={ratings[entry.id] === 'dislike' ? { filter: 'invert(39%) sepia(18%) saturate(892%) hue-rotate(94deg)' } : {}}
-                    >
-                      <img src="/icons/dislike.PNG" alt="" className="h-4 w-4" />
-                    </button>
-                  </div>
+                    />
+                  </button>
                 </div>
               </div>
             </div>
