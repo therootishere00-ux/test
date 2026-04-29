@@ -63,7 +63,8 @@ export function ChatThread({ messages }: ChatThreadProps) {
           if (entry.role === "user") {
             return (
               <div key={entry.id} className="flex justify-end">
-                <div className="chat-message-in max-w-[84%] rounded-[18px] bg-[#EDF5F0] px-4 py-3 text-[15px] leading-6 text-[#274333]">
+                {/* Обновленный стиль: полупрозрачный акцентный цвет */}
+                <div className="chat-message-in max-w-[84%] rounded-[18px] bg-[#39704E]/15 border border-[#39704E]/10 px-4 py-3 text-[15px] leading-6 text-[#274333]">
                   {entry.content}
                 </div>
               </div>
