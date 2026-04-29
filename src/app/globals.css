@@ -52,21 +52,28 @@
     100% { transform: rotate(360deg); }
   }
 
-  /* Плавная анимация для фонового градиента */
-  @keyframes blob {
-    0% { transform: translate(-50%, -50%) scale(1); }
-    33% { transform: translate(-45%, -55%) scale(1.05); }
-    66% { transform: translate(-55%, -45%) scale(0.95); }
-    100% { transform: translate(-50%, -50%) scale(1); }
+  /* Анимация для фонового пятна на главном экране */
+  @keyframes blob-float {
+    0% { transform: translate(0px, 0px) scale(1); }
+    33% { transform: translate(30px, -40px) scale(1.05); }
+    66% { transform: translate(-20px, 20px) scale(0.95); }
+    100% { transform: translate(0px, 0px) scale(1); }
   }
 
-  .animate-slide-in { animation: slideIn 0.25s cubic-bezier(0.2, 0, 0, 1) forwards; }
-  .animate-fade-in { animation: fadeIn 0.2s ease-out forwards; }
-  .animate-spin-smooth { animation: spin-smooth 0.5s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
-  
-  /* Класс для фонового пятна */
   .animate-blob {
-    animation: blob 12s infinite alternate ease-in-out;
+    animation: blob-float 12s ease-in-out infinite;
+  }
+
+  .animate-slide-in {
+    animation: slideIn 0.25s cubic-bezier(0.2, 0, 0, 1) forwards;
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.2s ease-out forwards;
+  }
+
+  .animate-spin-smooth {
+    animation: spin-smooth 0.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
   }
 
   .chat-word {
@@ -75,20 +82,29 @@
     will-change: opacity;
   }
 
-  .no-hover-effects { @apply transition-none; }
-  .active-scale:active { transform: scale(0.96); }
-  .feedback-icons-appear { animation: slideIn 0.3s cubic-bezier(0.2, 0, 0, 1) 0.1s both; }
+  .no-hover-effects {
+    @apply transition-none;
+  }
+  
+  .active-scale:active {
+    transform: scale(0.96);
+  }
 }
 
-textarea { transition: height 0.1s ease-out; }
-.chat-message-in { word-break: break-word; hyphens: auto; }
+textarea {
+  transition: height 0.1s ease-out;
+}
+
+.chat-message-in {
+  word-break: break-word;
+  hyphens: auto;
+}
 
 * {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-button:hover, span:hover, div:hover {
-  background-color: transparent;
-  color: inherit;
+.feedback-icons-appear {
+  animation: slideIn 0.3s cubic-bezier(0.2, 0, 0, 1) 0.1s both;
 }
