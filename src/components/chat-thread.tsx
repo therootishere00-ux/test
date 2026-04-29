@@ -6,9 +6,9 @@ export type ChatMessage = {
   id: string;
   role: "user" | "assistant";
   content: string;
-  status?: "loading" | "done" | "error"; // Статус загрузки
-  header?: string; // Кастомный заголовок
-  hideActions?: boolean; // Убрать кнопки оценки
+  status?: "loading" | "done" | "error";
+  header?: string;
+  hideActions?: boolean;
 };
 
 type ChatThreadProps = {
@@ -19,20 +19,20 @@ function splitWords(content: string) {
   return content.split(/\s+/).filter(Boolean);
 }
 
-// Компонент загрузочных колец Йоды
+// Новый лоадер: тонкие контуры и маленькие точки
 const YodaLoader = () => (
-  <div className="relative h-[20px] w-[20px] flex-shrink-0">
-    {/* Внешний тонкий контур */}
-    <div className="absolute inset-0 rounded-full border-[1.5px] border-transparent border-t-[#39704E]/50 border-l-[#39704E]/50 animate-[spin_2.5s_linear_infinite]">
-      <div className="absolute -top-[1.5px] left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-[#39704E]/80" />
+  <div className="relative h-4 w-4 flex-shrink-0">
+    {/* Внешний контур */}
+    <div className="absolute inset-0 rounded-full border-[1px] border-[#39704E]/30 animate-[spin_2s_linear_infinite]">
+      <div className="absolute -top-[1.5px] left-1/2 h-[3px] w-[3px] -translate-x-1/2 rounded-full bg-[#39704E]" />
     </div>
-    {/* Средний контур (крутится в обратную сторону) */}
-    <div className="absolute inset-[3.5px] rounded-full border-[1.2px] border-transparent border-r-[#39704E]/60 border-b-[#39704E]/60 animate-[spin_1.8s_linear_reverse_infinite]">
-      <div className="absolute top-1/2 -right-[1.5px] h-1 w-1 -translate-y-1/2 rounded-full bg-[#39704E]" />
+    {/* Средний контур */}
+    <div className="absolute inset-[3px] rounded-full border-[1px] border-[#39704E]/30 animate-[spin_1.5s_linear_reverse_infinite]">
+      <div className="absolute top-1/2 -right-[1.5px] h-[2.5px] w-[2.5px] -translate-y-1/2 rounded-full bg-[#39704E]" />
     </div>
     {/* Внутренний контур */}
-    <div className="absolute inset-[7px] rounded-full border border-transparent border-t-[#39704E]/70 animate-[spin_1s_linear_infinite]">
-      <div className="absolute -bottom-1 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-[#39704E]" />
+    <div className="absolute inset-[6px] rounded-full border-[1px] border-[#39704E]/30 animate-[spin_1s_linear_infinite]">
+      <div className="absolute -bottom-[1px] left-1/2 h-[2px] w-[2px] -translate-x-1/2 rounded-full bg-[#39704E]" />
     </div>
   </div>
 );
@@ -105,67 +105,76 @@ export function ChatThread({ messages }: ChatThreadProps) {
 
           return (
             <div key={entry.id} className="flex flex-col gap-3">
-              {/* Заголовок ИИ и иконка */}
+              {/* Плавная смена шапки (Crossfade) */}
               <div className="flex items-center gap-2.5 px-1">
-                {isLoading ? (
-                  <YodaLoader />
-                ) : (
-                  <img src="/icons/applogo.PNG" alt="" className="h-[18px] w-[18px] object-contain" />
-                )}
-                <span className="text-[15px] font-bold tracking-tight text-[#171717]">
-                  {entry.header || "Yota 2.5"}
-                </span>
+                {/* Анимация иконки */}
+                <div className="relative h-[18px] w-[18px] flex-shrink-0">
+                  <div className={`absolute inset-0 flex items-center justify-center transition-all duration-500 ease-out ${isLoading ? 'opacity-100 scale-100' : 'opacity-0 scale-50 pointer-events-none'}`}>
+                    <YodaLoader />
+                  </div>
+                  <div className={`absolute inset-0 flex items-center justify-center transition-all duration-500 ease-out ${isLoading ? 'opacity-0 scale-50 pointer-events-none' : 'opacity-100 scale-100'}`}>
+                    <img src="/icons/applogo.PNG" alt="" className="h-[18px] w-[18px] object-contain" />
+                  </div>
+                </div>
+
+                {/* Анимация текста */}
+                <div className="relative flex-1 h-[20px] overflow-hidden">
+                  <span className={`absolute left-0 top-0 flex h-full items-center text-[15px] font-bold tracking-tight text-[#171717] transition-all duration-500 ease-out ${isLoading ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2 pointer-events-none'}`}>
+                    Подумать Йоде нужно…
+                  </span>
+                  <span className={`absolute left-0 top-0 flex h-full items-center text-[15px] font-bold tracking-tight text-[#171717] transition-all duration-500 ease-out ${isLoading ? 'opacity-0 translate-y-2 pointer-events-none' : 'opacity-100 translate-y-0'}`}>
+                    {entry.header || "Yota 2.5"}
+                  </span>
+                </div>
               </div>
 
               {/* Тело ответа */}
-              {!isLoading && (
-                <div className="w-full px-1">
-                  {entry.content && (
-                    <div className="text-[15px] leading-7 text-[#2E2E2E] w-full">
-                      {words.slice(0, visibleCount).map((word, index) => (
-                        <span key={`${entry.id}-${index}`} className="chat-word">
-                          {index < visibleCount - 1 ? `${word}\u00A0` : word}
-                        </span>
-                      ))}
-                    </div>
-                  )}
+              <div className={`w-full px-1 transition-all duration-500 ${isLoading ? 'opacity-0 max-h-0 overflow-hidden' : 'opacity-100 max-h-[2000px]'}`}>
+                {entry.content && (
+                  <div className="text-[15px] leading-7 text-[#2E2E2E] w-full">
+                    {words.slice(0, visibleCount).map((word, index) => (
+                      <span key={`${entry.id}-${index}`} className="chat-word">
+                        {index < visibleCount - 1 ? `${word}\u00A0` : word}
+                      </span>
+                    ))}
+                  </div>
+                )}
 
-                  {/* Кнопки оценки (прячутся, если hideActions === true) */}
-                  {!entry.hideActions && (
-                    <div className={`mt-5 flex items-center gap-6 transition-all duration-300 ${isDone ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1 pointer-events-none'}`}>
-                      <button 
-                        onClick={() => {
-                          setSpinningId(entry.id);
-                          setTimeout(() => setSpinningId(null), 600);
-                        }}
-                        className="active:scale-90 transition-transform"
-                      >
-                        <img src="/icons/refresh.PNG" alt="" className={`h-4 w-4 opacity-40 ${spinningId === entry.id ? 'animate-spin-smooth' : ''}`} />
-                      </button>
-                      <button 
-                        onClick={() => toggleRating(entry.id, 'like')}
-                        className="active:scale-90 transition-transform"
-                      >
-                        <img 
-                          src="/icons/like.PNG" alt="" 
-                          className={`h-4 w-4 transition-all ${ratings[entry.id] === 'like' ? 'opacity-100' : 'opacity-40 grayscale'}`}
-                          style={ratings[entry.id] === 'like' ? { filter: 'invert(39%) sepia(18%) saturate(892%) hue-rotate(94deg)' } : {}}
-                        />
-                      </button>
-                      <button 
-                        onClick={() => toggleRating(entry.id, 'dislike')}
-                        className="active:scale-90 transition-transform"
-                      >
-                        <img 
-                          src="/icons/dislike.PNG" alt="" 
-                          className={`h-4 w-4 transition-all ${ratings[entry.id] === 'dislike' ? 'opacity-100' : 'opacity-40 grayscale'}`}
-                          style={ratings[entry.id] === 'dislike' ? { filter: 'invert(39%) sepia(18%) saturate(892%) hue-rotate(94deg)' } : {}}
-                        />
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
+                {/* Кнопки оценки */}
+                {!entry.hideActions && (
+                  <div className={`mt-5 flex items-center gap-6 transition-all duration-300 ${isDone ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1 pointer-events-none'}`}>
+                    <button 
+                      onClick={() => {
+                        setSpinningId(entry.id);
+                        setTimeout(() => setSpinningId(null), 600);
+                      }}
+                      className="active:scale-90 transition-transform"
+                    >
+                      <img src="/icons/refresh.PNG" alt="" className={`h-4 w-4 opacity-40 ${spinningId === entry.id ? 'animate-spin-smooth' : ''}`} />
+                    </button>
+                    <button 
+                      onClick={() => toggleRating(entry.id, 'like')}
+                      className="active:scale-90 transition-transform"
+                    >
+                      <img 
+                        src="/icons/like.PNG" alt="" 
+                        className={`h-4 w-4 transition-all ${ratings[entry.id] === 'like' ? 'opacity-100' : 'opacity-40 grayscale'}`}
+                        style={ratings[entry.id] === 'like' ? { filter: 'invert(39%) sepia(18%) saturate(892%) hue-rotate(94deg)' } : {}}
+                      />
+                    </button>
+                    <button 
+                      onClick={() => toggleRating(entry.id, 'dislike')}
+                      className="active:scale-90 transition-transform"
+                    >
+                      <img 
+                        src="/icons/dislike.PNG" alt="" 
+                        className={`h-4 w-4 transition-all ${ratings[entry.id] === 'dislike' ? 'opacity-100' : 'opacity-40 grayscale'}`}
+                        style={ratings[entry.id] === 'dislike' ? { filter: 'invert(39%) sepia(18%) saturate(892%) hue-rotate(94deg)' } : {}}
+                      />
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           );
         })}
