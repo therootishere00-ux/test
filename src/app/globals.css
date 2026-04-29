@@ -9,107 +9,90 @@
 }
 
 @layer base {
-  /* Жесткая фиксация вьюпорта от шатаний и масштабирования */
   html, body {
     max-width: 100vw;
     overflow-x: hidden;
     overscroll-behavior: none;
     touch-action: manipulation;
   }
-
   body {
     color: rgb(var(--foreground-rgb));
     background: rgb(var(--background-start-rgb));
     -webkit-tap-highlight-color: transparent;
-    font-feature-settings: "ss01", "ss02", "cv01", "cv11";
   }
 }
 
 @layer utilities {
-  .hide-scrollbar::-webkit-scrollbar {
-    display: none;
-  }
-  .hide-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
+  /* Быстрое появление сообщения (прицветание) */
+  .animate-message-appear {
+    animation: messageIn 0.2s cubic-bezier(0.2, 0, 0, 1) forwards;
   }
 
-  .visible-scrollbar::-webkit-scrollbar {
-    width: 4px;
-  }
-  .visible-scrollbar::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  .visible-scrollbar::-webkit-scrollbar-thumb {
-    background: #e6e0d7;
-    border-radius: 10px;
+  @keyframes messageIn {
+    from { opacity: 0; transform: scale(0.98); }
+    to { opacity: 1; transform: scale(1); }
   }
 
-  @keyframes slideIn {
-    from { opacity: 0; transform: translateY(8px); }
-    to { opacity: 1; transform: translateY(0); }
+  /* Анимация роста из центра */
+  .animate-grow-center {
+    animation: growCenter 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
   }
 
-  @keyframes fadeIn {
+  @keyframes growCenter {
+    from { opacity: 0; transform: scale(0.5); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  /* Выцветание иконок */
+  .animate-fade-quick {
+    animation: fadeInQuick 0.3s ease-out forwards;
+  }
+
+  @keyframes fadeInQuick {
     from { opacity: 0; }
     to { opacity: 1; }
   }
 
-  @keyframes spin-smooth {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+  /* Переход текста (сверху-вниз) */
+  .header-text-exit {
+    animation: textExit 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+  .header-text-enter {
+    animation: textEnter 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;
   }
 
-  @keyframes blob-float {
-    0% { transform: translate(0px, 0px) scale(1); }
-    33% { transform: translate(30px, -40px) scale(1.05); }
-    66% { transform: translate(-20px, 20px) scale(0.95); }
-    100% { transform: translate(0px, 0px) scale(1); }
+  @keyframes textExit {
+    from { opacity: 1; transform: translateY(0); }
+    to { opacity: 0; transform: translateY(10px); }
   }
 
-  .animate-blob {
-    animation: blob-float 12s ease-in-out infinite;
+  @keyframes textEnter {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 
-  .animate-slide-in {
-    animation: slideIn 0.25s cubic-bezier(0.2, 0, 0, 1) forwards;
+  /* Вращение точек с разной скоростью */
+  .spin-fast { animation: spin 0.8s linear infinite; }
+  .spin-medium { animation: spin 1.2s linear infinite; }
+  .spin-slow { animation: spin 1.8s linear infinite; }
+
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
   }
 
-  .animate-fade-in {
-    animation: fadeIn 0.2s ease-out forwards;
+  .hide-scrollbar::-webkit-scrollbar { display: none; }
+  .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+  /* Пятно на фоне: теперь чуть виднее */
+  .bg-blob-optimized {
+    background: rgba(57, 112, 78, 0.22); /* чуть заметнее */
+    filter: blur(60px);
+    animation: blobFloat 10s ease-in-out infinite;
   }
 
-  .animate-spin-smooth {
-    animation: spin-smooth 0.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  @keyframes blobFloat {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(10px, -20px) scale(1.1); }
   }
-
-  .chat-word {
-    display: inline-block;
-    animation: fadeIn 0.15s ease-out forwards;
-    will-change: opacity;
-  }
-
-  .no-hover-effects {
-    @apply transition-none;
-  }
-  
-  .active-scale:active {
-    transform: scale(0.96);
-  }
-}
-
-/* Убрал transition: height, так как он ломает обратное сужение строки ввода */
-
-.chat-message-in {
-  word-break: break-word;
-  hyphens: auto;
-}
-
-* {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-.feedback-icons-appear {
-  animation: slideIn 0.3s cubic-bezier(0.2, 0, 0, 1) 0.1s both;
 }
