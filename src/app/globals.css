@@ -18,7 +18,6 @@
 }
 
 @layer utilities {
-  /* Скрытие скроллбара при сохранении функционала */
   .hide-scrollbar::-webkit-scrollbar {
     display: none;
   }
@@ -38,16 +37,9 @@
     border-radius: 10px;
   }
 
-  /* Нативные быстрые анимации Apple/iOS */
   @keyframes slideIn {
-    from {
-      opacity: 0;
-      transform: translateY(8px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 
   @keyframes fadeIn {
@@ -55,23 +47,26 @@
     to { opacity: 1; }
   }
 
-  /* Вращение refresh как в системных аппах (быстрое, без лишней тягучести) */
   @keyframes spin-smooth {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
   }
 
-  .animate-slide-in {
-    animation: slideIn 0.25s cubic-bezier(0.2, 0, 0, 1) forwards;
+  /* Плавная анимация для фонового градиента */
+  @keyframes blob {
+    0% { transform: translate(-50%, -50%) scale(1); }
+    33% { transform: translate(-45%, -55%) scale(1.05); }
+    66% { transform: translate(-55%, -45%) scale(0.95); }
+    100% { transform: translate(-50%, -50%) scale(1); }
   }
 
-  .animate-fade-in {
-    animation: fadeIn 0.2s ease-out forwards;
-  }
-
-  .animate-spin-smooth {
-    /* 0.5s - оптимально для мобилок: быстро и четко */
-    animation: spin-smooth 0.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  .animate-slide-in { animation: slideIn 0.25s cubic-bezier(0.2, 0, 0, 1) forwards; }
+  .animate-fade-in { animation: fadeIn 0.2s ease-out forwards; }
+  .animate-spin-smooth { animation: spin-smooth 0.5s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+  
+  /* Класс для фонового пятна */
+  .animate-blob {
+    animation: blob 12s infinite alternate ease-in-out;
   }
 
   .chat-word {
@@ -80,35 +75,20 @@
     will-change: opacity;
   }
 
-  /* Полный запрет на изменения цвета/яркости при наведении (Apple Style) */
-  .no-hover-effects {
-    @apply transition-none;
-  }
-  
-  /* Только обратная связь по нажатию */
-  .active-scale:active {
-    transform: scale(0.96);
-  }
+  .no-hover-effects { @apply transition-none; }
+  .active-scale:active { transform: scale(0.96); }
+  .feedback-icons-appear { animation: slideIn 0.3s cubic-bezier(0.2, 0, 0, 1) 0.1s both; }
 }
 
-/* Стили для текстового поля */
-textarea {
-  transition: height 0.1s ease-out;
-}
+textarea { transition: height 0.1s ease-out; }
+.chat-message-in { word-break: break-word; hyphens: auto; }
 
-/* Геометрия бабблов и текста */
-.chat-message-in {
-  word-break: break-word;
-  hyphens: auto;
-}
-
-/* Убираем любые системные тени, оставляем только чистый flat дизайн */
 * {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Иконки под ответом ИИ - плавное появление после текста */
-.feedback-icons-appear {
-  animation: slideIn 0.3s cubic-bezier(0.2, 0, 0, 1) 0.1s both;
+button:hover, span:hover, div:hover {
+  background-color: transparent;
+  color: inherit;
 }
