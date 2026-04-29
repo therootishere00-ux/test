@@ -55,7 +55,6 @@ function isEmojiOnly(value: string) {
 
 export function StartScreen() {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
-  const modelRef = useRef<HTMLDivElement | null>(null);
   const [name, setName] = useState("Артем");
   const [message, setMessage] = useState("");
   const [analysisEnabled, setAnalysisEnabled] = useState(false);
@@ -63,8 +62,7 @@ export function StartScreen() {
   const [prompts, setPrompts] = useState(() => pickPrompts(promptLibrary, 5));
   const [chatStarted, setChatStarted] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [modelOpen, setModelOpen] = useState(false);
-  const [modelName, setModelName] = useState("Yota 3.5");
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
     setName(getTelegramName());
@@ -85,28 +83,14 @@ export function StartScreen() {
     textarea.style.overflowY = textarea.scrollHeight > 120 ? "auto" : "hidden";
   }, [message]);
 
-  useEffect(() => {
-    if (!modelOpen) {
-      return;
-    }
-
-    const handlePointerDown = (event: PointerEvent) => {
-      if (!modelRef.current?.contains(event.target as Node)) {
-        setModelOpen(false);
-      }
-    };
-
-    window.addEventListener("pointerdown", handlePointerDown);
-
-    return () => {
-      window.removeEventListener("pointerdown", handlePointerDown);
-    };
-  }, [modelOpen]);
-
   const handleShuffle = () => {
-    startTransition(() => {
-      setPrompts(pickPrompts(promptLibrary, 5));
-    });
+    setIsRefreshing(true);
+    setTimeout(() => {
+      startTransition(() => {
+        setPrompts(pickPrompts(promptLibrary, 5));
+        setIsRefreshing(false);
+      });
+    }, 200);
   };
 
   const sendDisabled = message.trim().length < 2 || isEmojiOnly(message.trim());
@@ -154,7 +138,7 @@ export function StartScreen() {
   const renderComposer = () => (
     <div className="space-y-3">
       <form
-        className="rounded-[18px] border border-[#E6E0D7] bg-[#FFFFFF] px-4 pb-3 pt-3"
+        className="rounded-[18px] border border-[#E6E0D7] bg-[#FFFFFF] px-4 pb-3 pt-3 shadow-sm"
         onSubmit={(event) => {
           event.preventDefault();
           submitMessage();
@@ -174,7 +158,7 @@ export function StartScreen() {
           <button
             type="button"
             onClick={() => setAnalysisEnabled((value) => !value)}
-            className={`inline-flex h-9 items-center gap-2 rounded-[12px] border px-3 ${
+            className={`inline-flex h-9 items-center gap-2 rounded-[12px] border px-3 transition-all ${
               analysisEnabled
                 ? "border-[#CFE1D6] bg-[#EDF5F0] text-[#39704E]"
                 : "border-[#E3DED5] bg-[#F7F4EE] text-[#6F6A61]"
@@ -194,8 +178,10 @@ export function StartScreen() {
             type="submit"
             aria-label="Отправить сообщение"
             disabled={sendDisabled}
-            className={`grid h-9 w-9 place-items-center rounded-[12px] border border-[#171717] transition-all duration-150 ${
-              sendDisabled ? "bg-[#171717]/35 opacity-55" : "bg-[#171717] opacity-100"
+            className={`grid h-9 w-9 place-items-center rounded-[12px] transition-all duration-150 ${
+              sendDisabled 
+                ? "bg-[#171717]/35 opacity-55" 
+                : "bg-[#39704E] shadow-lg shadow-[#39704E]/20 opacity-100"
             }`}
           >
             <img
@@ -208,7 +194,7 @@ export function StartScreen() {
         </div>
       </form>
 
-      <p className="text-center text-xs text-[#9A948A]">Это ИИ, он может допускать ошибки</p>
+      {!chatStarted && <p className="text-center text-xs text-[#9A948A]">Это ИИ, он может допускать ошибки</p>}
     </div>
   );
 
@@ -217,7 +203,6 @@ export function StartScreen() {
       <MenuDrawer open={menuOpen} onClose={() => setMenuOpen(false)} />
 
       <div className="relative mx-auto flex min-h-dvh w-full max-w-md flex-col px-4 pb-6 pt-6">
-        {/* Хедер с логотипом и иконками */}
         <div className="mb-6 flex items-center justify-between">
           <button
             type="button"
@@ -228,8 +213,14 @@ export function StartScreen() {
             <img src="/icons/menu.PNG" alt="" aria-hidden="true" className="h-[20px] w-[20px]" />
           </button>
 
-          <div className="flex-1 flex items-center justify-center">
-            <h1 className="text-[18px] font-black tracking-tight">
+          <div className="flex-1 flex items-center justify-center gap-2">
+            <img 
+              src="/icons/applogo.PNG" 
+              alt="" 
+              aria-hidden="true" 
+              className="h-[20px] w-[20px] object-contain" 
+            />
+            <h1 className="text-[18px] font-black tracking-tight text-[#39704E]">
               swgoh<span className="opacity-65">.ai</span>
             </h1>
           </div>
@@ -264,7 +255,7 @@ export function StartScreen() {
               <div className="space-y-3">
                 <p className="text-sm font-medium text-[#8C867D]">Начать можно так</p>
 
-                <div className="hide-scrollbar flex flex-col gap-2">
+                <div className={`hide-scrollbar flex flex-col gap-2 transition-opacity duration-200 ${isRefreshing ? "opacity-0" : "opacity-100"}`}>
                   {prompts.map((prompt) => (
                     <button
                       key={prompt}
@@ -292,7 +283,7 @@ export function StartScreen() {
                     src="/icons/refresh.PNG"
                     alt=""
                     aria-hidden="true"
-                    className="h-[15px] w-[15px]"
+                    className={`h-[15px] w-[15px] ${isRefreshing ? "animate-spin" : ""}`}
                   />
                   Перемешать
                 </button>
