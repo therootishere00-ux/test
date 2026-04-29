@@ -5,18 +5,18 @@ import { ChatThread, type ChatMessage } from "@/components/chat-thread";
 import { MenuDrawer } from "@/components/menu-drawer";
 
 const promptLibrary = [
-  "Собери план прокачки аккаунта на 30 дней",
-  "Подбери контр-пики под текущий GAC",
-  "С чего начать путь к Galactic Legend",
-  "Разбери мои слабые места по модам",
-  "Кого качать следующим из текущего ростера",
-  "Собери эффективный флот для ранней игры",
-  "Какие омеги и зеты важнее всего сейчас",
-  "Как ускорить фарм ключевых команд",
-  "Какие герои сильнее для Conquest",
-  "Как выжать максимум из текущего инвентаря",
-  "Проведи аудит ресурсов и узких мест",
-  "Подбери составы под Territory War"
+  "Собери план прокачки с нуля",
+  "Кого выбрать первой легендой?",
+  "Как улучшить мой GAC рейтинг",
+  "В чём я явно отстаю от других",
+  "Какие герои дадут мне больше всего",
+  "Как правильно расходовать ресурсы",
+  "Что качать в первую очередь",
+  "Подскажи по моему текущему составу",
+  "Как подготовиться к войне за территорию",
+  "Что мне не хватает для флота",
+  "Расскажи про мои узкие места",
+  "Как получить первую легенду быстрее"
 ];
 
 const demoReply =
@@ -190,68 +190,21 @@ export function StartScreen() {
             <span className="text-sm font-medium">Анализ</span>
           </button>
 
-          <div className="flex items-center gap-3 pl-3">
-            {chatStarted ? (
-              <span className="text-sm font-medium text-[#6F6A61]/65">{modelName}</span>
-            ) : (
-              <div ref={modelRef} className="relative">
-                <button
-                  type="button"
-                  aria-label="Выбрать модель"
-                  onClick={() => setModelOpen((value) => !value)}
-                  className="inline-flex items-center gap-1 text-sm font-medium text-[#6F6A61]"
-                >
-                  <span>{modelName}</span>
-                  <img
-                    src="/icons/right.PNG"
-                    alt=""
-                    aria-hidden="true"
-                    className={`h-[12px] w-[12px] opacity-75 transition-transform duration-150 ${
-                      modelOpen ? "rotate-90" : "rotate-0"
-                    }`}
-                  />
-                </button>
-
-                <div
-                  className={`absolute left-0 top-[calc(100%+8px)] flex flex-col gap-1 text-sm font-medium text-[#6F6A61] transition-all duration-150 ${
-                    modelOpen
-                      ? "pointer-events-auto translate-y-0 opacity-100"
-                      : "pointer-events-none -translate-y-1 opacity-0"
-                  }`}
-                >
-                  {["Yota 4.5", "Yota 2.5"].map((option) => (
-                    <button
-                      key={option}
-                      type="button"
-                      onClick={() => {
-                        setModelName(option);
-                        setModelOpen(false);
-                      }}
-                      className="text-left text-sm font-medium text-[#6F6A61]"
-                    >
-                      {option}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <button
-              type="submit"
-              aria-label="Отправить сообщение"
-              disabled={sendDisabled}
-              className={`grid h-9 w-9 place-items-center rounded-[12px] border border-[#171717] transition-all duration-150 ${
-                sendDisabled ? "bg-[#171717]/35 opacity-55" : "bg-[#171717] opacity-100"
-              }`}
-            >
-              <img
-                src="/icons/send.PNG"
-                alt=""
-                aria-hidden="true"
-                className="h-[16px] w-[16px] brightness-0 invert"
-              />
-            </button>
-          </div>
+          <button
+            type="submit"
+            aria-label="Отправить сообщение"
+            disabled={sendDisabled}
+            className={`grid h-9 w-9 place-items-center rounded-[12px] border border-[#171717] transition-all duration-150 ${
+              sendDisabled ? "bg-[#171717]/35 opacity-55" : "bg-[#171717] opacity-100"
+            }`}
+          >
+            <img
+              src="/icons/send.PNG"
+              alt=""
+              aria-hidden="true"
+              className="h-[16px] w-[16px] brightness-0 invert"
+            />
+          </button>
         </div>
       </form>
 
@@ -264,7 +217,8 @@ export function StartScreen() {
       <MenuDrawer open={menuOpen} onClose={() => setMenuOpen(false)} />
 
       <div className="relative mx-auto flex min-h-dvh w-full max-w-md flex-col px-4 pb-6 pt-6">
-        <div className="absolute left-4 top-6 z-10 flex items-center">
+        {/* Хедер с логотипом и иконками */}
+        <div className="mb-6 flex items-center justify-between">
           <button
             type="button"
             aria-label="Меню"
@@ -272,6 +226,20 @@ export function StartScreen() {
             className="grid h-9 w-9 place-items-center text-[#171717]"
           >
             <img src="/icons/menu.PNG" alt="" aria-hidden="true" className="h-[20px] w-[20px]" />
+          </button>
+
+          <div className="flex-1 flex items-center justify-center">
+            <h1 className="text-[18px] font-black tracking-tight">
+              swgoh<span className="opacity-65">.ai</span>
+            </h1>
+          </div>
+
+          <button
+            type="button"
+            aria-label="Профиль"
+            className="grid h-9 w-9 place-items-center text-[#171717]"
+          >
+            <img src="/icons/profile.PNG" alt="" aria-hidden="true" className="h-[20px] w-[20px]" />
           </button>
         </div>
 
@@ -285,17 +253,9 @@ export function StartScreen() {
           >
             <div className="space-y-6">
               <div className="space-y-1 text-left">
-                <div className="flex items-center gap-3">
-                  <img
-                    src="/icons/applogo.PNG"
-                    alt=""
-                    aria-hidden="true"
-                    className="h-9 w-9 rounded-[10px] object-cover"
-                  />
-                  <h1 className="text-[38px] font-semibold leading-[0.98] tracking-[-0.05em] text-[#171717]">
-                    Ну привет, {name}
-                  </h1>
-                </div>
+                <h1 className="text-[38px] font-semibold leading-[0.98] tracking-[-0.05em] text-[#171717]">
+                  Ну привет, {name}
+                </h1>
                 <p className="text-[38px] font-semibold leading-[0.98] tracking-[-0.05em] text-[#171717]">
                   С чем тебе помочь?
                 </p>
@@ -304,15 +264,21 @@ export function StartScreen() {
               <div className="space-y-3">
                 <p className="text-sm font-medium text-[#8C867D]">Начать можно так</p>
 
-                <div className="hide-scrollbar flex gap-3 overflow-x-auto pb-1 pr-2">
+                <div className="hide-scrollbar flex flex-col gap-2">
                   {prompts.map((prompt) => (
                     <button
                       key={prompt}
                       type="button"
                       onClick={() => setMessage(prompt)}
-                      className="shrink-0 rounded-[14px] border border-[#E6E0D7] bg-[#FBFAF7] px-4 py-3 text-left text-sm leading-snug text-[#2A2A2A]"
+                      className="flex items-center justify-between rounded-[14px] border border-[#E6E0D7] bg-[#FBFAF7] px-4 py-3 text-left text-sm leading-snug text-[#2A2A2A]"
                     >
-                      {prompt}
+                      <span>{prompt}</span>
+                      <img
+                        src="/icons/right.PNG"
+                        alt=""
+                        aria-hidden="true"
+                        className="h-[12px] w-[12px] opacity-65 flex-shrink-0 ml-2"
+                      />
                     </button>
                   ))}
                 </div>
