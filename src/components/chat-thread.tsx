@@ -20,6 +20,7 @@ export function ChatThread({ messages }: ChatThreadProps) {
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const [revealedWords, setRevealedWords] = useState<Record<string, number>>({});
   const [ratings, setRatings] = useState<Record<string, "like" | "dislike" | null>>({});
+  const [spinningId, setSpinningId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!viewportRef.current) return;
@@ -55,22 +56,28 @@ export function ChatThread({ messages }: ChatThreadProps) {
     }));
   };
 
+  const handleRegenerate = (msgId: string) => {
+    setSpinningId(msgId);
+    setTimeout(() => setSpinningId(null), 800);
+    // Здесь будет вызов функции регенерации ответа через ИИ
+  };
+
   return (
     <div ref={viewportRef} className="visible-scrollbar flex-1 overflow-y-auto pr-1">
       <div className="space-y-8 pb-4 pt-2">
         {messages.map((entry) => {
           if (entry.role === "user") {
-            const isLongUserText = entry.content.length > 160;
+            const isLongUserText = entry.content.length > 180;
             return (
               <div key={entry.id} className="flex flex-col items-end gap-2">
                 <div className="chat-message-in max-w-[85%] rounded-[20px] bg-[#39704E]/15 px-4 py-3 text-[15px] leading-6 text-[#274333]">
                   {entry.content}
                 </div>
                 {isLongUserText && (
-                  <div className="flex items-center gap-1.5 px-1 opacity-60">
+                  <button type="button" className="flex items-center gap-1.5 px-1 opacity-60 active:opacity-100 transition-opacity">
                     <span className="text-[12px] font-medium">Больше</span>
                     <img src="/icons/more.PNG" alt="" className="h-3.5 w-3.5" />
-                  </div>
+                  </button>
                 )}
               </div>
             );
@@ -81,7 +88,6 @@ export function ChatThread({ messages }: ChatThreadProps) {
 
           return (
             <div key={entry.id} className="flex flex-col gap-3">
-              {/* Заголовок Yota с увеличенным логотипом */}
               <div className="flex items-center gap-2.5 px-1">
                 <img src="/icons/applogo.PNG" alt="" className="h-[18px] w-[18px] object-contain" />
                 <span className="text-[15px] font-bold tracking-tight text-[#171717]">Yota 2.5</span>
@@ -97,10 +103,16 @@ export function ChatThread({ messages }: ChatThreadProps) {
                     ))}
                   </div>
 
-                  {/* Три иконки в ряд под сообщением ИИ */}
                   <div className="flex items-center gap-5 px-1">
-                    <button className="opacity-40 hover:opacity-100 transition-opacity">
-                      <img src="/icons/roll.PNG" alt="" className="h-4 w-4" />
+                    <button 
+                      onClick={() => handleRegenerate(entry.id)}
+                      className="opacity-40 hover:opacity-100 transition-opacity"
+                    >
+                      <img 
+                        src="/icons/refresh.PNG" 
+                        alt="" 
+                        className={`h-4 w-4 ${spinningId === entry.id ? 'animate-spin-once' : ''}`} 
+                      />
                     </button>
                     <button 
                       onClick={() => toggleRating(entry.id, 'like')}
