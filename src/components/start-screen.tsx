@@ -33,6 +33,7 @@ export function StartScreen() {
   const [message, setMessage] = useState("");
   const [isAnimating, setIsAnimating] = useState(false);
   const [chatStarted, setChatStarted] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false); // Стейт для меню
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [allPrompts, setAllPrompts] = useState<string[]>([]);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -61,7 +62,7 @@ export function StartScreen() {
     if (textarea) {
       textarea.style.height = 'auto';
       const scrollHeight = textarea.scrollHeight;
-      textarea.style.height = `${Math.max(Math.min(scrollHeight, 120), 56)}px`;
+      textarea.style.height = `${(Math.max(Math.min(scrollHeight, 120), 56))}px`;
     }
   }, [message]);
 
@@ -91,10 +92,14 @@ export function StartScreen() {
 
       {/* Верхняя панель: Меню и Профиль */}
       <div className="absolute left-0 right-0 top-0 z-50 flex items-center justify-between px-6 py-4">
-        <MenuDrawer />
-        <div className="h-9 w-9 rounded-full bg-[#E5E5DF] overflow-hidden">
+        {/* Добавили пропсы, которые требовал TypeScript */}
+        <MenuDrawer open={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
+        <button 
+          onClick={() => setIsMenuOpen(true)}
+          className="h-9 w-9 rounded-full bg-[#E5E5DF] overflow-hidden transition-transform active:scale-95"
+        >
           <img src="/icons/applogo.PNG" className="h-full w-full object-cover" alt="Profile" />
-        </div>
+        </button>
       </div>
 
       {!chatStarted ? (
@@ -113,7 +118,7 @@ export function StartScreen() {
           <div className="mt-12 w-full px-[25px] max-w-[650px]">
             <div className="relative w-full">
               
-              {/* Задняя плашка с анимацией выезда */}
+              {/* Задняя плашка */}
               <motion.div 
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
