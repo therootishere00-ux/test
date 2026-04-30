@@ -13,18 +13,15 @@ const PromptRow = ({ items, direction, speed, offset, onPick }: any) => {
         {[...items, ...items].map((item: string, idx: number) => {
           const isGreen = (idx + offset) % 2 === 0;
           return (
-            <motion.button 
+            <button 
               key={idx} 
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.4, ease: "easeOut" }}
               onClick={() => onPick(item)}
               className={`whitespace-nowrap rounded-full px-5 py-2.5 text-[14px] font-medium transition-all active:scale-95 ${
                 isGreen ? "bg-[#39704E]/10 text-[#39704E]" : "border border-[#E5E5DF] text-[#171717]/60"
               }`}
             >
               {item}
-            </motion.button>
+            </button>
           );
         })}
       </div>
@@ -100,40 +97,44 @@ export function StartScreen() {
         </button>
         <MenuDrawer open={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
         <button className="transition-transform active:scale-90">
-          <img src="/icons/profile.PNG" className="h-6 w-6 object-contain" alt="Profile" />
+          <img src="/icons/profile.PNG" className="h-5 w-5 object-contain" alt="Profile" />
         </button>
       </div>
 
       {!chatStarted ? (
         <div className="flex h-full flex-col items-center justify-center">
-          <motion.div 
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
-            className="mb-6 flex items-center gap-4"
-          >
+          <div className="mb-6 flex items-center gap-4">
             <img src="/icons/applogo.PNG" className="h-9 w-9 object-contain" alt="" />
             <h1 className="text-[26px] font-medium tracking-tight">Чем помочь тебе, хм?</h1>
-          </motion.div>
+          </div>
 
-          <div className="w-full space-y-1 opacity-90">
-            {rows.map((row, i) => (
-              <PromptRow key={i} items={row.items} direction={row.dir} speed={row.speed} offset={row.off} onPick={handlePick} />
-            ))}
+          <div className="min-h-[120px] w-full flex flex-col justify-center">
+            {rows.length > 0 && (
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.4, ease: "easeOut" }}
+                className="w-full space-y-1 opacity-90"
+              >
+                {rows.map((row, i) => (
+                  <PromptRow key={i} items={row.items} direction={row.dir} speed={row.speed} offset={row.off} onPick={handlePick} />
+                ))}
+              </motion.div>
+            )}
           </div>
 
           <div className="mt-12 w-full px-[25px] max-w-[650px]">
             <div className="relative w-full">
               
-              {/* Задняя плашка */}
+              {/* Задняя плашка (вырастает снизу вверх) */}
               <motion.div 
-                initial={{ y: 15, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.3, duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
+                initial={{ scaleY: 0, opacity: 0 }}
+                animate={{ scaleY: 1, opacity: 1 }}
+                transition={{ delay: 0.1, duration: 0.25, ease: "easeOut" }}
+                style={{ transformOrigin: "bottom" }}
                 className="absolute -top-[38px] left-0 right-0 bottom-0 bg-[#262626]/85 rounded-[24px] z-0 flex items-start pt-3 px-6 shadow-sm"
               >
                 <div className="flex items-center gap-2.5">
-                  {/* Принудительно белая иконка с 0.7 прозрачностью */}
                   <img 
                     src="/icons/energy.PNG" 
                     className="h-4 w-4 object-contain opacity-70 brightness-0 invert" 
@@ -147,12 +148,7 @@ export function StartScreen() {
               </motion.div>
 
               {/* Основная строка */}
-              <motion.div 
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, ease: "easeOut" }}
-                className="relative flex w-full flex-col bg-[#262626] rounded-[24px] z-10 shadow-sm"
-              >
+              <div className="relative flex w-full flex-col bg-[#262626] rounded-[24px] z-10 shadow-sm">
                 <div className="relative flex items-center min-h-[56px]">
                   <AnimatePresence mode="wait">
                     {isAnimating && (
@@ -188,17 +184,12 @@ export function StartScreen() {
                     </button>
                   </div>
                 </div>
-              </motion.div>
+              </div>
             </div>
 
-            <motion.p 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.6, duration: 0.4 }}
-              className="mt-5 text-center text-[13px] font-medium text-[#171717]/40 tracking-tight"
-            >
+            <p className="mt-[10px] text-center text-[13px] font-medium text-[#171717]/40 tracking-tight">
               Это ИИ. Он может ошибаться
-            </motion.p>
+            </p>
           </div>
         </div>
       ) : (
