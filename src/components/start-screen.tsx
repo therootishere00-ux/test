@@ -13,15 +13,18 @@ const PromptRow = ({ items, direction, speed, offset, onPick }: any) => {
         {[...items, ...items].map((item: string, idx: number) => {
           const isGreen = (idx + offset) % 2 === 0;
           return (
-            <button 
+            <motion.button 
               key={idx} 
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.4, ease: "easeOut" }}
               onClick={() => onPick(item)}
               className={`whitespace-nowrap rounded-full px-5 py-2.5 text-[14px] font-medium transition-all active:scale-95 ${
                 isGreen ? "bg-[#39704E]/10 text-[#39704E]" : "border border-[#E5E5DF] text-[#171717]/60"
               }`}
             >
               {item}
-            </button>
+            </motion.button>
           );
         })}
       </div>
@@ -33,7 +36,7 @@ export function StartScreen() {
   const [message, setMessage] = useState("");
   const [isAnimating, setIsAnimating] = useState(false);
   const [chatStarted, setChatStarted] = useState(false);
-  const [isMenuOpen, setIsMenuOpen] = useState(false); // Стейт для меню
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [allPrompts, setAllPrompts] = useState<string[]>([]);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -90,24 +93,28 @@ export function StartScreen() {
         .hide-scrollbar::-webkit-scrollbar { display: none; }
       `}</style>
 
-      {/* Верхняя панель: Меню и Профиль */}
-      <div className="absolute left-0 right-0 top-0 z-50 flex items-center justify-between px-6 py-4">
-        {/* Добавили пропсы, которые требовал TypeScript */}
+      {/* Верхняя панель */}
+      <div className="absolute left-0 right-0 top-0 z-50 flex items-center justify-between px-7 py-6">
+        <button onClick={() => setIsMenuOpen(true)} className="transition-transform active:scale-90">
+          <img src="/icons/menu.PNG" className="h-5 w-5 object-contain" alt="Menu" />
+        </button>
         <MenuDrawer open={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
-        <button 
-          onClick={() => setIsMenuOpen(true)}
-          className="h-9 w-9 rounded-full bg-[#E5E5DF] overflow-hidden transition-transform active:scale-95"
-        >
-          <img src="/icons/applogo.PNG" className="h-full w-full object-cover" alt="Profile" />
+        <button className="transition-transform active:scale-90">
+          <img src="/icons/profile.PNG" className="h-6 w-6 object-contain" alt="Profile" />
         </button>
       </div>
 
       {!chatStarted ? (
         <div className="flex h-full flex-col items-center justify-center">
-          <div className="mb-6 flex items-center gap-4">
+          <motion.div 
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+            className="mb-6 flex items-center gap-4"
+          >
             <img src="/icons/applogo.PNG" className="h-9 w-9 object-contain" alt="" />
             <h1 className="text-[26px] font-medium tracking-tight">Чем помочь тебе, хм?</h1>
-          </div>
+          </motion.div>
 
           <div className="w-full space-y-1 opacity-90">
             {rows.map((row, i) => (
@@ -120,22 +127,32 @@ export function StartScreen() {
               
               {/* Задняя плашка */}
               <motion.div 
-                initial={{ y: 20, opacity: 0 }}
+                initial={{ y: 15, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.5, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                transition={{ delay: 0.3, duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
                 className="absolute -top-[38px] left-0 right-0 bottom-0 bg-[#262626]/85 rounded-[24px] z-0 flex items-start pt-3 px-6 shadow-sm"
               >
                 <div className="flex items-center gap-2.5">
-                  <img src="/icons/energy.PNG" className="h-4 w-4 object-contain opacity-60 brightness-200" alt="" />
-                  <span className="text-[13px] font-medium text-white/60">
+                  {/* Принудительно белая иконка с 0.7 прозрачностью */}
+                  <img 
+                    src="/icons/energy.PNG" 
+                    className="h-4 w-4 object-contain opacity-70 brightness-0 invert" 
+                    alt="" 
+                  />
+                  <span className="text-[13px] font-medium text-white/70">
                     Нашел баг? Пиши нам:{" "}
-                    <span className="text-white/90 underline underline-offset-2">@swgohai_request</span>
+                    <span className="text-white/100 underline underline-offset-2">@swgohai_request</span>
                   </span>
                 </div>
               </motion.div>
 
               {/* Основная строка */}
-              <div className="relative flex w-full flex-col bg-[#262626] rounded-[24px] z-10 shadow-sm">
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, ease: "easeOut" }}
+                className="relative flex w-full flex-col bg-[#262626] rounded-[24px] z-10 shadow-sm"
+              >
                 <div className="relative flex items-center min-h-[56px]">
                   <AnimatePresence mode="wait">
                     {isAnimating && (
@@ -171,12 +188,17 @@ export function StartScreen() {
                     </button>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             </div>
 
-            <p className="mt-5 text-center text-[13px] font-medium text-[#171717]/40 tracking-tight">
+            <motion.p 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.6, duration: 0.4 }}
+              className="mt-5 text-center text-[13px] font-medium text-[#171717]/40 tracking-tight"
+            >
               Это ИИ. Он может ошибаться
-            </p>
+            </motion.p>
           </div>
         </div>
       ) : (
