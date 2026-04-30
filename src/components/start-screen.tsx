@@ -35,8 +35,7 @@ export function StartScreen() {
   const [chatStarted, setChatStarted] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
 
-  // Единый радиус скругления для всего интерфейса
-  const baseRounding = "rounded-[18px]";
+  const baseRounding = "rounded-[22px]";
 
   useEffect(() => {
     const textarea = textareaRef.current;
@@ -61,9 +60,9 @@ export function StartScreen() {
 
   const renderComposer = () => (
     <div className="fixed bottom-[15px] left-0 right-0 z-20 px-4 w-full max-w-md mx-auto">
-      <div className="space-y-2.5">
+      <div className="space-y-3">
         <form
-          className={`${baseRounding} bg-white px-4 pb-3 pt-3 shadow-[0_4px_12px_rgba(0,0,0,0.03)]`}
+          className={`${baseRounding} bg-white px-4 pb-3 pt-3 shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all`}
           onSubmit={(e) => { e.preventDefault(); submitMessage(message); }}
         >
           <textarea
@@ -78,7 +77,7 @@ export function StartScreen() {
             <button
               type="button"
               onClick={() => setAnalysisEnabled(!analysisEnabled)}
-              className={`flex h-8 items-center gap-2 px-3 transition-colors ${baseRounding} ${
+              className={`flex h-8 items-center gap-2 px-3 transition-all ${baseRounding} ${
                 analysisEnabled ? "bg-[#EDF5F0] text-[#39704E]" : "bg-[#F7F4EE] text-[#6F6A61]"
               }`}
             >
@@ -88,15 +87,15 @@ export function StartScreen() {
                 style={analysisEnabled ? { filter: "invert(33%) sepia(21%) saturate(1005%) hue-rotate(94deg) brightness(96%) contrast(87%)" } : {}}
                 alt="" 
               />
-              <span className="text-xs font-medium">Анализ</span>
+              <span className="text-[13px] font-medium">Анализ</span>
             </button>
             <button
               type="submit"
               disabled={!isMessageValid}
-              className={`grid h-8 w-8 place-items-center rounded-[10px] transition-all ${
+              className={`grid h-8 w-8 place-items-center rounded-[12px] transition-all ${
                 !isMessageValid 
-                  ? "bg-[#171717]/10" 
-                  : "bg-[#39704E] active:scale-90" // Акцентный зеленый в активе
+                  ? "bg-[#171717]/5 opacity-30" 
+                  : "bg-[#39704E] shadow-lg shadow-[#39704E]/20 active:scale-95"
               }`}
             >
               <img src="/icons/send.PNG" className="h-3.5 w-3.5 brightness-0 invert" alt="" />
@@ -104,7 +103,7 @@ export function StartScreen() {
           </div>
         </form>
         {!chatStarted && (
-          <p className="text-center text-[10px] font-medium text-[#9A948A]">
+          <p className="text-center text-[11px] text-[#B5B0A7] font-medium">
             Это ИИ, он может допускать ошибки
           </p>
         )}
@@ -113,58 +112,58 @@ export function StartScreen() {
   );
 
   return (
-    <main className="relative h-dvh w-full bg-[#F5F3EE] select-none">
+    <main className="relative h-dvh w-full bg-[#F5F3EE] select-none font-sans">
       <MenuDrawer open={menuOpen} onClose={() => setMenuOpen(false)} />
 
-      <div className="mx-auto flex h-full w-full max-w-md flex-col px-4 pt-5">
+      <div className="mx-auto flex h-full w-full max-w-md flex-col px-6 pt-6">
         {/* Header */}
         <header className="z-10 flex items-center justify-between">
-          <button onClick={() => setMenuOpen(true)} className="p-2 -ml-2">
-            <img src="/icons/menu.PNG" className="h-5 w-5" alt="" />
+          <button onClick={() => setMenuOpen(true)} className="p-1 -ml-1 active:opacity-50 transition-opacity">
+            <img src="/icons/menu.PNG" className="h-6 w-6" alt="" />
           </button>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             <img src="/icons/applogo.PNG" className="h-5 w-5 object-contain" alt="" />
-            <h1 className="text-[18px] font-black italic text-[#39704E] tracking-tighter">
+            <h1 className="text-[17px] font-black italic text-[#39704E] tracking-tighter">
               swgoh.ai
             </h1>
           </div>
-          <button className="p-2 -mr-2">
-            <img src="/icons/profile.PNG" className="h-5 w-5" alt="" />
+          <button className="p-1 -mr-1 active:opacity-50 transition-opacity">
+            <img src="/icons/profile.PNG" className="h-6 w-6" alt="" />
           </button>
         </header>
 
-        <section className="relative flex-1 flex flex-col overflow-hidden">
+        <section className="relative flex-1 flex flex-col">
           {!chatStarted ? (
-            <div className="flex flex-1 flex-col justify-center pb-32">
-              {/* Приветствие */}
-              <div className="mb-6 px-2">
-                <h2 className="text-[28px] font-medium leading-[1.15] tracking-tight text-[#171717]">
+            <div className="flex flex-1 flex-col justify-center pb-36">
+              {/* Приветствие в стиле референсов */}
+              <div className="mb-10">
+                <h2 className="text-[32px] font-medium leading-tight tracking-tight text-[#171717]">
                   С чем помочь тебе,<br />
-                  <span>хм?</span>
+                  <span className="text-[#171717]/40">хм?</span>
                 </h2>
-                <p className="mt-2 text-[14px] text-[#8C867D]">Начать можно так</p>
+                <p className="mt-3 text-[15px] text-[#8C867D] font-medium">Начать можно так</p>
               </div>
 
-              {/* Подсказки */}
-              <div className="w-full space-y-2 px-1">
+              {/* Подсказки: чистый стиль без рамок */}
+              <div className="w-full space-y-2.5">
                 {prompts.map((p) => (
                   <button
                     key={p}
                     onClick={() => submitMessage(p)}
-                    className={`flex w-full items-center justify-between ${baseRounding} bg-white/60 px-5 py-3.5 text-left text-[14px] transition-all active:scale-[0.98] active:bg-white`}
+                    className={`flex w-full items-center justify-between ${baseRounding} bg-white px-5 py-4 text-left text-[15px] transition-all hover:bg-white/80 active:scale-[0.98] shadow-[0_4px_12px_rgba(0,0,0,0.02)]`}
                   >
                     <span className="font-medium text-[#2A2A2A]">{p}</span>
-                    <img src="/icons/right.PNG" className="h-2.5 w-2.5 opacity-20" alt="" />
+                    <img src="/icons/right.PNG" className="h-3 w-3 opacity-20" alt="" />
                   </button>
                 ))}
                 
-                {/* Перемешка */}
-                <div className="pt-2">
+                {/* Перемешка слева */}
+                <div className="pt-3">
                   <button
                     onClick={handleShuffle}
-                    className="flex items-center gap-2 px-2 text-[12px] font-semibold text-[#8C867D] active:opacity-60"
+                    className="flex items-center gap-2.5 px-1 text-[13px] font-semibold text-[#8C867D] active:opacity-50 transition-opacity"
                   >
-                    <img src="/icons/refresh.PNG" className="h-3.5 w-3.5 opacity-60" alt="" />
+                    <img src="/icons/refresh.PNG" className="h-4 w-4 opacity-40" alt="" />
                     Перемешать
                   </button>
                 </div>
