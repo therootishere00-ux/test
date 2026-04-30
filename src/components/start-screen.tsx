@@ -12,8 +12,8 @@ const promptLibrary = [
   "Какие герои дадут мне больше всего",
   "Как правильно расходовать ресурсы",
   "Что качать в первую очередь",
-  "Подскажи по моему текущему составу",
-  "Как подготовиться к войне за территорию",
+  "Подскажи по моему составу",
+  "Как подготовиться к ТВ",
   "Что мне не хватает для флота"
 ];
 
@@ -42,10 +42,6 @@ export function StartScreen() {
     textarea.style.height = `${Math.min(textarea.scrollHeight, 120)}px`;
   }, [message]);
 
-  const handleShuffle = () => {
-    startTransition(() => setPrompts(pickPrompts(promptLibrary, 3)));
-  };
-
   const onSend = (text: string) => {
     const normalized = text.trim();
     if (normalized.length < 2) return;
@@ -54,110 +50,56 @@ export function StartScreen() {
     setMessage("");
   };
 
-  const renderComposer = () => (
-    <div className="fixed bottom-4 left-0 right-0 z-20 px-5 w-full max-w-md mx-auto">
-      <div className="flex flex-col gap-3">
-        <form
-          className="rounded-[24px] bg-white p-3 shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all"
-          onSubmit={(e) => { e.preventDefault(); onSend(message); }}
-        >
-          <textarea
-            ref={textareaRef}
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            placeholder={analysisEnabled ? "Анализируем..." : "Спросите Yota..."}
-            className="w-full resize-none bg-transparent px-2 py-1 text-[16px] leading-relaxed text-[#171717] outline-none placeholder:text-[#ADAAA4] hide-scrollbar"
-            rows={1}
-          />
-          
-          <div className="mt-2 flex items-center justify-between px-1">
-            <button
-              type="button"
-              onClick={() => setAnalysisEnabled(!analysisEnabled)}
-              className={`flex h-9 items-center gap-2 rounded-full px-4 transition-all ${
-                analysisEnabled ? "bg-[#EDF5F0] text-[#39704E]" : "bg-[#F7F4EE] text-[#6F6A61]"
-              }`}
-            >
-              <img 
-                src="/icons/firemode.PNG" 
-                className="h-4 w-4" 
-                style={analysisEnabled ? { filter: "invert(33%) sepia(21%) saturate(1005%) hue-rotate(94deg) brightness(96%) contrast(87%)" } : {}}
-                alt="" 
-              />
-              <span className="text-[13px] font-medium">Анализ</span>
-            </button>
-
-            <button
-              type="submit"
-              disabled={message.trim().length < 2}
-              className={`grid h-9 w-9 place-items-center rounded-[12px] transition-all ${
-                message.trim().length < 2 ? "bg-[#171717]/5" : "bg-[#39704E] shadow-sm active:scale-95"
-              }`}
-            >
-              <img src="/icons/send.PNG" className="h-4 w-4 brightness-0 invert" alt="" />
-            </button>
-          </div>
-        </form>
-        {!chatStarted && (
-          <p className="text-center text-[11px] text-[#A3A099]">
-            Это ИИ, он может допускать ошибки
-          </p>
-        )}
-      </div>
-    </div>
-  );
-
   return (
-    <main className="relative h-dvh w-full bg-[#F5F3EE] font-sans antialiased select-none">
+    <main className="relative h-dvh w-full bg-[#F5F3EE] font-sans antialiased select-none overflow-hidden">
       <MenuDrawer open={menuOpen} onClose={() => setMenuOpen(false)} />
 
-      <div className="mx-auto flex h-full w-full max-w-md flex-col px-6">
-        {/* Header - Тонкий и изящный */}
-        <header className="flex h-16 items-center justify-between">
+      <div className="mx-auto flex h-full w-full max-w-md flex-col px-7">
+        {/* Header: максимально облегченный */}
+        <header className="flex h-20 items-center justify-between">
           <button onClick={() => setMenuOpen(true)} className="p-1">
-            <img src="/icons/menu.PNG" className="h-5 w-5 opacity-80" alt="" />
+            <img src="/icons/menu.PNG" className="h-5 w-5 opacity-40" alt="" />
           </button>
           <div className="flex items-center gap-2">
-            <img src="/icons/applogo.PNG" className="h-5 w-5 object-contain" alt="" />
-            <span className="text-[17px] font-bold italic tracking-tight text-[#39704E]">swgoh.ai</span>
+            <img src="/icons/applogo.PNG" className="h-4 w-4 grayscale opacity-60 object-contain" alt="" />
+            <span className="text-[16px] font-bold italic tracking-tight text-[#39704E]">swgoh.ai</span>
           </div>
           <button className="p-1">
-            <img src="/icons/profile.PNG" className="h-5 w-5 opacity-80" alt="" />
+            <img src="/icons/profile.PNG" className="h-5 w-5 opacity-40" alt="" />
           </button>
         </header>
 
         <section className="relative flex-1 flex flex-col">
           {!chatStarted ? (
-            <div className="flex flex-1 flex-col justify-center pb-40">
-              {/* Приветствие в стиле Apple референсов */}
-              <div className="mb-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
-                <h2 className="text-[32px] font-normal leading-tight tracking-tight text-[#171717]">
+            <div className="flex flex-1 flex-col pt-[15vh]">
+              {/* Приветствие: тонко и слева */}
+              <div className="mb-14">
+                <h2 className="text-[34px] font-normal leading-[1.1] tracking-tight text-[#171717]">
                   С чем помочь тебе,<br />
-                  <span className="font-medium">хм?</span>
+                  <span className="text-[#171717]/40 font-light">хм?</span>
                 </h2>
-                <p className="mt-3 text-[15px] text-[#8C867D]">Начать можно так</p>
+                <p className="mt-4 text-[14px] font-medium text-[#8C867D]/60">Начать можно так</p>
               </div>
 
-              {/* Подсказки: Без границ, на мягком фоне */}
-              <div className="flex flex-col gap-2.5">
-                {prompts.map((p, i) => (
+              {/* Подсказки: убрали все рамки, только мягкая заливка */}
+              <div className="flex flex-col gap-2">
+                {prompts.map((p) => (
                   <button
                     key={p}
                     onClick={() => onSend(p)}
-                    style={{ animationDelay: `${i * 100}ms` }}
-                    className="group flex w-full items-center justify-between rounded-[22px] bg-white/40 p-4 text-left transition-all hover:bg-white active:scale-[0.98] animate-in fade-in slide-in-from-bottom-2"
+                    className="flex w-full items-center justify-between rounded-[20px] bg-white/40 px-5 py-4 text-left transition-all active:scale-[0.98] active:bg-white/80"
                   >
-                    <span className="text-[15px] font-medium text-[#2A2A2A]">{p}</span>
-                    <img src="/icons/right.PNG" className="h-3 w-3 opacity-0 transition-opacity group-hover:opacity-20" alt="" />
+                    <span className="text-[15px] font-medium text-[#171717]/80">{p}</span>
+                    <img src="/icons/right.PNG" className="h-2.5 w-2.5 opacity-10" alt="" />
                   </button>
                 ))}
                 
-                <div className="mt-2 flex justify-start">
+                <div className="mt-3">
                   <button
-                    onClick={handleShuffle}
-                    className="flex items-center gap-2 rounded-full px-2 py-1 text-[13px] font-semibold text-[#8C867D] transition-opacity active:opacity-50"
+                    onClick={() => startTransition(() => setPrompts(pickPrompts(promptLibrary, 3)))}
+                    className="flex items-center gap-2 px-1 text-[13px] font-medium text-[#8C867D]/70 active:opacity-40"
                   >
-                    <img src="/icons/refresh.PNG" className="h-4 w-4 opacity-50" alt="" />
+                    <img src="/icons/refresh.PNG" className="h-3.5 w-3.5 opacity-40" alt="" />
                     <span>Перемешать</span>
                   </button>
                 </div>
@@ -170,7 +112,57 @@ export function StartScreen() {
           )}
         </section>
 
-        {renderComposer()}
+        {/* Composer: Парящий блок */}
+        <div className="pb-8 pt-4">
+          <div className="flex flex-col gap-3">
+            <form
+              className="rounded-[24px] bg-white p-3 shadow-[0_10px_40px_rgba(0,0,0,0.04)]"
+              onSubmit={(e) => { e.preventDefault(); onSend(message); }}
+            >
+              <textarea
+                ref={textareaRef}
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder={analysisEnabled ? "Режим анализа..." : "Спросите Yota..."}
+                className="w-full resize-none bg-transparent px-3 py-1.5 text-[16px] text-[#171717] outline-none placeholder:text-[#ADAAA4] hide-scrollbar"
+                rows={1}
+              />
+              
+              <div className="mt-2 flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => setAnalysisEnabled(!analysisEnabled)}
+                  className={`flex h-8 items-center gap-2 rounded-full px-4 transition-all ${
+                    analysisEnabled ? "bg-[#EDF5F0] text-[#39704E]" : "bg-[#F7F4EE] text-[#6F6A61]"
+                  }`}
+                >
+                  <img 
+                    src="/icons/firemode.PNG" 
+                    className="h-3.5 w-3.5" 
+                    style={analysisEnabled ? { filter: "invert(33%) sepia(21%) saturate(1005%) hue-rotate(94deg) brightness(96%) contrast(87%)" } : {}}
+                    alt="" 
+                  />
+                  <span className="text-[12px] font-medium">Анализ</span>
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={message.trim().length < 2}
+                  className={`grid h-8 w-8 place-items-center rounded-[10px] transition-all ${
+                    message.trim().length < 2 ? "bg-[#171717]/5 opacity-40" : "bg-[#39704E] active:scale-90"
+                  }`}
+                >
+                  <img src="/icons/send.PNG" className="h-3.5 w-3.5 brightness-0 invert" alt="" />
+                </button>
+              </div>
+            </form>
+            {!chatStarted && (
+              <p className="text-center text-[10px] font-medium text-[#A3A099] tracking-tight">
+                Это ИИ, он может допускать ошибки
+              </p>
+            )}
+          </div>
+        </div>
       </div>
     </main>
   );
