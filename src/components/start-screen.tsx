@@ -10,129 +10,190 @@ const promptLibrary = [
   "Как улучшить мой GAC рейтинг",
   "В чём я явно отстаю от других",
   "Какие герои дадут мне больше всего",
-  "Как правильно расходовать ресурсы"
+  "Как правильно расходовать ресурсы",
+  "Что качать в первую очередь",
+  "Подскажи по моему текущему составу",
+  "Как подготовиться к войне за территорию",
+  "Что мне не хватает для флота",
+  "Расскажи про мои узкие места",
+  "Как получить первую легенду быстрее"
 ];
+
+const demoReply =
+  "Понял. В демо-режиме я пока не анализирую данные SWGOH, но структура чата уже готова: здесь будут ответы ассистента, рекомендации и разбор состава.";
+
+function getTelegramName() {
+  const webApp = typeof window !== "undefined" ? window.Telegram?.WebApp : undefined;
+  const firstName = webApp?.initDataUnsafe?.user?.first_name?.trim();
+  return firstName || "Артем";
+}
+
+function pickPrompts(source: string[], amount: number) {
+  const items = [...source];
+  for (let index = items.length - 1; index > 0; index -= 1) {
+    const nextIndex = Math.floor(Math.random() * (index + 1));
+    [items[index], items[nextIndex]] = [items[nextIndex], items[index]];
+  }
+  return items.slice(0, amount);
+}
+
+function isEmojiOnly(value: string) {
+  const normalized = value.trim();
+  if (!normalized) return false;
+  const withoutEmoji = normalized
+    .replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}\uFE0F]/gu, "")
+    .replace(/\s/gu, "");
+  return withoutEmoji.length === 0;
+}
 
 export function StartScreen() {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const [name, setName] = useState("Артем");
   const [message, setMessage] = useState("");
+  const [analysisEnabled, setAnalysisEnabled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [prompts, setPrompts] = useState(() => promptLibrary.sort(() => 0.5 - Math.random()).slice(0, 3));
+  const [prompts, setPrompts] = useState(() => pickPrompts(promptLibrary, 5));
   const [chatStarted, setChatStarted] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
 
   useEffect(() => {
+    setName(getTelegramName());
+  }, []);
+
+  useEffect(() => {
     const textarea = textareaRef.current;
     if (!textarea) return;
-    textarea.style.height = "24px"; 
-    textarea.style.height = `${Math.min(textarea.scrollHeight, 120)}px`;
+    textarea.style.height = "0px";
+    const nextHeight = Math.min(textarea.scrollHeight, 120);
+    textarea.style.height = `${nextHeight}px`;
+    textarea.style.overflowY = textarea.scrollHeight > 120 ? "auto" : "hidden";
   }, [message]);
 
-  const submitMessage = async (overrideMessage?: string) => {
-    const text = (overrideMessage ?? message).trim();
-    if (text.length < 2) return;
-
-    const userMsg: ChatMessage = { id: `u-${Date.now()}`, role: "user", content: text };
-    const assistantId = `a-${Date.now()}`;
-    
-    setChatStarted(true);
-    setMessages(prev => [...prev, userMsg, { id: assistantId, role: "assistant", content: "", status: "loading" }]);
-    setMessage("");
-
-    setTimeout(() => {
-      setMessages(prev => prev.map(msg => 
-        msg.id === assistantId 
-          ? { 
-              ...msg, 
-              status: "error", 
-              header: "Йода занят сейчас", 
-              subHeader: "Много запросов к Силе поступает. Позже попробуй.",
-              content: "" 
-            } 
-          : msg
-      ));
-    }, 2000);
+  const handleShuffle = () => {
+    startTransition(() => {
+      setPrompts(pickPrompts(promptLibrary, 5));
+    });
   };
 
+  const submitMessage = () => {
+    const normalized = message.trim();
+    if (normalized.length < 2 || isEmojiOnly(normalized)) return;
+
+    const userMessage: ChatMessage = {
+      id: `user-${Date.now()}`,
+      role: "user",
+      content: normalized
+    };
+
+    setChatStarted(true);
+    setMessages((current) => [...current, userMessage]);
+    setMessage("");
+
+    window.setTimeout(() => {
+      setMessages((current) => [
+        ...current,
+        { id: `assistant-${Date.now()}`, role: "assistant", content: demoReply }
+      ]);
+    }, 400);
+  };
+
+  const renderComposer = () => (
+    <div className="fixed bottom-[15px] left-0 right-0 z-20 px-4 w-full max-w-md mx-auto">
+      <div className="space-y-3">
+        <form
+          className="rounded-[22px] border border-[#E6E0D7] bg-[#FFFFFF] px-4 pb-3 pt-3 shadow-sm"
+          onSubmit={(event) => {
+            event.preventDefault();
+            submitMessage();
+          }}
+        >
+          <textarea
+            ref={textareaRef}
+            value={message}
+            onChange={(event) => setMessage(event.target.value)}
+            placeholder={analysisEnabled ? "Что анализируем?" : "Спросите Yota..."}
+            rows={1}
+            className="hide-scrollbar min-h-[24px] w-full resize-none bg-transparent py-1 text-[15px] leading-6 text-[#171717] outline-none"
+          />
+          <div className="mt-2 flex items-center justify-between">
+            <button
+              type="button"
+              onClick={() => setAnalysisEnabled(!analysisEnabled)}
+              className={`flex h-8 items-center gap-2 rounded-full px-3 transition-colors ${
+                analysisEnabled ? "bg-[#EDF5F0] text-[#39704E]" : "bg-[#F7F4EE] text-[#6F6A61]"
+              }`}
+            >
+              <img src="/icons/firemode.PNG" className="h-3.5 w-3.5" alt="" />
+              <span className="text-xs font-semibold">Анализ</span>
+            </button>
+            <button
+              type="submit"
+              disabled={message.trim().length < 2}
+              className={`grid h-8 w-8 place-items-center rounded-full transition-all ${
+                message.trim().length < 2 ? "bg-[#171717]/20" : "bg-[#171717]"
+              }`}
+            >
+              <img src="/icons/send.PNG" className="h-3.5 w-3.5 brightness-0 invert" alt="" />
+            </button>
+          </div>
+        </form>
+        {!chatStarted && (
+          <p className="text-center text-[10px] text-[#9A948A]">Это ИИ, он может ошибаться</p>
+        )}
+      </div>
+    </div>
+  );
+
   return (
-    <main className="relative flex h-dvh flex-col bg-[#F5F3EE] text-[#171717] overflow-hidden">
+    <main className="relative min-h-dvh overflow-hidden bg-[#F5F3EE] text-[#171717]">
       <MenuDrawer open={menuOpen} onClose={() => setMenuOpen(false)} />
 
-      <div className="relative mx-auto flex h-full w-full max-w-md flex-col px-4 pt-6 pb-4">
-        {/* Хедер всегда сверху */}
-        <div className="mb-4 flex items-center justify-between z-30">
-          <button onClick={() => setMenuOpen(true)} className="active:scale-90 transition-transform">
-            <img src="/icons/menu.PNG" alt="" className="h-5 w-5" />
+      <div className="relative mx-auto flex h-dvh w-full max-w-md flex-col px-4 pt-6">
+        {/* Header */}
+        <div className="z-10 flex items-center justify-between">
+          <button onClick={() => setMenuOpen(true)} className="p-2">
+            <img src="/icons/menu.PNG" className="h-5 w-5" alt="" />
           </button>
-          <div className="flex items-center gap-2">
-            <img src="/icons/applogo.PNG" alt="" className="h-5 w-5" />
-            <h1 className="text-[18px] font-black text-[#39704E]">swgoh.ai</h1>
-          </div>
-          <div className="w-5" /> 
+          <h1 className="text-lg font-black italic tracking-tighter">swgoh.ai</h1>
+          <button className="p-2">
+            <img src="/icons/profile.PNG" className="h-5 w-5" alt="" />
+          </button>
         </div>
 
-        <section className="relative flex flex-1 flex-col overflow-hidden">
-          {/* Пустой экран — СТРОГО ПО ЦЕНТРУ */}
+        {/* Content Area */}
+        <section className="relative flex-1 flex flex-col">
+          {/* Start View - Centered */}
           {!chatStarted && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center z-10">
-              {/* Пятно тоже по центру */}
-              <div className="absolute top-1/2 left-1/2 h-[280px] w-[280px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#39704E]/15 blur-[70px] pointer-events-none" />
+            <div className="flex flex-1 flex-col items-center justify-center pb-32 text-center">
+              <h2 className="text-[32px] font-bold leading-tight tracking-tight mb-8">
+                Ну привет, {name}.<br />
+                С чем тебе помочь?
+              </h2>
               
-              <div className="w-full space-y-8 px-2">
-                <h2 className="text-[38px] font-semibold tracking-tight leading-[1.05] text-center">
-                  Чем помочь тебе, хм?
-                </h2>
-                
-                <div className="space-y-2.5">
-                  <p className="text-center text-sm font-medium text-[#8C867D] mb-4">Начни с готового</p>
-                  {prompts.map((p) => (
-                    <button 
-                      key={p} 
-                      onClick={() => submitMessage(p)}
-                      className="w-full flex items-center justify-between rounded-2xl bg-white px-4 py-4 text-left text-[14px] shadow-[0_2px_8px_rgba(0,0,0,0.02)] active:scale-[0.98] transition-transform"
-                    >
-                      <span>{p}</span>
-                      <img src="/icons/right.PNG" alt="" className="h-3 w-3 opacity-30" />
-                    </button>
-                  ))}
-                </div>
+              <div className="w-full space-y-2">
+                {prompts.map((prompt) => (
+                  <button
+                    key={prompt}
+                    onClick={() => setMessage(prompt)}
+                    className="w-full rounded-xl border border-[#E6E0D7] bg-white/50 px-4 py-3 text-left text-sm transition-active active:scale-[0.98]"
+                  >
+                    {prompt}
+                  </button>
+                ))}
+                <button onClick={handleShuffle} className="text-xs font-medium text-[#8C867D] pt-2">
+                  ↻ Перемешать подсказки
+                </button>
               </div>
             </div>
           )}
 
-          {/* Чат */}
-          <div className={`flex-1 flex flex-col transition-all duration-500 ${chatStarted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8 pointer-events-none"}`}>
-            {chatStarted && <ChatThread messages={messages} onRetry={() => submitMessage(messages.filter(m => m.role === 'user').pop()?.content)} />}
-          </div>
-
-          {/* Инпут — всегда внизу */}
-          <div className="mt-4 z-20">
-            <form
-              className="rounded-[24px] border border-[#E6E0D7] bg-white px-4 py-3 shadow-sm focus-within:border-[#39704E]/30 transition-colors"
-              onSubmit={(e) => { e.preventDefault(); submitMessage(); }}
-            >
-              <textarea
-                ref={textareaRef}
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                placeholder="Спроси Йоду…"
-                rows={1}
-                className="hide-scrollbar w-full resize-none bg-transparent py-1 text-[15px] outline-none"
-              />
-              <div className="mt-2 flex justify-end">
-                <button
-                  type="submit"
-                  disabled={message.trim().length < 2}
-                  className={`h-9 w-9 grid place-items-center rounded-xl transition-all ${
-                    message.trim().length >= 2 ? "bg-[#39704E]" : "bg-[#171717]/10"
-                  }`}
-                >
-                  <img src="/icons/send.PNG" alt="" className="h-4 w-4 brightness-0 invert" />
-                </button>
-              </div>
-            </form>
+          {/* Chat View */}
+          <div className={`flex-1 overflow-hidden transition-opacity duration-200 ${chatStarted ? 'opacity-100' : 'opacity-0'}`}>
+            {chatStarted && <ChatThread messages={messages} />}
           </div>
         </section>
+
+        {renderComposer()}
       </div>
     </main>
   );
