@@ -16,7 +16,7 @@ const PromptRow = ({ items, direction, speed, offset, onPick }: any) => {
             <button 
               key={idx} 
               onClick={() => onPick(item)}
-              className={`whitespace-nowrap rounded-full px-5 py-2 text-[14px] font-medium transition-all active:scale-95 ${
+              className={`whitespace-nowrap rounded-full px-5 py-2.5 text-[14px] font-medium transition-all active:scale-95 ${
                 isGreen ? "bg-[#39704E]/10 text-[#39704E]" : "border border-[#E5E5DF] text-[#171717]/60"
               }`}
             >
@@ -51,27 +51,28 @@ export function StartScreen() {
   const rows = useMemo(() => {
     if (allPrompts.length === 0) return [];
     return [
-      { items: allPrompts.slice(0, 12), dir: 'left', speed: '60s', off: 0 },
-      { items: allPrompts.slice(12, 24), dir: 'right', speed: '50s', off: 1 },
-      { items: allPrompts.slice(24, 36), dir: 'left', speed: '70s', off: 0 },
+      { items: allPrompts.slice(0, 12), dir: 'left', speed: '65s', off: 0 },
+      { items: allPrompts.slice(12, 24), dir: 'right', speed: '55s', off: 1 },
+      { items: allPrompts.slice(24, 36), dir: 'left', speed: '75s', off: 0 },
     ];
   }, [allPrompts]);
 
   useEffect(() => {
     const textarea = textareaRef.current;
     if (textarea) {
-      textarea.style.height = '52px';
+      textarea.style.height = 'auto';
       const scrollHeight = textarea.scrollHeight;
-      const newHeight = Math.min(scrollHeight, 96);
-      textarea.style.height = `${newHeight}px`;
-      setIsLarge(newHeight > 60);
+      const newHeight = Math.min(scrollHeight, 120);
+      textarea.style.height = `${Math.max(newHeight, 56)}px`;
+      setIsLarge(newHeight > 64);
     }
   }, [message]);
 
   const handlePick = (text: string) => {
     setIsAnimating(true);
     setMessage(text);
-    setTimeout(() => setIsAnimating(false), 400);
+    // Длительность анимации
+    setTimeout(() => setIsAnimating(false), 300);
   };
 
   const onSend = (text?: string) => {
@@ -99,7 +100,7 @@ export function StartScreen() {
             <h1 className="text-[26px] font-medium tracking-tight">Чем помочь тебе, хм?</h1>
           </div>
 
-          <div className="w-full space-y-0.5 opacity-90">
+          <div className="w-full space-y-1 opacity-90">
             {rows.map((row, i) => (
               <PromptRow key={i} items={row.items} direction={row.dir} speed={row.speed} offset={row.off} onPick={handlePick} />
             ))}
@@ -107,20 +108,20 @@ export function StartScreen() {
 
           <div className="mt-8 w-full px-[25px]">
             <motion.div 
-              animate={{ borderRadius: isLarge ? "16px" : "30px" }}
-              transition={{ type: "spring", stiffness: 400, damping: 30 }}
-              className="relative flex w-full flex-col bg-[#262626] shadow-xl"
+              animate={{ borderRadius: isLarge ? "24px" : "32px" }}
+              transition={{ type: "spring", stiffness: 300, damping: 25 }}
+              className="relative flex w-full flex-col bg-[#262626] shadow-2xl"
             >
-              <div className="relative min-h-[56px] flex items-end">
+              <div className="relative flex items-center min-h-[56px]">
                 <AnimatePresence mode="wait">
                   {isAnimating && (
                     <motion.div
                       key="animating-text"
-                      initial={{ opacity: 0, y: 8, rotateX: 10 }}
-                      animate={{ opacity: 1, y: 0, rotateX: 0 }}
+                      initial={{ opacity: 0, y: 12, rotateX: 12, scale: 0.97 }}
+                      animate={{ opacity: 1, y: 0, rotateX: 0, scale: 1 }}
                       exit={{ opacity: 0 }}
-                      transition={{ duration: 0.2, ease: "easeOut" }}
-                      className="absolute inset-0 py-[15px] pl-5 pr-14 text-[16px] leading-[1.4] text-white/90 pointer-events-none"
+                      transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                      className="absolute left-0 top-0 w-full py-[16px] pl-6 pr-14 text-[16px] leading-[1.5] text-white/90 pointer-events-none"
                     >
                       {message}
                     </motion.div>
@@ -132,7 +133,7 @@ export function StartScreen() {
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   placeholder={isAnimating ? "" : "Спросить что-нибудь…"}
-                  className={`hide-scrollbar w-full bg-transparent py-[15px] pl-5 pr-14 text-[16px] leading-[1.4] text-white outline-none placeholder:text-white/20 resize-none transition-opacity duration-200 ${isAnimating ? 'opacity-0' : 'opacity-100'}`}
+                  className={`hide-scrollbar w-full bg-transparent py-[16px] pl-6 pr-14 text-[16px] leading-[1.5] text-white outline-none placeholder:text-white/20 resize-none transition-opacity duration-150 ${isAnimating ? 'opacity-0' : 'opacity-100'}`}
                   onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); onSend(); } }}
                 />
 
@@ -140,7 +141,7 @@ export function StartScreen() {
                   <button
                     onClick={() => onSend()}
                     disabled={message.trim().length < 2 || isAnimating}
-                    className="flex h-10 w-10 items-center justify-center rounded-full bg-[#F5F5F0] transition-transform active:scale-90 disabled:opacity-10"
+                    className="flex h-10 w-10 items-center justify-center rounded-full bg-[#F5F5F0] transition-all active:scale-90 disabled:opacity-10"
                   >
                     <img src="/icons/send.PNG" className="h-4 w-4 brightness-0" alt="" />
                   </button>
