@@ -5,17 +5,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ChatThread, type ChatMessage } from "@/components/chat-thread";
 import { MenuDrawer } from "@/components/menu-drawer";
 
-const promptLibrary = [
-  "Собери план прокачки с нуля", "Кого выбрать первой легендой?",
-  "Как улучшить мой GAC рейтинг", "В чём я явно отстаю от других",
-  "Какие герои дадут мне больше всего", "Как правильно расходовать ресурсы",
-  "Что качать в первую очередь", "Подскажи по моему составу",
-  "Как подготовиться к ТВ", "Что мне не хватает для флота",
-  "Лучшие модули для Рей", "Приоритеты в магазине осколков"
-];
-
-const shuffle = (arr: string[]) => [...arr].sort(() => Math.random() - 0.5);
-
 const PromptRow = ({ items, direction, speed, offset, onPick }: any) => {
   const scrollClass = direction === 'left' ? 'animate-marquee-left' : 'animate-marquee-right';
   return (
@@ -44,25 +33,38 @@ export function StartScreen() {
   const [message, setMessage] = useState("");
   const [isAnimating, setIsAnimating] = useState(false);
   const [lineCount, setLineCount] = useState(1);
-  const [menuOpen, setMenuOpen] = useState(false);
   const [chatStarted, setChatStarted] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [allPrompts, setAllPrompts] = useState<string[]>([]);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const rows = useMemo(() => [
-    { items: shuffle(promptLibrary).slice(0, 6), dir: 'left', speed: '60s', off: 0 },
-    { items: shuffle(promptLibrary).slice(0, 6), dir: 'right', speed: '50s', off: 1 },
-    { items: shuffle(promptLibrary).slice(0, 6), dir: 'left', speed: '65s', off: 0 },
-  ], []);
+  // Загружаем словарь из текстового файла
+  useEffect(() => {
+    fetch('/slovar.txt')
+      .then(res => res.text())
+      .then(data => {
+        const lines = data.split('\n').filter(line => line.trim().length > 0);
+        setAllPrompts(lines.sort(() => Math.random() - 0.5));
+      })
+      .catch(() => setAllPrompts(["Ошибка загрузки словаря"]));
+  }, []);
+
+  // Распределяем загруженные подсказки по рядам
+  const rows = useMemo(() => {
+    if (allPrompts.length === 0) return [];
+    return [
+      { items: allPrompts.slice(0, 15), dir: 'left', speed: '80s', off: 0 },
+      { items: allPrompts.slice(15, 30), dir: 'right', speed: '70s', off: 1 },
+      { items: allPrompts.slice(30, 45), dir: 'left', speed: '90s', off: 0 },
+    ];
+  }, [allPrompts]);
 
   useEffect(() => {
     const textarea = textareaRef.current;
     if (textarea) {
       textarea.style.height = '48px';
-      const scrollHeight = textarea.scrollHeight;
-      const newHeight = Math.min(scrollHeight, 96);
+      const newHeight = Math.min(textarea.scrollHeight, 96);
       textarea.style.height = `${newHeight}px`;
-      // Определяем "состояние" высоты для скругления углов
       setLineCount(newHeight > 60 ? 3 : 1);
     }
   }, [message]);
@@ -70,7 +72,6 @@ export function StartScreen() {
   const handlePick = (text: string) => {
     setIsAnimating(true);
     setMessage(text);
-    // Длительность совпадает с анимацией во Framer Motion
     setTimeout(() => setIsAnimating(false), 400);
   };
 
@@ -92,8 +93,6 @@ export function StartScreen() {
         .hide-scrollbar::-webkit-scrollbar { display: none; }
       `}</style>
 
-      <MenuDrawer open={menuOpen} onClose={() => setMenuOpen(false)} />
-
       {!chatStarted ? (
         <div className="flex h-full flex-col items-center justify-center">
           <div className="mb-6 flex items-center gap-4">
@@ -108,7 +107,6 @@ export function StartScreen() {
           </div>
 
           <div className="mt-8 w-full px-[25px]">
-            {/* Анимированный контейнер строки: меняет borderRadius */}
             <motion.div 
               animate={{ borderRadius: lineCount > 1 ? "18px" : "32px" }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
@@ -116,7 +114,7 @@ export function StartScreen() {
             >
               <div className="relative">
                 <AnimatePresence mode="wait">
-                  {isAnimating ? (
+                  {isAnimating && (
                     <motion.div
                       key="animating-text"
                       initial={{ opacity: 0, y: 10, rotateX: 15, scale: 0.98 }}
@@ -127,7 +125,7 @@ export function StartScreen() {
                     >
                       {message}
                     </motion.div>
-                  ) : null}
+                  )}
                 </AnimatePresence>
 
                 <textarea
