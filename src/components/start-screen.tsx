@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { startTransition, useEffect, useRef, useState } from "react";
 import { ChatThread, type ChatMessage } from "@/components/chat-thread";
 import { MenuDrawer } from "@/components/menu-drawer";
 
@@ -19,90 +19,92 @@ const promptLibrary = [
   "Приоритеты в магазине осколков"
 ];
 
+const PromptRow = ({ items, direction, speed = "40s", offset = 0, onPick }: { items: string[], direction: 'left' | 'right', speed?: string, offset?: number, onPick: (text: string) => void }) => {
+  const scrollClass = direction === 'left' ? 'animate-marquee-left' : 'animate-marquee-right';
+  return (
+    <div className="flex overflow-hidden py-1.5 select-none">
+      <div className={`flex min-w-full shrink-0 items-center justify-around gap-3 ${scrollClass}`} style={{ animationDuration: speed }}>
+        {items.map((item, idx) => {
+          const isEven = (idx + offset) % 2 === 0;
+          return (
+            <button 
+              key={idx} 
+              onClick={() => onPick(item)}
+              className={`whitespace-nowrap rounded-full px-6 py-2.5 text-[14px] font-medium transition-all active:scale-95 ${
+                isEven 
+                  ? "bg-[#39704E]/10 text-[#39704E]" 
+                  : "border border-[#E5E5DF] text-[#171717]/60"
+              }`}
+            >
+              {item}
+            </button>
+          );
+        })}
+      </div>
+      <div aria-hidden="true" className={`flex min-w-full shrink-0 items-center justify-around gap-3 ${scrollClass}`} style={{ animationDuration: speed }}>
+        {items.map((item, idx) => {
+          const isEven = (idx + offset) % 2 === 0;
+          return (
+            <button 
+              key={`dup-${idx}`} 
+              onClick={() => onPick(item)}
+              className={`whitespace-nowrap rounded-full px-6 py-2.5 text-[14px] font-medium ${
+                isEven 
+                  ? "bg-[#39704E]/10 text-[#39704E]" 
+                  : "border border-[#E5E5DF] text-[#171717]/60"
+              }`}
+            >
+              {item}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
 export function StartScreen() {
   const [message, setMessage] = useState("");
+  const [isAnimatingText, setIsAnimatingText] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [chatStarted, setChatStarted] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [visiblePrompts, setVisiblePrompts] = useState(promptLibrary);
-  const [removingId, setRemovingId] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Авто-высота
   useEffect(() => {
     const textarea = textareaRef.current;
     if (textarea) {
       textarea.style.height = 'auto';
-      textarea.style.height = `${Math.min(textarea.scrollHeight, 84)}px`;
+      const newHeight = Math.min(textarea.scrollHeight, 84);
+      textarea.style.height = `${newHeight}px`;
     }
   }, [message]);
 
-  // Эффект печати по словам (flow effect)
-  const typeText = (text: string) => {
-    const words = text.split(" ");
-    let currentText = "";
-    words.forEach((word, index) => {
-      setTimeout(() => {
-        currentText += (index === 0 ? "" : " ") + word;
-        setMessage(currentText);
-      }, index * 80); // Скорость появления слов
-    });
-  };
-
-  const handlePromptClick = (text: string, fullId: string) => {
-    setRemovingId(fullId);
-    // Начинаем печатать текст почти сразу
-    setTimeout(() => typeText(text), 100);
-    // Удаляем из массива после завершения анимации сжатия
-    setTimeout(() => {
-      setVisiblePrompts(prev => prev.filter((_, i) => `${i}-${_}` !== fullId));
-      setRemovingId(null);
-    }, 400); 
+  const handlePickPrompt = (text: string) => {
+    setMessage("");
+    setIsAnimatingText(true);
+    // Симуляция быстрой "прорисовки" текста
+    setMessage(text);
+    setTimeout(() => setIsAnimatingText(false), 300);
   };
 
   const onSend = () => {
-    if (message.trim().length < 2) return;
-    setMessages([{ id: Date.now().toString(), role: "user", content: message.trim() }]);
+    const normalized = message.trim();
+    if (normalized.length < 2) return;
+    setMessages([{ id: Date.now().toString(), role: "user", content: normalized }]);
     setChatStarted(true);
     setMessage("");
-  };
-
-  const PromptRow = ({ range, direction, speed, offset }: any) => {
-    const items = visiblePrompts.slice(range[0], range[1]);
-    const scrollClass = direction === 'left' ? 'animate-marquee-left' : 'animate-marquee-right';
-    
-    return (
-      <div className="flex overflow-hidden py-1.5 select-none">
-        <div className={`flex min-w-full shrink-0 items-center justify-around gap-3 ${scrollClass}`} style={{ animationDuration: speed }}>
-          {items.map((item, idx) => {
-            const fullId = `${idx + range[0]}-${item}`;
-            const isRemoving = removingId === fullId;
-            const isEven = (idx + offset) % 2 === 0;
-            
-            return (
-              <button
-                key={fullId}
-                onClick={() => handlePromptClick(item, fullId)}
-                className={`whitespace-nowrap rounded-full px-6 py-2.5 text-[14px] font-medium transition-all duration-400 ease-in-out ${
-                  isRemoving ? "max-w-0 opacity-0 px-0 mx-[-6px] overflow-hidden scale-95" : "max-w-[400px] opacity-100"
-                } ${isEven ? "bg-[#39704E]/10 text-[#39704E]" : "border border-[#E5E5DF] text-[#171717]/60"}`}
-              >
-                {item}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-    );
   };
 
   return (
     <main className="relative h-dvh w-full bg-[#F5F5F0] font-sans antialiased overflow-hidden text-[#171717]">
       <style jsx global>{`
-        @keyframes marquee-left { from { transform: translateX(0); } to { transform: translateX(-50%); } }
-        @keyframes marquee-right { from { transform: translateX(-50%); } to { transform: translateX(0); } }
+        @keyframes marquee-left { from { transform: translateX(0); } to { transform: translateX(-100%); } }
+        @keyframes marquee-right { from { transform: translateX(-100%); } to { transform: translateX(0); } }
+        @keyframes word-fade { from { opacity: 0; transform: translateY(2px); } to { opacity: 1; transform: translateY(0); } }
         .animate-marquee-left { animation: marquee-left linear infinite; }
         .animate-marquee-right { animation: marquee-right linear infinite; }
+        .animate-word { animation: word-fade 0.15s ease-out forwards; }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
       `}</style>
 
@@ -116,30 +118,42 @@ export function StartScreen() {
           </div>
 
           <div className="w-full space-y-0.5 opacity-90">
-            <PromptRow range={[0, 4]} direction="left" speed="40s" offset={0} />
-            <PromptRow range={[4, 8]} direction="right" speed="35s" offset={1} />
-            <PromptRow range={[8, 12]} direction="left" speed="45s" offset={0} />
+            <PromptRow items={promptLibrary.slice(0, 4)} direction="left" speed="60s" offset={0} onPick={handlePickPrompt} />
+            <PromptRow items={promptLibrary.slice(4, 8)} direction="right" speed="50s" offset={1} onPick={handlePickPrompt} />
+            <PromptRow items={promptLibrary.slice(8, 12)} direction="left" speed="70s" offset={0} onPick={handlePickPrompt} />
           </div>
 
           <div className="mt-10 w-full px-[25px]">
             <form 
-              className="relative flex w-full items-center bg-[#262626] rounded-[30px] min-h-[56px] px-2 py-1.5"
+              className="relative flex w-full items-center bg-[#262626] rounded-[30px] min-h-[52px] p-1.5"
               onSubmit={(e) => { e.preventDefault(); onSend(); }}
             >
-              <textarea
-                ref={textareaRef}
-                rows={1}
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                placeholder="Спросить что-нибудь…"
-                className="hide-scrollbar flex-1 bg-transparent py-3 pl-4 pr-12 text-[16px] leading-[1.4] text-white outline-none placeholder:text-white/30 resize-none"
-                onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); onSend(); } }}
-              />
-              <div className="absolute right-2 top-0 bottom-0 flex items-center">
+              <div className="relative flex-1 flex items-center">
+                <textarea
+                  ref={textareaRef}
+                  rows={1}
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  placeholder="Спросить что-нибудь…"
+                  className={`hide-scrollbar w-full bg-transparent py-2.5 pl-4 pr-12 text-[16px] leading-[1.4] text-white outline-none placeholder:text-white/30 resize-none overflow-y-auto transition-opacity ${isAnimatingText ? 'opacity-0' : 'opacity-100'}`}
+                  onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); onSend(); } }}
+                />
+                {/* Слой для анимации текста */}
+                {isAnimatingText && (
+                  <div className="absolute inset-0 py-2.5 pl-4 pr-12 text-[16px] leading-[1.4] text-white/80 pointer-events-none flex flex-wrap gap-x-1">
+                    {message.split(' ').map((word, i) => (
+                      <span key={i} className="animate-word" style={{ animationDelay: `${i * 0.03}s` }}>{word}</span>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Кнопка: уменьшена и выровнена с равными отступами */}
+              <div className="absolute right-1.5 top-1.5 bottom-1.5 flex items-center">
                 <button
                   type="submit"
                   disabled={message.trim().length < 2}
-                  className="flex h-9 w-9 items-center justify-center rounded-full bg-[#F5F5F0] transition-all active:scale-90 disabled:opacity-20"
+                  className="flex h-[40px] w-[40px] items-center justify-center rounded-full bg-[#F5F5F0] transition-all active:scale-90 disabled:opacity-20 shadow-sm"
                 >
                   <img src="/icons/send.PNG" className="h-4 w-4 brightness-0" alt="" />
                 </button>
