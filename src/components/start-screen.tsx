@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChatThread, type ChatMessage } from "@/components/chat-thread";
+import { MenuDrawer } from "@/components/menu-drawer";
 
 const PromptRow = ({ items, direction, speed, offset, onPick }: any) => {
   const scrollClass = direction === 'left' ? 'animate-marquee-left' : 'animate-marquee-right';
@@ -88,6 +89,14 @@ export function StartScreen() {
         .hide-scrollbar::-webkit-scrollbar { display: none; }
       `}</style>
 
+      {/* Верхняя панель: Меню и Профиль */}
+      <div className="absolute left-0 right-0 top-0 z-50 flex items-center justify-between px-6 py-4">
+        <MenuDrawer />
+        <div className="h-9 w-9 rounded-full bg-[#E5E5DF] overflow-hidden">
+          <img src="/icons/applogo.PNG" className="h-full w-full object-cover" alt="Profile" />
+        </div>
+      </div>
+
       {!chatStarted ? (
         <div className="flex h-full flex-col items-center justify-center">
           <div className="mb-6 flex items-center gap-4">
@@ -102,19 +111,23 @@ export function StartScreen() {
           </div>
 
           <div className="mt-12 w-full px-[25px] max-w-[650px]">
-            {/* Общий контейнер для плашки и строки */}
             <div className="relative w-full">
               
-              {/* Задняя плашка (Баг-репорт) */}
-              <div className="absolute -top-[38px] left-0 right-0 bottom-0 bg-[#262626]/85 rounded-[24px] z-0 flex items-start pt-3 px-6 shadow-sm">
+              {/* Задняя плашка с анимацией выезда */}
+              <motion.div 
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.5, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                className="absolute -top-[38px] left-0 right-0 bottom-0 bg-[#262626]/85 rounded-[24px] z-0 flex items-start pt-3 px-6 shadow-sm"
+              >
                 <div className="flex items-center gap-2.5">
-                  <img src="/icons/energy.PNG" className="h-4 w-4 object-contain opacity-85" alt="" />
-                  <span className="text-[13px] font-medium text-white/85">
+                  <img src="/icons/energy.PNG" className="h-4 w-4 object-contain opacity-60 brightness-200" alt="" />
+                  <span className="text-[13px] font-medium text-white/60">
                     Нашел баг? Пиши нам:{" "}
-                    <span className="text-white underline underline-offset-2">@swgohai_request</span>
+                    <span className="text-white/90 underline underline-offset-2">@swgohai_request</span>
                   </span>
                 </div>
-              </div>
+              </motion.div>
 
               {/* Основная строка */}
               <div className="relative flex w-full flex-col bg-[#262626] rounded-[24px] z-10 shadow-sm">
