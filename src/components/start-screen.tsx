@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChatThread, type ChatMessage } from "@/components/chat-thread";
-import { MenuDrawer } from "@/components/menu-drawer";
 
 const PromptRow = ({ items, direction, speed, offset, onPick }: any) => {
   const scrollClass = direction === 'left' ? 'animate-marquee-left' : 'animate-marquee-right';
@@ -32,7 +31,6 @@ const PromptRow = ({ items, direction, speed, offset, onPick }: any) => {
 export function StartScreen() {
   const [message, setMessage] = useState("");
   const [isAnimating, setIsAnimating] = useState(false);
-  const [isLarge, setIsLarge] = useState(false);
   const [chatStarted, setChatStarted] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [allPrompts, setAllPrompts] = useState<string[]>([]);
@@ -45,7 +43,7 @@ export function StartScreen() {
         const lines = data.split(/\r?\n/).filter(line => line.trim().length > 0);
         setAllPrompts(lines.sort(() => Math.random() - 0.5));
       })
-      .catch(() => setAllPrompts(["Ошибка загрузки словарика"]));
+      .catch(() => setAllPrompts(["Ошибка загрузки"]));
   }, []);
 
   const rows = useMemo(() => {
@@ -64,15 +62,16 @@ export function StartScreen() {
       const scrollHeight = textarea.scrollHeight;
       const newHeight = Math.min(scrollHeight, 120);
       textarea.style.height = `${Math.max(newHeight, 56)}px`;
-      setIsLarge(newHeight > 64);
     }
   }, [message]);
 
   const handlePick = (text: string) => {
     setIsAnimating(true);
     setMessage(text);
-    // Длительность анимации
-    setTimeout(() => setIsAnimating(false), 300);
+    setTimeout(() => {
+      setIsAnimating(false);
+      textareaRef.current?.focus();
+    }, 400);
   };
 
   const onSend = (text?: string) => {
@@ -107,20 +106,16 @@ export function StartScreen() {
           </div>
 
           <div className="mt-8 w-full px-[25px]">
-            <motion.div 
-              animate={{ borderRadius: isLarge ? "24px" : "32px" }}
-              transition={{ type: "spring", stiffness: 300, damping: 25 }}
-              className="relative flex w-full flex-col bg-[#262626] shadow-2xl"
-            >
+            <div className="relative flex w-full flex-col bg-[#262626] rounded-[36px]">
               <div className="relative flex items-center min-h-[56px]">
                 <AnimatePresence mode="wait">
                   {isAnimating && (
                     <motion.div
                       key="animating-text"
-                      initial={{ opacity: 0, y: 12, rotateX: 12, scale: 0.97 }}
-                      animate={{ opacity: 1, y: 0, rotateX: 0, scale: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                      initial={{ opacity: 0, y: 10, filter: "blur(4px)" }}
+                      animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                      exit={{ opacity: 0, transition: { duration: 0.1 } }}
+                      transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
                       className="absolute left-0 top-0 w-full py-[16px] pl-6 pr-14 text-[16px] leading-[1.5] text-white/90 pointer-events-none"
                     >
                       {message}
@@ -133,7 +128,7 @@ export function StartScreen() {
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   placeholder={isAnimating ? "" : "Спросить что-нибудь…"}
-                  className={`hide-scrollbar w-full bg-transparent py-[16px] pl-6 pr-14 text-[16px] leading-[1.5] text-white outline-none placeholder:text-white/20 resize-none transition-opacity duration-150 ${isAnimating ? 'opacity-0' : 'opacity-100'}`}
+                  className={`hide-scrollbar w-full bg-transparent py-[16px] pl-6 pr-14 text-[16px] leading-[1.5] text-white outline-none placeholder:text-white/20 resize-none transition-opacity duration-300 rounded-[36px] ${isAnimating ? 'opacity-0' : 'opacity-100'}`}
                   onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); onSend(); } }}
                 />
 
@@ -147,7 +142,12 @@ export function StartScreen() {
                   </button>
                 </div>
               </div>
-            </motion.div>
+            </div>
+            
+            {/* Текст под инпутом */}
+            <p className="mt-3 text-center text-[11px] font-medium text-[#171717]/30 tracking-tight">
+              Это ИИ. Он может ошибаться
+            </p>
           </div>
         </div>
       ) : (
