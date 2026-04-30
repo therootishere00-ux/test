@@ -15,7 +15,7 @@ const PromptRow = ({ items, direction, speed, offset, onPick }: any) => {
             <button 
               key={idx} 
               onClick={() => onPick(item)}
-              className={`whitespace-nowrap rounded-full px-6 py-3 text-[15px] font-medium transition-all active:scale-95 ${
+              className={`whitespace-nowrap rounded-full px-5 py-2.5 text-[14px] font-medium transition-all active:scale-95 ${
                 isGreen ? "bg-[#39704E]/10 text-[#39704E]" : "border border-[#E5E5DF] text-[#171717]/60"
               }`}
             >
@@ -60,17 +60,14 @@ export function StartScreen() {
     if (textarea) {
       textarea.style.height = 'auto';
       const scrollHeight = textarea.scrollHeight;
-      textarea.style.height = `${Math.max(Math.min(scrollHeight, 150), 56)}px`;
+      textarea.style.height = `${Math.max(Math.min(scrollHeight, 120), 56)}px`;
     }
   }, [message]);
 
   const handlePick = (text: string) => {
     setIsAnimating(true);
     setMessage(text);
-    setTimeout(() => {
-      setIsAnimating(false);
-      textareaRef.current?.focus();
-    }, 200);
+    setTimeout(() => setIsAnimating(false), 300);
   };
 
   const onSend = (text?: string) => {
@@ -93,9 +90,9 @@ export function StartScreen() {
 
       {!chatStarted ? (
         <div className="flex h-full flex-col items-center justify-center">
-          <div className="mb-8 flex items-center gap-4">
-            <img src="/icons/applogo.PNG" className="h-10 w-10 object-contain" alt="" />
-            <h1 className="text-[28px] font-medium tracking-tight">Чем помочь тебе, хм?</h1>
+          <div className="mb-6 flex items-center gap-4">
+            <img src="/icons/applogo.PNG" className="h-9 w-9 object-contain" alt="" />
+            <h1 className="text-[26px] font-medium tracking-tight">Чем помочь тебе, хм?</h1>
           </div>
 
           <div className="w-full space-y-1 opacity-90">
@@ -104,20 +101,20 @@ export function StartScreen() {
             ))}
           </div>
 
-          <div className="mt-14 w-full px-6 max-w-[600px] relative">
-            {/* Задняя плашка (энергия) */}
-            <div className="absolute -top-[28px] left-6 right-6 h-[60px] bg-[#212121]/85 rounded-[28px] z-0 flex items-start pt-2 px-5">
-              <div className="flex items-center gap-2">
-                <img src="/icons/energy.PNG" className="h-3.5 w-3.5 object-contain" alt="" />
-                <span className="text-[12px] font-medium text-white/70 leading-none">
+          <div className="mt-12 w-full px-[25px] relative max-w-[650px]">
+            {/* Плашка на фоне — вылезает выше и заходит за основную строку */}
+            <div className="absolute -top-[40px] left-[25px] right-[25px] h-[80px] bg-[#262626]/85 rounded-[32px] z-0 flex items-start pt-3.5 px-6">
+              <div className="flex items-center gap-2.5">
+                <img src="/icons/energy.PNG" className="h-4 w-4 object-contain" alt="" />
+                <span className="text-[13px] font-medium text-white/70">
                   Йода умеет анализировать аккаунты. Достаточно отправить свой код союзника
                 </span>
               </div>
             </div>
 
-            {/* Основная строка */}
-            <div className="relative flex w-full flex-col bg-[#212121] rounded-[28px] p-2 z-10 shadow-lg">
-              <div className="relative flex items-end min-h-[56px]">
+            {/* Основная строка из твоего кода (без тени, фиксированные углы) */}
+            <div className="relative flex w-full flex-col bg-[#262626] rounded-[32px] z-10">
+              <div className="relative flex items-center min-h-[56px]">
                 <AnimatePresence mode="wait">
                   {isAnimating && (
                     <motion.div
@@ -125,8 +122,8 @@ export function StartScreen() {
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
-                      transition={{ duration: 0.15 }}
-                      className="absolute left-0 top-0 w-full py-[14px] pl-5 pr-14 text-[17px] leading-relaxed text-white/90 pointer-events-none"
+                      transition={{ duration: 0.2 }}
+                      className="absolute left-0 top-0 w-full py-[16px] pl-6 pr-14 text-[16px] leading-[1.5] text-white/90 pointer-events-none"
                     >
                       {message}
                     </motion.div>
@@ -138,7 +135,7 @@ export function StartScreen() {
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   placeholder={isAnimating ? "" : "Спросить что-нибудь…"}
-                  className={`hide-scrollbar w-full bg-transparent py-[14px] pl-5 pr-14 text-[17px] leading-relaxed text-white outline-none placeholder:text-white/30 resize-none transition-opacity duration-200 ${isAnimating ? 'opacity-0' : 'opacity-100'}`}
+                  className={`hide-scrollbar w-full bg-transparent py-[16px] pl-6 pr-14 text-[16px] leading-[1.5] text-white outline-none placeholder:text-white/20 resize-none transition-opacity duration-150 ${isAnimating ? 'opacity-0' : 'opacity-100'}`}
                   onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); onSend(); } }}
                 />
 
@@ -146,16 +143,14 @@ export function StartScreen() {
                   <button
                     onClick={() => onSend()}
                     disabled={message.trim().length < 2 || isAnimating}
-                    className="flex h-11 w-11 items-center justify-center rounded-full bg-white transition-transform active:scale-90 disabled:opacity-20"
+                    className="flex h-10 w-10 items-center justify-center rounded-full bg-[#F5F5F0] transition-all active:scale-90 disabled:opacity-10"
                   >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M12 19V5M12 5L5 12M12 5L19 12" stroke="black" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
+                    <img src="/icons/send.PNG" className="h-4 w-4 brightness-0" alt="" />
                   </button>
                 </div>
               </div>
             </div>
-            
+
             <p className="mt-5 text-center text-[13px] font-medium text-[#171717]/40 tracking-tight">
               Это ИИ. Он может ошибаться
             </p>
