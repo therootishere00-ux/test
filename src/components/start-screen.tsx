@@ -101,52 +101,57 @@ export function StartScreen() {
             ))}
           </div>
 
-          <div className="mt-12 w-full px-[25px] relative max-w-[650px]">
-            {/* Плашка на фоне — вылезает выше и заходит за основную строку */}
-            <div className="absolute -top-[40px] left-[25px] right-[25px] h-[80px] bg-[#262626]/85 rounded-[32px] z-0 flex items-start pt-3.5 px-6">
-              <div className="flex items-center gap-2.5">
-                <img src="/icons/energy.PNG" className="h-4 w-4 object-contain" alt="" />
-                <span className="text-[13px] font-medium text-white/70">
-                  Йода умеет анализировать аккаунты. Достаточно отправить свой код союзника
-                </span>
+          <div className="mt-12 w-full px-[25px] max-w-[650px]">
+            {/* Общий контейнер для плашки и строки */}
+            <div className="relative w-full">
+              
+              {/* Задняя плашка (Баг-репорт) */}
+              <div className="absolute -top-[38px] left-0 right-0 bottom-0 bg-[#262626]/85 rounded-[24px] z-0 flex items-start pt-3 px-6 shadow-sm">
+                <div className="flex items-center gap-2.5">
+                  <img src="/icons/energy.PNG" className="h-4 w-4 object-contain opacity-85" alt="" />
+                  <span className="text-[13px] font-medium text-white/85">
+                    Нашел баг? Пиши нам:{" "}
+                    <span className="text-white underline underline-offset-2">@swgohai_request</span>
+                  </span>
+                </div>
               </div>
-            </div>
 
-            {/* Основная строка из твоего кода (без тени, фиксированные углы) */}
-            <div className="relative flex w-full flex-col bg-[#262626] rounded-[32px] z-10">
-              <div className="relative flex items-center min-h-[56px]">
-                <AnimatePresence mode="wait">
-                  {isAnimating && (
-                    <motion.div
-                      key="animating-text"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="absolute left-0 top-0 w-full py-[16px] pl-6 pr-14 text-[16px] leading-[1.5] text-white/90 pointer-events-none"
+              {/* Основная строка */}
+              <div className="relative flex w-full flex-col bg-[#262626] rounded-[24px] z-10 shadow-sm">
+                <div className="relative flex items-center min-h-[56px]">
+                  <AnimatePresence mode="wait">
+                    {isAnimating && (
+                      <motion.div
+                        key="animating-text"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="absolute left-0 top-0 w-full py-[16px] pl-6 pr-14 text-[16px] leading-[1.5] text-white/90 pointer-events-none"
+                      >
+                        {message}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  <textarea
+                    ref={textareaRef}
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    placeholder={isAnimating ? "" : "Спросить что-нибудь…"}
+                    className={`hide-scrollbar w-full bg-transparent py-[16px] pl-6 pr-14 text-[16px] leading-[1.5] text-white outline-none placeholder:text-white/20 resize-none transition-opacity duration-150 ${isAnimating ? 'opacity-0' : 'opacity-100'}`}
+                    onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); onSend(); } }}
+                  />
+
+                  <div className="absolute right-2 bottom-2">
+                    <button
+                      onClick={() => onSend()}
+                      disabled={message.trim().length < 2 || isAnimating}
+                      className="flex h-10 w-10 items-center justify-center rounded-full bg-[#F5F5F0] transition-all active:scale-90 disabled:opacity-10"
                     >
-                      {message}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-
-                <textarea
-                  ref={textareaRef}
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  placeholder={isAnimating ? "" : "Спросить что-нибудь…"}
-                  className={`hide-scrollbar w-full bg-transparent py-[16px] pl-6 pr-14 text-[16px] leading-[1.5] text-white outline-none placeholder:text-white/20 resize-none transition-opacity duration-150 ${isAnimating ? 'opacity-0' : 'opacity-100'}`}
-                  onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); onSend(); } }}
-                />
-
-                <div className="absolute right-2 bottom-2">
-                  <button
-                    onClick={() => onSend()}
-                    disabled={message.trim().length < 2 || isAnimating}
-                    className="flex h-10 w-10 items-center justify-center rounded-full bg-[#F5F5F0] transition-all active:scale-90 disabled:opacity-10"
-                  >
-                    <img src="/icons/send.PNG" className="h-4 w-4 brightness-0" alt="" />
-                  </button>
+                      <img src="/icons/send.PNG" className="h-4 w-4 brightness-0" alt="" />
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
