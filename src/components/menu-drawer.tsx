@@ -18,70 +18,59 @@ export function MenuDrawer({ open, onClose }: MenuDrawerProps) {
       />
 
       <aside
-        className={`absolute left-0 top-0 z-40 h-dvh w-[84%] max-w-[340px] border-r border-[#E6E0D7] bg-[#F5F3EE] px-5 pb-6 pt-6 transition-transform duration-200 ${
+        className={`absolute left-0 top-0 z-40 h-dvh w-[84%] max-w-[340px] bg-[#F5F5F0] shadow-2xl transition-transform duration-300 ease-[0.23,1,0.32,1] flex flex-col ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="flex h-full flex-col">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <img
-                src="/icons/applogo.PNG"
-                alt=""
-                aria-hidden="true"
-                className="h-7 w-7 object-contain"
-              />
-              <span
-                className="text-[24px] font-bold tracking-[-0.04em] text-[#39704E]"
-                style={{ fontFamily: "var(--font-menu)" }}
-              >
-                <span>swgoh</span>
-                <span className="opacity-65">.ai</span>
-              </span>
-            </div>
+        {/* Верхний блок: Шапка */}
+        <div className="relative flex items-center justify-between px-6 py-5 border-b border-[#E5E5DF]">
+          <img
+            src="/icons/applogo.PNG"
+            alt=""
+            aria-hidden="true"
+            className="relative z-10 h-7 w-7 object-contain"
+          />
 
-            <button
-              type="button"
-              aria-label="Закрыть меню"
-              onClick={onClose}
-              className="grid h-9 w-9 place-items-center text-[#171717]"
-            >
-              <img src="/icons/cross.PNG" alt="" aria-hidden="true" className="h-[20px] w-[20px]" />
-            </button>
+          <span
+            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-[22px] font-bold tracking-[-0.04em] text-[#305327]"
+            style={{ fontFamily: "var(--font-menu, sans-serif)" }}
+          >
+            swgoh<span className="opacity-70">.ai</span>
+          </span>
+
+          <button
+            type="button"
+            aria-label="Закрыть меню"
+            onClick={onClose}
+            className="relative z-10 flex items-center justify-end transition-transform active:scale-90"
+          >
+            <img 
+              src="/icons/cross.PNG" 
+              alt="" 
+              aria-hidden="true" 
+              className="h-5 w-5 object-contain opacity-80" 
+            />
+          </button>
+        </div>
+
+        {/* Центральный блок: Контент */}
+        <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
+          <p className="text-[15px] font-medium text-[#171717]/60">
+            Чатов нет
+          </p>
+          <p className="mt-1.5 text-[13px] text-[#171717]/40 font-medium">
+            Самое время начать болтать!
+          </p>
+        </div>
+
+        {/* Нижний блок: Профиль */}
+        <div className="border-t border-[#E5E5DF] px-6 py-5 flex items-center gap-3 transition-colors active:bg-black/5 cursor-pointer">
+          <div className="h-9 w-9 rounded-full bg-[#E5E5DF] overflow-hidden flex-shrink-0">
+            {/* В будущем здесь будет аватарка, пока просто серый круг */}
           </div>
-
-          <div className="flex flex-1 items-center justify-center">
-            <p className="text-sm font-medium text-[#9A948A]">Чатов нет</p>
-          </div>
-
-          <div className="mt-auto rounded-[18px] bg-[#FFFFFF] p-3">
-            <div className="space-y-2">
-              <button
-                type="button"
-                className="flex h-11 w-full items-center rounded-[12px] px-3 text-left text-[13px] font-medium text-[#232323]"
-              >
-                <span className="flex items-center gap-3">
-                  <span className="h-5 w-5 rounded-[7px] border border-[#D8D1C7] bg-[#F3EFE8]" />
-                  <span>Аккаунт</span>
-                </span>
-              </button>
-
-              <button
-                type="button"
-                className="flex h-11 w-full items-center rounded-[12px] px-3 text-left text-[13px] font-medium text-[#232323]"
-              >
-                <span className="flex items-center gap-3">
-                  <img
-                    src="/icons/settings.PNG"
-                    alt=""
-                    aria-hidden="true"
-                    className="h-[16px] w-[16px]"
-                  />
-                  <span>Настройки</span>
-                </span>
-              </button>
-            </div>
-          </div>
+          <span className="text-[15px] font-semibold text-[#171717]/85 tracking-tight">
+            Юзер
+          </span>
         </div>
       </aside>
     </>
