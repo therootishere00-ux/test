@@ -22,8 +22,8 @@ export function MenuDrawer({ open, onClose }: MenuDrawerProps) {
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        {/* Верхний блок: Шапка */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-[#E5E5DF]">
+        {/* Верхний блок: Шапка (без линии) */}
+        <div className="flex items-center justify-between px-6 py-5">
           <div className="flex items-center gap-3">
             <img
               src="/icons/applogo.PNG"
@@ -69,18 +69,31 @@ export function MenuDrawer({ open, onClose }: MenuDrawerProps) {
           </p>
         </div>
 
-        {/* Нижний блок: Реклама и Профиль */}
+        {/* Нижний блок: Рекламный баннер и Профиль */}
         <div className="mt-auto flex flex-col">
-          {/* Плашка Рекламы */}
-          <div className="mx-4 mb-3 flex items-center justify-between bg-[#E5E5DF]/40 rounded-xl px-4 py-3 cursor-pointer active:scale-[0.98] transition-transform">
-            <span className="text-[13px] font-semibold text-[#171717]/70 tracking-tight">
-              Реклама
-            </span>
-            <img 
-              src="/icons/suggestion.PNG" 
-              alt="" 
-              className="h-4 w-4 object-contain opacity-60" 
-            />
+          
+          {/* Баннер из фото */}
+          <div className="mx-4 mb-5 flex items-center justify-between bg-[#E9EDE7] rounded-[20px] p-4 pr-3 cursor-pointer active:scale-[0.98] transition-transform group">
+            <div className="flex flex-col flex-1 pr-2">
+              <span className="text-[15px] font-bold text-[#171717] leading-tight mb-1">
+                Не знаешь с чего начать?
+              </span>
+              <span className="text-[12px] font-medium text-[#171717]/60 leading-snug">
+                Вот несколько популярных тем, которые могут быть полезны.
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <img 
+                src="/icons/suggestion.PNG" 
+                alt="" 
+                className="h-12 w-12 object-contain" 
+              />
+              <img 
+                src="/icons/right.PNG" 
+                alt="" 
+                className="h-3 w-3 object-contain opacity-30 group-hover:opacity-50 transition-opacity" 
+              />
+            </div>
           </div>
 
           {/* Блок Юзера */}
