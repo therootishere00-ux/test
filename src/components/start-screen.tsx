@@ -11,7 +11,7 @@ const SparkleIcon = () => (
     viewBox="0 0 24 24" 
     fill="none" 
     xmlns="http://www.w3.org/2000/svg"
-    className="text-[#5FA86D]"
+    className="text-[#5FA86D] shrink-0"
   >
     <path d="M12 2L12.8 8.5L19 7L14.5 11.5L20 16L13.5 14.5L12 21L10.5 14.5L4 16L9.5 11.5L5 7L11.2 8.5L12 2Z" fill="currentColor"/>
   </svg>
@@ -51,14 +51,14 @@ export function StartScreen() {
         const lines = data.split(/\r?\n/).filter(line => line.trim().length > 0);
         setAllPrompts(lines.sort(() => Math.random() - 0.5));
       })
-      .catch(() => setAllPrompts(["Как прокачать Фениксов?", "Лучшие модули для Вейдера", "Гайд на Гранд-мастера Йоду"]));
+      .catch(() => setAllPrompts(["Гайд на Гранд-мастера Йоду", "Лучшие модули для Вейдера", "Как пройти 7 уровень узлов?"]));
   }, []);
 
   const rows = useMemo(() => {
     if (allPrompts.length === 0) return [];
     return [
-      { items: allPrompts.slice(0, 10), dir: 'left', speed: '80s' },
-      { items: allPrompts.slice(10, 20), dir: 'right', speed: '70s' },
+      { items: allPrompts.slice(0, 10), dir: 'left', speed: '90s' },
+      { items: allPrompts.slice(10, 20), dir: 'right', speed: '80s' },
     ];
   }, [allPrompts]);
 
@@ -90,7 +90,7 @@ export function StartScreen() {
 
       <div className={`flex h-full flex-col transition-all duration-500 ${isMenuOpen ? 'blur-md scale-[0.98] opacity-50' : ''}`}>
         
-        {/* Шапка */}
+        {/* Меню */}
         <div className="absolute left-0 right-0 top-0 z-50 flex items-center px-6 py-6">
           <button onClick={() => setIsMenuOpen(true)} className="opacity-60 hover:opacity-100 transition-opacity">
             <img src="/icons/menu.PNG" className="h-5 w-5 invert" alt="Menu" />
@@ -100,46 +100,59 @@ export function StartScreen() {
         {!chatStarted ? (
           <div className="flex h-full flex-col items-center justify-center">
             
-            <div className="mb-10 flex flex-col items-center gap-4 text-center px-4">
+            {/* Заголовок: выровнен влево вместе с иконкой */}
+            <div className="w-full max-w-[600px] px-8 mb-10 flex items-start gap-4">
               <SparkleIcon />
-              <h1 className="text-[32px] leading-tight font-serif text-[#F2F1ED] tracking-tight">
+              <h1 className="text-[32px] leading-[1.1] font-serif text-[#F2F1ED] tracking-tight">
                 С чем помочь тебе,<br />хм?
               </h1>
             </div>
 
             {/* Бегущие строки */}
-            <div className="w-full space-y-1 mb-8 opacity-80">
+            <div className="w-full space-y-1 mb-10 opacity-70">
               {rows.map((row, i) => (
                 <PromptRow key={i} items={row.items} direction={row.dir} speed={row.speed} onPick={(t:string) => setMessage(t)} />
               ))}
             </div>
 
             <div className="w-full max-w-[600px] px-6">
-              <div className="relative flex w-full flex-col bg-[#2D2C2A] rounded-[22px] border border-white/5 focus-within:border-white/10 transition-all">
-                <div className="flex flex-col p-3 min-h-[85px]">
+              {/* Основная строка ввода */}
+              <div className="relative flex w-full flex-col bg-[#2D2C2A] rounded-[24px] border border-white/5 focus-within:border-white/10 transition-all">
+                <div className="flex flex-col p-4"> {/* Увеличен padding для баланса */}
                   <textarea
                     ref={textareaRef}
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     placeholder="Спросить что-нибудь..."
-                    className="hide-scrollbar w-full flex-1 bg-transparent px-2 pt-1 text-[16px] leading-relaxed text-[#E8E6E3] outline-none placeholder:text-[#7A7975] resize-none"
+                    className="hide-scrollbar w-full flex-1 bg-transparent px-2 text-[16px] leading-relaxed text-[#E8E6E3] outline-none placeholder:text-[#7A7975] resize-none"
                     onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); onSend(); } }}
                   />
 
-                  <div className="flex items-center justify-between mt-2">
-                    {/* Плашка "Думай дольше" - залитая, шрифт как в заголовке */}
-                    <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 transition-colors active:scale-95">
-                      <img src="/icons/bulb.svg" className="w-3.5 h-3.5 opacity-60" style={{ filter: 'brightness(0) saturate(100%) invert(73%) sepia(5%) saturate(148%) hue-rotate(5deg) brightness(89%) contrast(83%)' }} alt="" />
-                      <span className="text-[13px] text-[#A3A29D] font-serif font-medium">Думай дольше</span>
+                  {/* Нижний ряд кнопок с равными отступами */}
+                  <div className="flex items-center justify-between mt-4">
+                    {/* Плашка "Думай дольше" - шрифт Inter, крупнее */}
+                    <button className="flex items-center gap-2.5 px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 transition-colors active:scale-95">
+                      <img 
+                        src="/icons/bulb.svg" 
+                        className="w-4 h-4 opacity-60" 
+                        style={{ filter: 'brightness(0) saturate(100%) invert(73%) sepia(5%) saturate(148%) hue-rotate(5deg) brightness(89%) contrast(83%)' }} 
+                        alt="" 
+                      />
+                      <span className="text-[14px] text-[#A3A29D] font-medium tracking-wide">Думай дольше</span>
                     </button>
 
-                    {/* Квадратная кнопка отправки - крупнее и скруглена под стиль ввода */}
+                    {/* Квадратная кнопка отправки - 10% крупнее (h-10), иконка цвета фона */}
                     <button
                       onClick={() => onSend()}
                       disabled={message.trim().length < 2}
-                      className="flex h-9 w-9 items-center justify-center rounded-[14px] bg-[#5FA86D] transition-all hover:bg-[#6FBD7E] disabled:opacity-20 active:scale-90"
+                      className="flex h-10 w-10 items-center justify-center rounded-[16px] bg-[#5FA86D] transition-all hover:bg-[#6FBD7E] disabled:opacity-20 active:scale-90 shadow-sm"
                     >
-                      <img src="/icons/send.svg" className="w-[18px] h-[18px]" alt="Send" />
+                      <img 
+                        src="/icons/send.svg" 
+                        className="w-5 h-5" 
+                        style={{ filter: 'brightness(0) saturate(100%) invert(11%) sepia(4%) saturate(842%) hue-rotate(3deg) brightness(96%) contrast(89%)' }} 
+                        alt="Send" 
+                      />
                     </button>
                   </div>
                 </div>
