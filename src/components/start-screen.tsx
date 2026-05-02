@@ -1,34 +1,23 @@
 "use client";
 
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChatThread, type ChatMessage } from "@/components/chat-thread";
 import { MenuDrawer } from "@/components/menu-drawer";
 
-const PromptRow = ({ items, direction, speed, offset, onPick }: any) => {
-  const scrollClass = direction === 'left' ? 'animate-marquee-left' : 'animate-marquee-right';
-  return (
-    <div className="flex overflow-hidden py-1.5 select-none w-full">
-      <div className={`flex shrink-0 items-center gap-3 ${scrollClass}`} style={{ animationDuration: speed }}>
-        {[...items, ...items].map((item: string, idx: number) => {
-          const isGreen = (idx + offset) % 2 === 0;
-          return (
-            <button 
-              key={idx} 
-              onClick={() => onPick(item)}
-              // Смягчил кнопки подсказок, чтобы они выглядели легче
-              className={`whitespace-nowrap rounded-full px-5 py-2.5 text-[14px] transition-all duration-200 active:scale-[0.95] ${
-                isGreen ? "bg-[#39704E]/10 text-[#39704E] font-medium" : "bg-white border border-[#E5E5DF]/50 text-[#171717]/70 shadow-sm"
-              }`}
-            >
-              {item}
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-};
+// Иконка-звездочка в стиле Claude
+const SparkleIcon = () => (
+  <svg 
+    width="36" 
+    height="36" 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    xmlns="http://www.w3.org/2000/svg"
+    className="text-[#D46B53] drop-shadow-sm"
+  >
+    <path d="M12 2L12.8 8.5L19 7L14.5 11.5L20 16L13.5 14.5L12 21L10.5 14.5L4 16L9.5 11.5L5 7L11.2 8.5L12 2Z" fill="currentColor"/>
+  </svg>
+);
 
 export function StartScreen() {
   const [message, setMessage] = useState("");
@@ -36,7 +25,9 @@ export function StartScreen() {
   const [chatStarted, setChatStarted] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [allPrompts, setAllPrompts] = useState<string[]>([]);
+  
+  // Храним 5 случайных подсказок для сетки
+  const [displayPrompts, setDisplayPrompts] = useState<string[]>([]);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -44,33 +35,25 @@ export function StartScreen() {
       .then(res => res.text())
       .then(data => {
         const lines = data.split(/\r?\n/).filter(line => line.trim().length > 0);
-        setAllPrompts(lines.sort(() => Math.random() - 0.5));
+        const shuffled = lines.sort(() => Math.random() - 0.5);
+        setDisplayPrompts(shuffled.slice(0, 5)); // Берем только 5 штук для красивой сетки
       })
-      .catch(() => setAllPrompts(["Ошибка загрузки"]));
+      .catch(() => setDisplayPrompts(["Как собрать отряд?", "Кого качать первым?", "Тактики на ВГ"]));
   }, []);
-
-  const rows = useMemo(() => {
-    if (allPrompts.length === 0) return [];
-    return [
-      { items: allPrompts.slice(0, 12), dir: 'left', speed: '65s', off: 0 },
-      { items: allPrompts.slice(12, 24), dir: 'right', speed: '55s', off: 1 },
-      { items: allPrompts.slice(24, 36), dir: 'left', speed: '75s', off: 0 },
-    ];
-  }, [allPrompts]);
 
   useEffect(() => {
     const textarea = textareaRef.current;
     if (textarea) {
       textarea.style.height = 'auto';
       const scrollHeight = textarea.scrollHeight;
-      textarea.style.height = `${(Math.max(Math.min(scrollHeight, 120), 56))}px`;
+      textarea.style.height = `${Math.max(Math.min(scrollHeight, 120), 24)}px`;
     }
   }, [message]);
 
   const handlePick = (text: string) => {
     setIsAnimating(true);
     setMessage(text);
-    setTimeout(() => setIsAnimating(false), 300);
+    setTimeout(() => setIsAnimating(false), 200);
   };
 
   const onSend = (text?: string) => {
@@ -82,134 +65,124 @@ export function StartScreen() {
   };
 
   return (
-    <main className="relative h-dvh w-full bg-[#F5F5F0] font-sans antialiased overflow-hidden text-[#171717]">
+    <main className="relative h-dvh w-full bg-[#252422] font-sans antialiased overflow-hidden text-[#E8E6E3]">
       <style jsx global>{`
-        @keyframes marquee-left { from { transform: translateX(0); } to { transform: translateX(-50%); } }
-        @keyframes marquee-right { from { transform: translateX(-50%); } to { transform: translateX(0); } }
-        .animate-marquee-left { animation: marquee-left linear infinite; }
-        .animate-marquee-right { animation: marquee-right linear infinite; }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
       `}</style>
 
-      {/* Обертка для размытия с мультяшным scale */}
       <div 
-        className={`flex h-full flex-col transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] origin-center ${
-          isMenuOpen ? 'blur-[6px] scale-[0.97] opacity-60' : 'blur-0 scale-100 opacity-100'
+        className={`flex h-full flex-col transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] origin-center ${
+          isMenuOpen ? 'blur-[8px] scale-[0.96] opacity-40' : 'blur-0 scale-100 opacity-100'
         }`}
         style={{ willChange: "transform, filter, opacity" }}
       >
         
-        {/* Верхняя панель */}
-        <div className="absolute left-0 right-0 top-0 z-50 flex items-center justify-between px-7 py-6">
+        {/* Верхняя панель (минималистичная) */}
+        <div className="absolute left-0 right-0 top-0 z-50 flex items-center justify-between px-6 py-6">
           <button 
             onClick={() => setIsMenuOpen(true)} 
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-white/50 backdrop-blur-md shadow-sm border border-white/20 transition-all duration-200 active:scale-[0.85]"
+            className="flex h-10 w-10 items-center justify-center transition-transform duration-200 active:scale-[0.85] opacity-60 hover:opacity-100"
           >
-            <img src="/icons/menu.PNG" className="h-4 w-4 object-contain opacity-80" alt="Menu" />
+            <img src="/icons/menu.PNG" className="h-5 w-5 object-contain invert brightness-0" alt="Menu" />
           </button>
-          <button className="flex h-10 w-10 items-center justify-center rounded-full bg-white/50 backdrop-blur-md shadow-sm border border-white/20 transition-all duration-200 active:scale-[0.85]">
-            <img src="/icons/profile.PNG" className="h-4 w-4 object-contain opacity-80" alt="Profile" />
+          <button className="flex h-10 w-10 items-center justify-center transition-transform duration-200 active:scale-[0.85] opacity-60 hover:opacity-100">
+            <img src="/icons/profile.PNG" className="h-5 w-5 object-contain invert brightness-0" alt="Profile" />
           </button>
         </div>
 
         {!chatStarted ? (
-          <div className="flex h-full flex-col items-center justify-center">
-            {/* Заголовок (Шрифт с засечками) */}
-            <div className="mb-8 flex flex-col items-center gap-3">
-              <img src="/icons/applogo.PNG" className="h-10 w-10 object-contain drop-shadow-sm" alt="" />
-              <h1 className="text-[32px] font-serif italic text-[#2C2C2C]">
-                Чем помочь тебе, хм?
+          <div className="flex h-full flex-col items-center justify-center px-5">
+            
+            {/* Заголовок со звездой */}
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, ease: "easeOut" }}
+              className="mb-10 flex flex-col items-center gap-5 text-center"
+            >
+              <SparkleIcon />
+              <h1 className="text-[36px] leading-[1.1] font-serif tracking-tight text-[#F2F1ED]">
+                О чем думаешь,<br />хм?
               </h1>
-            </div>
+            </motion.div>
 
-            {/* Подсказки */}
-            <div className="min-h-[120px] w-full flex flex-col justify-center">
-              {rows.length > 0 && (
+            {/* Блок ввода и подсказок */}
+            <div className="w-full max-w-[650px] flex flex-col items-center gap-5">
+              
+              {/* Поле ввода (в стиле Claude) */}
+              <motion.div 
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.7, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+                className="relative flex w-full flex-col bg-[#2D2C2A] rounded-[24px] border border-white/5 z-10 shadow-lg transition-colors duration-300 focus-within:border-white/10 focus-within:bg-[#302F2D]"
+              >
+                <div className="relative flex flex-col min-h-[100px] p-3">
+                  <AnimatePresence mode="wait">
+                    {isAnimating && (
+                      <motion.div
+                        key="animating-text"
+                        initial={{ opacity: 0, y: 4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute left-4 top-4 w-[calc(100%-32px)] text-[16px] leading-[1.5] text-[#E8E6E3] pointer-events-none"
+                      >
+                        {message}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  <textarea
+                    ref={textareaRef}
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    placeholder={isAnimating ? "" : "Спросить что-нибудь..."}
+                    className={`hide-scrollbar w-full flex-1 bg-transparent px-1 pt-1 pb-4 text-[16px] leading-[1.5] text-[#E8E6E3] outline-none placeholder:text-[#7A7975] resize-none transition-opacity duration-150 ${isAnimating ? 'opacity-0' : 'opacity-100'}`}
+                    onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); onSend(); } }}
+                  />
+
+                  {/* Нижняя панелька в поле ввода */}
+                  <div className="flex items-center justify-between mt-auto">
+                    <div className="flex items-center gap-2 pl-1">
+                      {/* Декоративная кнопка плюса (как на скрине) */}
+                      <button className="flex h-8 w-8 items-center justify-center rounded-[10px] border border-white/10 transition-colors hover:bg-white/5 active:scale-95">
+                        <span className="text-[#A3A29D] text-lg font-light leading-none">+</span>
+                      </button>
+                    </div>
+
+                    <button
+                      onClick={() => onSend()}
+                      disabled={message.trim().length < 2 || isAnimating}
+                      className="flex h-8 w-10 items-center justify-center rounded-[10px] bg-[#D46B53] transition-all duration-200 active:scale-90 hover:bg-[#E37A62] disabled:opacity-30 disabled:hover:bg-[#D46B53] disabled:active:scale-100"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-[#252422]">
+                        <path d="M12 20L12 4M12 4L6 10M12 4L18 10" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Сетка подсказок (вместо бегущей строки) */}
+              {displayPrompts.length > 0 && (
                 <motion.div 
-                  initial={{ opacity: 0, y: 15 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-                  className="w-full space-y-1.5 opacity-95"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.8, delay: 0.3 }}
+                  className="flex flex-wrap items-center justify-center gap-2.5 px-2"
                 >
-                  {rows.map((row, i) => (
-                    <PromptRow key={i} items={row.items} direction={row.dir} speed={row.speed} offset={row.off} onPick={handlePick} />
+                  {displayPrompts.map((item, idx) => (
+                    <button 
+                      key={idx} 
+                      onClick={() => handlePick(item)}
+                      className="flex items-center gap-2 rounded-xl border border-[#403E3B] bg-transparent px-4 py-2 text-[14px] text-[#9A9894] transition-all duration-200 hover:bg-[#32312F] hover:text-[#C5C4C0] active:scale-95"
+                    >
+                      {item}
+                    </button>
                   ))}
                 </motion.div>
               )}
-            </div>
 
-            <div className="mt-14 w-full px-[25px] max-w-[650px]">
-              <div className="relative w-full">
-                
-                {/* Плашка с мультяшным spring-эффектом */}
-                <motion.div 
-                  initial={{ scaleY: 0, opacity: 0 }}
-                  animate={{ scaleY: 1, opacity: 1 }}
-                  transition={{ 
-                    type: "spring", 
-                    stiffness: 300, 
-                    damping: 20, 
-                    delay: 0.15 
-                  }}
-                  style={{ transformOrigin: "bottom" }}
-                  className="absolute -top-[38px] left-0 right-0 bottom-0 bg-[#212121] rounded-[28px] z-0 flex items-start pt-3 px-6 shadow-md"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <img 
-                      src="/icons/energy.PNG" 
-                      className="h-4 w-4 object-contain brightness-0 invert opacity-80" 
-                      alt="" 
-                    />
-                    <span className="text-[13px] font-medium text-white/80">
-                      Нашел баг? Пиши нам:{" "}
-                      <span className="text-white underline underline-offset-4 decoration-white/30 hover:decoration-white transition-colors">@swgohai_request</span>
-                    </span>
-                  </div>
-                </motion.div>
-
-                {/* Поле ввода */}
-                <div className="relative flex w-full flex-col bg-[#212121] rounded-[28px] z-10 shadow-lg transition-transform duration-300 focus-within:scale-[1.02] focus-within:-translate-y-1">
-                  <div className="relative flex items-center min-h-[60px]">
-                    <AnimatePresence mode="wait">
-                      {isAnimating && (
-                        <motion.div
-                          key="animating-text"
-                          initial={{ opacity: 0, y: 5 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, scale: 0.98 }}
-                          transition={{ duration: 0.2 }}
-                          className="absolute left-0 top-0 w-full py-[18px] pl-6 pr-14 text-[16px] leading-[1.5] text-white/90 pointer-events-none font-serif"
-                        >
-                          {message}
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-
-                    <textarea
-                      ref={textareaRef}
-                      value={message}
-                      onChange={(e) => setMessage(e.target.value)}
-                      placeholder={isAnimating ? "" : "Спросить что-нибудь…"}
-                      className={`hide-scrollbar w-full bg-transparent py-[18px] pl-6 pr-14 text-[16px] leading-[1.5] text-white outline-none placeholder:text-white/30 resize-none transition-opacity duration-200 ${isAnimating ? 'opacity-0' : 'opacity-100'}`}
-                      onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); onSend(); } }}
-                    />
-
-                    <div className="absolute right-2.5 bottom-2.5">
-                      <button
-                        onClick={() => onSend()}
-                        disabled={message.trim().length < 2 || isAnimating}
-                        className="flex h-10 w-10 items-center justify-center rounded-full bg-white transition-all duration-300 active:scale-[0.85] hover:scale-105 disabled:opacity-15 disabled:hover:scale-100"
-                      >
-                        <img src="/icons/send.PNG" className="h-4 w-4 brightness-0" alt="" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <p className="mt-4 text-center text-[12px] font-medium text-[#171717]/30">
-                AI может допускать ошибки. Проверяйте информацию.
-              </p>
             </div>
           </div>
         ) : (
