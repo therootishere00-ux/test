@@ -17,7 +17,6 @@ type ChatThreadProps = {
 export function ChatThread({ messages, onNewChat }: ChatThreadProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Автоскролл при новых сообщениях
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTo({
@@ -29,21 +28,21 @@ export function ChatThread({ messages, onNewChat }: ChatThreadProps) {
 
   return (
     <div className="flex flex-col h-full w-full max-w-[600px] mx-auto relative">
-      {/* Header чата */}
-      <div className="flex items-center justify-between py-4 mb-4 border-b border-white/[0.05]">
-        <span className="text-[13px] text-[#6A6965] font-medium tracking-wider uppercase">Чат сессия</span>
+      {/* Header */}
+      <div className="flex items-center justify-between py-6 mb-2 border-b border-white/[0.04]">
+        <span className="text-[12px] text-[#6A6965] font-medium tracking-widest uppercase">Чат сессия</span>
         <button 
           onClick={onNewChat}
-          className="p-2 -mr-2 active:scale-90 transition-transform"
+          className="p-1 active:scale-90 transition-transform hover:bg-white/5 rounded-lg"
         >
-          <img src="/icons/newchat.svg" alt="New Chat" className="w-5 h-5 opacity-40" />
+          <img src="/icons/newchat.svg" alt="New Chat" className="w-[22px] h-[22px] opacity-70" />
         </button>
       </div>
 
-      {/* Контейнер сообщений */}
+      {/* Messages */}
       <div 
         ref={scrollRef}
-        className="flex-1 overflow-y-auto hide-scrollbar space-y-8 pb-10"
+        className="flex-1 overflow-y-auto hide-scrollbar space-y-8 pb-10 pt-4"
       >
         <AnimatePresence initial={false}>
           {messages.map((msg) => (
@@ -61,50 +60,48 @@ function MessageItem({ message }: { message: ChatMessage }) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
       className={`flex w-full ${isUser ? "justify-end" : "justify-start"}`}
     >
       <div className={`flex flex-col ${isUser ? "items-end max-w-[85%]" : "items-start w-full"}`}>
-        
         {isUser ? (
-          /* Блок пользователя */
           <div className="bg-[#5FA86D] text-[#1A1A18] px-4 py-2.5 rounded-[18px] rounded-tr-[4px] shadow-sm">
             <p className="text-[15px] leading-relaxed whitespace-pre-wrap">{message.content}</p>
           </div>
         ) : (
-          /* Блок ИИ */
-          <div className="flex flex-col w-full space-y-4">
-            <div className="text-[#E8E6E3] text-[15px] leading-[1.6] whitespace-pre-wrap">
+          <div className="flex flex-col w-full space-y-3">
+            <div className="text-[#E8E6E3] text-[15px] leading-[1.65] whitespace-pre-wrap">
               {message.content}
             </div>
             
-            {/* Панель инструментов под ответом */}
-            <div className="flex items-center gap-4 ml-0.5">
-              <button className="active:scale-90 transition-transform opacity-30 hover:opacity-60">
-                <img src="/icons/redo.svg" alt="Redo" className="w-4 h-4" />
+            {/* Feedback Toolbar */}
+            <div className="flex items-center gap-4 ml-1">
+              <button className="active:scale-90 transition-all opacity-50 hover:opacity-100">
+                <img src="/icons/redo.svg" alt="Redo" className="w-[18px] h-[18px]" />
               </button>
               
               <div className="flex items-center gap-3">
                 <button 
                   onClick={() => setFeedback(feedback === 'like' ? null : 'like')}
-                  className="active:scale-90 transition-transform"
+                  className="active:scale-90 transition-all"
                 >
                   <img 
                     src="/icons/like.svg" 
                     alt="Like" 
-                    className={`w-4 h-4 transition-colors ${feedback === 'like' ? 'brightness-100' : 'opacity-30'}`}
+                    className={`w-[18px] h-[18px] transition-all ${feedback === 'like' ? 'brightness-100 opacity-100' : 'opacity-50 hover:opacity-100'}`}
                     style={feedback === 'like' ? { filter: 'invert(58%) sepia(13%) saturate(1067%) hue-rotate(82deg) brightness(96%) contrast(87%)' } : {}}
                   />
                 </button>
                 <button 
                   onClick={() => setFeedback(feedback === 'dislike' ? null : 'dislike')}
-                  className="active:scale-90 transition-transform"
+                  className="active:scale-90 transition-all"
                 >
                   <img 
                     src="/icons/dislike.svg" 
                     alt="Dislike" 
-                    className={`w-4 h-4 transition-colors ${feedback === 'dislike' ? 'brightness-100' : 'opacity-30'}`}
+                    className={`w-[18px] h-[18px] transition-all ${feedback === 'dislike' ? 'brightness-100 opacity-100' : 'opacity-50 hover:opacity-100'}`}
                     style={feedback === 'dislike' ? { filter: 'invert(58%) sepia(13%) saturate(1067%) hue-rotate(82deg) brightness(96%) contrast(87%)' } : {}}
                   />
                 </button>
