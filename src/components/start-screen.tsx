@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChatThread, type ChatMessage } from "@/components/chat-thread";
 import { MenuDrawer } from "@/components/menu-drawer";
 
-// Иконка-звездочка в стиле Claude
+// Иконка-звездочка без теней, цвет изменен на наш новый зеленый
 const SparkleIcon = () => (
   <svg 
     width="36" 
@@ -13,11 +13,34 @@ const SparkleIcon = () => (
     viewBox="0 0 24 24" 
     fill="none" 
     xmlns="http://www.w3.org/2000/svg"
-    className="text-[#D46B53] drop-shadow-sm"
+    className="text-[#5FA86D]" // Тот самый зеленый эквивалент терракотового
   >
     <path d="M12 2L12.8 8.5L19 7L14.5 11.5L20 16L13.5 14.5L12 21L10.5 14.5L4 16L9.5 11.5L5 7L11.2 8.5L12 2Z" fill="currentColor"/>
   </svg>
 );
+
+// Возвращаем бегущую строку, но со стилем новых кнопок-пилюль
+const PromptRow = ({ items, direction, speed, onPick }: any) => {
+  const scrollClass = direction === 'left' ? 'animate-marquee-left' : 'animate-marquee-right';
+  return (
+    <div className="flex overflow-hidden py-1.5 select-none w-full">
+      <div className={`flex shrink-0 items-center gap-2.5 ${scrollClass}`} style={{ animationDuration: speed }}>
+        {[...items, ...items].map((item: string, idx: number) => {
+          return (
+            <button 
+              key={idx} 
+              onClick={() => onPick(item)}
+              // Убрали тени, добавили бордер для контура
+              className="whitespace-nowrap rounded-xl border border-white/10 bg-transparent px-4 py-2 text-[14px] text-[#9A9894] transition-all duration-200 hover:bg-white/5 hover:text-[#C5C4C0] hover:border-white/20 active:scale-95"
+            >
+              {item}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
 
 export function StartScreen() {
   const [message, setMessage] = useState("");
@@ -25,21 +48,28 @@ export function StartScreen() {
   const [chatStarted, setChatStarted] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  
-  // Храним 5 случайных подсказок для сетки
-  const [displayPrompts, setDisplayPrompts] = useState<string[]>([]);
+  const [allPrompts, setAllPrompts] = useState<string[]>([]);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  // Возвращаем загрузку всего словаря для бегущих строк
   useEffect(() => {
     fetch('/slovar.txt')
       .then(res => res.text())
       .then(data => {
         const lines = data.split(/\r?\n/).filter(line => line.trim().length > 0);
-        const shuffled = lines.sort(() => Math.random() - 0.5);
-        setDisplayPrompts(shuffled.slice(0, 5)); // Берем только 5 штук для красивой сетки
+        setAllPrompts(lines.sort(() => Math.random() - 0.5));
       })
-      .catch(() => setDisplayPrompts(["Как собрать отряд?", "Кого качать первым?", "Тактики на ВГ"]));
+      .catch(() => setAllPrompts(["Ошибка загрузки"]));
   }, []);
+
+  const rows = useMemo(() => {
+    if (allPrompts.length === 0) return [];
+    return [
+      { items: allPrompts.slice(0, 12), dir: 'left', speed: '65s' },
+      { items: allPrompts.slice(12, 24), dir: 'right', speed: '55s' },
+      { items: allPrompts.slice(24, 36), dir: 'left', speed: '75s' },
+    ];
+  }, [allPrompts]);
 
   useEffect(() => {
     const textarea = textareaRef.current;
@@ -67,6 +97,10 @@ export function StartScreen() {
   return (
     <main className="relative h-dvh w-full bg-[#252422] font-sans antialiased overflow-hidden text-[#E8E6E3]">
       <style jsx global>{`
+        @keyframes marquee-left { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+        @keyframes marquee-right { from { transform: translateX(-50%); } to { transform: translateX(0); } }
+        .animate-marquee-left { animation: marquee-left linear infinite; }
+        .animate-marquee-right { animation: marquee-right linear infinite; }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
       `}</style>
 
@@ -77,7 +111,7 @@ export function StartScreen() {
         style={{ willChange: "transform, filter, opacity" }}
       >
         
-        {/* Верхняя панель (минималистичная) */}
+        {/* Верхняя панель */}
         <div className="absolute left-0 right-0 top-0 z-50 flex items-center justify-between px-6 py-6">
           <button 
             onClick={() => setIsMenuOpen(true)} 
@@ -91,14 +125,14 @@ export function StartScreen() {
         </div>
 
         {!chatStarted ? (
-          <div className="flex h-full flex-col items-center justify-center px-5">
+          <div className="flex h-full flex-col items-center justify-center">
             
             {/* Заголовок со звездой */}
             <motion.div 
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, ease: "easeOut" }}
-              className="mb-10 flex flex-col items-center gap-5 text-center"
+              className="mb-8 flex flex-col items-center gap-5 text-center"
             >
               <SparkleIcon />
               <h1 className="text-[36px] leading-[1.1] font-serif tracking-tight text-[#F2F1ED]">
@@ -106,15 +140,30 @@ export function StartScreen() {
               </h1>
             </motion.div>
 
-            {/* Блок ввода и подсказок */}
-            <div className="w-full max-w-[650px] flex flex-col items-center gap-5">
+            {/* Бегущие строки (вернули их наверх) */}
+            <div className="min-h-[120px] w-full flex flex-col justify-center mb-6">
+              {rows.length > 0 && (
+                <motion.div 
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.7, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+                  className="w-full space-y-1 opacity-90"
+                >
+                  {rows.map((row, i) => (
+                    <PromptRow key={i} items={row.items} direction={row.dir} speed={row.speed} onPick={handlePick} />
+                  ))}
+                </motion.div>
+              )}
+            </div>
+
+            <div className="w-full max-w-[650px] px-[25px]">
               
-              {/* Поле ввода (в стиле Claude) */}
+              {/* Поле ввода (без теней, играем бордерами) */}
               <motion.div 
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.7, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
-                className="relative flex w-full flex-col bg-[#2D2C2A] rounded-[24px] border border-white/5 z-10 shadow-lg transition-colors duration-300 focus-within:border-white/10 focus-within:bg-[#302F2D]"
+                transition={{ duration: 0.7, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                className="relative flex w-full flex-col bg-[#2D2C2A] rounded-[24px] border border-white/5 z-10 transition-all duration-300 focus-within:border-white/15 focus-within:bg-[#302F2D]"
               >
                 <div className="relative flex flex-col min-h-[100px] p-3">
                   <AnimatePresence mode="wait">
@@ -144,8 +193,8 @@ export function StartScreen() {
                   {/* Нижняя панелька в поле ввода */}
                   <div className="flex items-center justify-between mt-auto">
                     <div className="flex items-center gap-2 pl-1">
-                      {/* Декоративная кнопка плюса (как на скрине) */}
-                      <button className="flex h-8 w-8 items-center justify-center rounded-[10px] border border-white/10 transition-colors hover:bg-white/5 active:scale-95">
+                      {/* Декоративная кнопка плюса (контурная) */}
+                      <button className="flex h-8 w-8 items-center justify-center rounded-[10px] border border-white/10 transition-colors hover:bg-white/5 hover:border-white/20 active:scale-95">
                         <span className="text-[#A3A29D] text-lg font-light leading-none">+</span>
                       </button>
                     </div>
@@ -153,7 +202,8 @@ export function StartScreen() {
                     <button
                       onClick={() => onSend()}
                       disabled={message.trim().length < 2 || isAnimating}
-                      className="flex h-8 w-10 items-center justify-center rounded-[10px] bg-[#D46B53] transition-all duration-200 active:scale-90 hover:bg-[#E37A62] disabled:opacity-30 disabled:hover:bg-[#D46B53] disabled:active:scale-100"
+                      // Зеленая кнопка отправки
+                      className="flex h-8 w-10 items-center justify-center rounded-[10px] bg-[#5FA86D] transition-all duration-200 active:scale-90 hover:bg-[#6FBD7E] disabled:opacity-30 disabled:hover:bg-[#5FA86D] disabled:active:scale-100"
                     >
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-[#252422]">
                         <path d="M12 20L12 4M12 4L6 10M12 4L18 10" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -162,26 +212,6 @@ export function StartScreen() {
                   </div>
                 </div>
               </motion.div>
-
-              {/* Сетка подсказок (вместо бегущей строки) */}
-              {displayPrompts.length > 0 && (
-                <motion.div 
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.8, delay: 0.3 }}
-                  className="flex flex-wrap items-center justify-center gap-2.5 px-2"
-                >
-                  {displayPrompts.map((item, idx) => (
-                    <button 
-                      key={idx} 
-                      onClick={() => handlePick(item)}
-                      className="flex items-center gap-2 rounded-xl border border-[#403E3B] bg-transparent px-4 py-2 text-[14px] text-[#9A9894] transition-all duration-200 hover:bg-[#32312F] hover:text-[#C5C4C0] active:scale-95"
-                    >
-                      {item}
-                    </button>
-                  ))}
-                </motion.div>
-              )}
 
             </div>
           </div>
