@@ -70,8 +70,8 @@ export function StartScreen() {
     if (textarea) {
       textarea.style.height = 'auto';
       const scrollHeight = textarea.scrollHeight;
-      // Ограничение до 3 строк (примерно 82px с учетом паддингов)
-      textarea.style.height = `${Math.max(Math.min(scrollHeight, 82), 24)}px`;
+      // Ограничение до 3 строк (примерно 80px)
+      textarea.style.height = `${Math.max(Math.min(scrollHeight, 80), 24)}px`;
     }
   }, [message]);
 
@@ -106,15 +106,13 @@ export function StartScreen() {
         style={{ willChange: "transform, filter, opacity" }}
       >
         
-        <div className="absolute left-0 right-0 top-0 z-50 flex items-center justify-between px-6 py-6">
+        {/* Верхняя панель (Меню выше и левее, профиль убран) */}
+        <div className="absolute left-4 top-4 z-50">
           <button 
             onClick={() => setIsMenuOpen(true)} 
             className="flex h-10 w-10 items-center justify-center transition-transform duration-200 active:scale-[0.85] opacity-60 hover:opacity-100"
           >
             <img src="/icons/menu.PNG" className="h-5 w-5 object-contain invert brightness-0" alt="Menu" />
-          </button>
-          <button className="flex h-10 w-10 items-center justify-center transition-transform duration-200 active:scale-[0.85] opacity-60 hover:opacity-100">
-            <img src="/icons/profile.PNG" className="h-5 w-5 object-contain invert brightness-0" alt="Profile" />
           </button>
         </div>
 
@@ -150,13 +148,14 @@ export function StartScreen() {
 
             <div className="w-full max-w-[650px] px-[25px] flex flex-col items-center">
               
+              {/* Поле ввода (Прозрачный фон, закругление 26px) */}
               <motion.div 
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.7, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-                className="relative flex w-full flex-col bg-[#2D2C2A] rounded-[26px] border border-white/5 z-10 transition-all duration-300 focus-within:border-white/10"
+                className="relative flex w-full flex-col bg-transparent rounded-[26px] border border-white/15 z-10 transition-all duration-300 focus-within:border-white/25"
               >
-                <div className="relative flex flex-col min-h-[80px] p-4">
+                <div className="relative flex flex-col min-h-[72px] p-4">
                   <AnimatePresence mode="wait">
                     {isAnimating && (
                       <motion.div
@@ -165,7 +164,7 @@ export function StartScreen() {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.15 }}
-                        className="absolute left-5 top-5 w-[calc(100%-70px)] text-[16px] leading-[1.5] text-[#E8E6E3] pointer-events-none"
+                        className="absolute left-5 top-5 w-[calc(100%-65px)] text-[16px] leading-[1.5] text-[#E8E6E3] pointer-events-none"
                       >
                         {message}
                       </motion.div>
@@ -177,24 +176,25 @@ export function StartScreen() {
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     placeholder={isAnimating ? "" : "Спросить что-нибудь..."}
-                    className={`hide-scrollbar w-full flex-1 bg-transparent px-1 pt-1 pb-1 pr-12 text-[16px] leading-[1.5] text-[#E8E6E3] outline-none placeholder:text-[#7A7975] resize-none transition-opacity duration-150 ${isAnimating ? 'opacity-0' : 'opacity-100'}`}
+                    className={`hide-scrollbar w-full flex-1 bg-transparent px-1 pt-1 pb-1 pr-11 text-[16px] leading-[1.5] text-[#E8E6E3] outline-none placeholder:text-[#7A7975] resize-none transition-opacity duration-150 ${isAnimating ? 'opacity-0' : 'opacity-100'}`}
                     onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); onSend(); } }}
                   />
 
-                  <div className="absolute right-3 bottom-3">
+                  {/* Квадратная кнопка отправки с закруглением */}
+                  <div className="absolute right-2.5 bottom-2.5">
                     <button
                       onClick={() => onSend()}
                       disabled={message.trim().length < 2 || isAnimating}
-                      className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-[#5FA86D] transition-all duration-200 active:scale-[0.9] hover:bg-[#6FBD7E] disabled:opacity-20 disabled:hover:bg-[#5FA86D] disabled:active:scale-100 shadow-none"
+                      className="flex h-10 w-10 items-center justify-center rounded-[18px] bg-[#5FA86D] transition-all duration-200 active:scale-[0.9] hover:bg-[#6FBD7E] disabled:opacity-15 disabled:hover:bg-[#5FA86D] disabled:active:scale-100"
                     >
-                      <img src="/icons/send.PNG" className="h-5 w-5 brightness-0 opacity-90" alt="Send" />
+                      <img src="/icons/send.PNG" className="h-4.5 w-4.5 brightness-0 opacity-90" alt="Send" />
                     </button>
                   </div>
                 </div>
               </motion.div>
 
-              {/* Дисклеймер под строкой */}
-              <p className="mt-4 text-[12px] font-medium text-[#7A7975] tracking-tight">
+              {/* Текст под строкой */}
+              <p className="mt-4 text-[12px] font-medium text-[#7A7975] tracking-tight opacity-80">
                 Ии это. Он ошибаться может
               </p>
 
