@@ -21,13 +21,13 @@ const SparkleIcon = () => (
 const PromptRow = ({ items, direction, speed, onPick }: any) => {
   const scrollClass = direction === 'left' ? 'animate-marquee-left' : 'animate-marquee-right';
   return (
-    <div className="flex overflow-hidden py-1 select-none w-full">
+    <div className="flex overflow-hidden py-1.5 select-none w-full">
       <div className={`flex shrink-0 items-center gap-2.5 ${scrollClass}`} style={{ animationDuration: speed }}>
         {[...items, ...items].map((item: string, idx: number) => (
           <button 
             key={idx} 
             onClick={() => onPick(item)}
-            className="whitespace-nowrap rounded-xl border border-white/5 bg-[#2D2C2A]/50 px-4 py-2 text-[14px] text-[#9A9894] transition-all duration-200 hover:bg-white/5 hover:text-[#C5C4C0] active:scale-95"
+            className="whitespace-nowrap rounded-xl border border-white/10 bg-transparent px-4 py-2 text-[14px] text-[#9A9894] transition-all duration-200 hover:bg-white/5 hover:text-[#C5C4C0] hover:border-white/20 active:scale-95"
           >
             {item}
           </button>
@@ -59,8 +59,9 @@ export function StartScreen() {
   const rows = useMemo(() => {
     if (allPrompts.length === 0) return [];
     return [
-      { items: allPrompts.slice(0, 12), dir: 'left', speed: '70s' },
-      { items: allPrompts.slice(12, 24), dir: 'right', speed: '60s' },
+      { items: allPrompts.slice(0, 12), dir: 'left', speed: '65s' },
+      { items: allPrompts.slice(12, 24), dir: 'right', speed: '55s' },
+      { items: allPrompts.slice(24, 36), dir: 'left', speed: '75s' },
     ];
   }, [allPrompts]);
 
@@ -68,8 +69,9 @@ export function StartScreen() {
     const textarea = textareaRef.current;
     if (textarea) {
       textarea.style.height = 'auto';
-      // Ограничение высоты: ~80px это примерно 3 строки текста
-      textarea.style.height = `${Math.min(textarea.scrollHeight, 80)}px`;
+      const scrollHeight = textarea.scrollHeight;
+      // Ограничение до 3 строк (примерно 82px с учетом паддингов)
+      textarea.style.height = `${Math.max(Math.min(scrollHeight, 82), 24)}px`;
     }
   }, [message]);
 
@@ -97,65 +99,105 @@ export function StartScreen() {
         .hide-scrollbar::-webkit-scrollbar { display: none; }
       `}</style>
 
-      <div className={`flex h-full flex-col transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] origin-center ${
+      <div 
+        className={`flex h-full flex-col transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] origin-center ${
           isMenuOpen ? 'blur-[8px] scale-[0.96] opacity-40' : 'blur-0 scale-100 opacity-100'
-        }`}>
+        }`}
+        style={{ willChange: "transform, filter, opacity" }}
+      >
         
-        {/* Верхняя панель */}
         <div className="absolute left-0 right-0 top-0 z-50 flex items-center justify-between px-6 py-6">
-          <button onClick={() => setIsMenuOpen(true)} className="flex h-10 w-10 items-center justify-center opacity-60 active:scale-90 transition-transform">
-            <img src="/icons/menu.PNG" className="h-5 w-5 invert" alt="Menu" />
+          <button 
+            onClick={() => setIsMenuOpen(true)} 
+            className="flex h-10 w-10 items-center justify-center transition-transform duration-200 active:scale-[0.85] opacity-60 hover:opacity-100"
+          >
+            <img src="/icons/menu.PNG" className="h-5 w-5 object-contain invert brightness-0" alt="Menu" />
           </button>
-          <button className="flex h-10 w-10 items-center justify-center opacity-60 active:scale-90 transition-transform">
-            <img src="/icons/profile.PNG" className="h-5 w-5 invert" alt="Profile" />
+          <button className="flex h-10 w-10 items-center justify-center transition-transform duration-200 active:scale-[0.85] opacity-60 hover:opacity-100">
+            <img src="/icons/profile.PNG" className="h-5 w-5 object-contain invert brightness-0" alt="Profile" />
           </button>
         </div>
 
         {!chatStarted ? (
           <div className="flex h-full flex-col items-center justify-center">
             
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-10 flex flex-col items-center gap-5 text-center">
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, ease: "easeOut" }}
+              className="mb-8 flex flex-col items-center gap-5 text-center"
+            >
               <SparkleIcon />
-              <h1 className="text-[32px] leading-[1.1] font-serif tracking-tight text-[#F2F1ED]">
+              <h1 className="text-[36px] leading-[1.1] font-serif tracking-tight text-[#F2F1ED]">
                 О чем думаешь,<br />хм?
               </h1>
             </motion.div>
 
-            {/* Бегущие строки */}
-            <div className="min-h-[100px] w-full flex flex-col justify-center mb-10">
+            <div className="min-h-[120px] w-full flex flex-col justify-center mb-6">
               {rows.length > 0 && (
-                <div className="w-full space-y-1.5 opacity-80">
+                <motion.div 
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.7, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+                  className="w-full space-y-1 opacity-90"
+                >
                   {rows.map((row, i) => (
                     <PromptRow key={i} items={row.items} direction={row.dir} speed={row.speed} onPick={handlePick} />
                   ))}
-                </div>
+                </motion.div>
               )}
             </div>
 
-            <div className="w-full max-w-[650px] px-6">
-              <div className="relative flex w-full items-end gap-3 bg-[#2D2C2A] rounded-[22px] border border-white/5 p-2 transition-all focus-within:border-white/15">
-                <textarea
-                  ref={textareaRef}
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  placeholder="Спросить что-нибудь..."
-                  className="hide-scrollbar w-full flex-1 bg-transparent pl-4 py-3 text-[16px] leading-[1.4] text-[#E8E6E3] outline-none placeholder:text-[#7A7975] resize-none"
-                  onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); onSend(); } }}
-                />
-
-                <button
-                  onClick={() => onSend()}
-                  disabled={message.trim().length < 2}
-                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[18px] bg-[#5FA86D] transition-all active:scale-90 disabled:opacity-20"
-                >
-                  <img src="/icons/send.PNG" className="h-5 w-5 brightness-0" alt="Send" />
-                </button>
-              </div>
+            <div className="w-full max-w-[650px] px-[25px] flex flex-col items-center">
               
-              {/* Текст под строкой */}
-              <p className="mt-4 text-center text-[13px] font-medium text-[#7A7975] opacity-60">
+              <motion.div 
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.7, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                className="relative flex w-full flex-col bg-[#2D2C2A] rounded-[26px] border border-white/5 z-10 transition-all duration-300 focus-within:border-white/10"
+              >
+                <div className="relative flex flex-col min-h-[80px] p-4">
+                  <AnimatePresence mode="wait">
+                    {isAnimating && (
+                      <motion.div
+                        key="animating-text"
+                        initial={{ opacity: 0, y: 4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute left-5 top-5 w-[calc(100%-70px)] text-[16px] leading-[1.5] text-[#E8E6E3] pointer-events-none"
+                      >
+                        {message}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  <textarea
+                    ref={textareaRef}
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    placeholder={isAnimating ? "" : "Спросить что-нибудь..."}
+                    className={`hide-scrollbar w-full flex-1 bg-transparent px-1 pt-1 pb-1 pr-12 text-[16px] leading-[1.5] text-[#E8E6E3] outline-none placeholder:text-[#7A7975] resize-none transition-opacity duration-150 ${isAnimating ? 'opacity-0' : 'opacity-100'}`}
+                    onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); onSend(); } }}
+                  />
+
+                  <div className="absolute right-3 bottom-3">
+                    <button
+                      onClick={() => onSend()}
+                      disabled={message.trim().length < 2 || isAnimating}
+                      className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-[#5FA86D] transition-all duration-200 active:scale-[0.9] hover:bg-[#6FBD7E] disabled:opacity-20 disabled:hover:bg-[#5FA86D] disabled:active:scale-100 shadow-none"
+                    >
+                      <img src="/icons/send.PNG" className="h-5 w-5 brightness-0 opacity-90" alt="Send" />
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Дисклеймер под строкой */}
+              <p className="mt-4 text-[12px] font-medium text-[#7A7975] tracking-tight">
                 Ии это. Он ошибаться может
               </p>
+
             </div>
           </div>
         ) : (
