@@ -7,8 +7,8 @@ import { MenuDrawer } from "@/components/menu-drawer";
 
 const SparkleIcon = () => (
   <svg 
-    width="32" 
-    height="32" 
+    width="36" 
+    height="36" 
     viewBox="0 0 24 24" 
     fill="none" 
     xmlns="http://www.w3.org/2000/svg"
@@ -27,7 +27,7 @@ const PromptRow = ({ items, direction, speed, onPick }: any) => {
           <button 
             key={idx} 
             onClick={() => onPick(item)}
-            className="whitespace-nowrap rounded-xl border border-white/5 bg-white/[0.02] px-4 py-2 text-[13px] text-[#9A9894] transition-all duration-200 hover:bg-white/5 hover:text-[#C5C4C0] active:scale-95"
+            className="whitespace-nowrap rounded-xl border border-white/5 bg-[#2D2C2A]/50 px-4 py-2 text-[14px] text-[#9A9894] transition-all duration-200 hover:bg-white/5 hover:text-[#C5C4C0] active:scale-95"
           >
             {item}
           </button>
@@ -51,12 +51,10 @@ export function StartScreen() {
       .then(res => res.text())
       .then(data => {
         const lines = data.split(/\r?\n/).filter(line => line.trim().length > 0);
-        setAllPrompts(shuffled(lines));
+        setAllPrompts(lines.sort(() => Math.random() - 0.5));
       })
       .catch(() => setAllPrompts(["Ошибка загрузки"]));
   }, []);
-
-  const shuffled = (arr: any[]) => [...arr].sort(() => Math.random() - 0.5);
 
   const rows = useMemo(() => {
     if (allPrompts.length === 0) return [];
@@ -70,9 +68,8 @@ export function StartScreen() {
     const textarea = textareaRef.current;
     if (textarea) {
       textarea.style.height = 'auto';
-      // Ограничение высоты: ~24px на строку, макс 3 строки (72px)
-      const scrollHeight = textarea.scrollHeight;
-      textarea.style.height = `${Math.min(scrollHeight, 72)}px`;
+      // Ограничение высоты: ~80px это примерно 3 строки текста
+      textarea.style.height = `${Math.min(textarea.scrollHeight, 80)}px`;
     }
   }, [message]);
 
@@ -100,62 +97,63 @@ export function StartScreen() {
         .hide-scrollbar::-webkit-scrollbar { display: none; }
       `}</style>
 
-      <div 
-        className={`flex h-full flex-col transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
-          isMenuOpen ? 'blur-[8px] scale-[0.97] opacity-40' : 'blur-0 scale-100 opacity-100'
-        }`}
-      >
-        {/* Панель управления */}
+      <div className={`flex h-full flex-col transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] origin-center ${
+          isMenuOpen ? 'blur-[8px] scale-[0.96] opacity-40' : 'blur-0 scale-100 opacity-100'
+        }`}>
+        
+        {/* Верхняя панель */}
         <div className="absolute left-0 right-0 top-0 z-50 flex items-center justify-between px-6 py-6">
-          <button onClick={() => setIsMenuOpen(true)} className="opacity-40 hover:opacity-100 transition-opacity active:scale-90">
-            <img src="/icons/menu.PNG" className="h-5 w-5 invert" alt="" />
+          <button onClick={() => setIsMenuOpen(true)} className="flex h-10 w-10 items-center justify-center opacity-60 active:scale-90 transition-transform">
+            <img src="/icons/menu.PNG" className="h-5 w-5 invert" alt="Menu" />
           </button>
-          <button className="opacity-40 hover:opacity-100 transition-opacity active:scale-90">
-            <img src="/icons/profile.PNG" className="h-5 w-5 invert" alt="" />
+          <button className="flex h-10 w-10 items-center justify-center opacity-60 active:scale-90 transition-transform">
+            <img src="/icons/profile.PNG" className="h-5 w-5 invert" alt="Profile" />
           </button>
         </div>
 
         {!chatStarted ? (
-          <div className="flex h-full flex-col items-center justify-center px-6">
+          <div className="flex h-full flex-col items-center justify-center">
             
-            <div className="mb-8 flex flex-col items-center gap-4 text-center">
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-10 flex flex-col items-center gap-5 text-center">
               <SparkleIcon />
-              <h1 className="text-[32px] font-serif italic text-[#F2F1ED]">
-                О чем думаешь, хм?
+              <h1 className="text-[32px] leading-[1.1] font-serif tracking-tight text-[#F2F1ED]">
+                О чем думаешь,<br />хм?
               </h1>
-            </div>
+            </motion.div>
 
-            <div className="w-full mb-8 space-y-1">
-              {rows.map((row, i) => (
-                <PromptRow key={i} {...row} onPick={handlePick} />
-              ))}
-            </div>
-
-            <div className="w-full max-w-[600px]">
-              {/* Поле ввода с новым цветом фона и квадратной кнопкой */}
-              <div className="relative flex w-full flex-col bg-[#32312F] rounded-[22px] border border-white/10 transition-all duration-300 focus-within:border-white/20">
-                <div className="relative flex items-end p-2.5">
-                  <textarea
-                    ref={textareaRef}
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    placeholder={isAnimating ? "" : "Спросить что-нибудь..."}
-                    className="hide-scrollbar w-full bg-transparent px-3 py-2 text-[16px] leading-[1.4] text-[#E8E6E3] outline-none placeholder:text-[#7A7975] resize-none"
-                    onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); onSend(); } }}
-                  />
-
-                  <button
-                    onClick={() => onSend()}
-                    disabled={message.trim().length < 2 || isAnimating}
-                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] bg-[#5FA86D] transition-all duration-200 active:scale-90 hover:bg-[#6FBD7E] disabled:opacity-20"
-                  >
-                    <img src="/icons/send.PNG" className="h-5 w-5 invert brightness-0" alt="" />
-                  </button>
+            {/* Бегущие строки */}
+            <div className="min-h-[100px] w-full flex flex-col justify-center mb-10">
+              {rows.length > 0 && (
+                <div className="w-full space-y-1.5 opacity-80">
+                  {rows.map((row, i) => (
+                    <PromptRow key={i} items={row.items} direction={row.dir} speed={row.speed} onPick={handlePick} />
+                  ))}
                 </div>
-              </div>
+              )}
+            </div>
 
+            <div className="w-full max-w-[650px] px-6">
+              <div className="relative flex w-full items-end gap-3 bg-[#2D2C2A] rounded-[22px] border border-white/5 p-2 transition-all focus-within:border-white/15">
+                <textarea
+                  ref={textareaRef}
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  placeholder="Спросить что-нибудь..."
+                  className="hide-scrollbar w-full flex-1 bg-transparent pl-4 py-3 text-[16px] leading-[1.4] text-[#E8E6E3] outline-none placeholder:text-[#7A7975] resize-none"
+                  onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); onSend(); } }}
+                />
+
+                <button
+                  onClick={() => onSend()}
+                  disabled={message.trim().length < 2}
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[18px] bg-[#5FA86D] transition-all active:scale-90 disabled:opacity-20"
+                >
+                  <img src="/icons/send.PNG" className="h-5 w-5 brightness-0" alt="Send" />
+                </button>
+              </div>
+              
               {/* Текст под строкой */}
-              <p className="mt-4 text-center text-[13px] font-medium text-[#7A7975] italic tracking-tight">
+              <p className="mt-4 text-center text-[13px] font-medium text-[#7A7975] opacity-60">
                 Ии это. Он ошибаться может
               </p>
             </div>
