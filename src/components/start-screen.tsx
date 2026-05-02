@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useMemo } from "react";
 import { ChatThread, type ChatMessage } from "@/components/chat-thread";
 import { MenuDrawer } from "@/components/menu-drawer";
 
-// Компонент бегущей строки для подсказок
+// PromptRow остается без изменений...
 const PromptRow = ({ items, direction, speed, onPick }: any) => {
   const scrollClass = direction === 'left' ? 'animate-marquee-left' : 'animate-marquee-right';
   return (
@@ -32,7 +32,6 @@ export function StartScreen() {
   const [allPrompts, setAllPrompts] = useState<string[]>([]);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Загрузка словаря для подсказок
   useEffect(() => {
     fetch('/slovar.txt')
       .then(res => res.text())
@@ -43,7 +42,6 @@ export function StartScreen() {
       .catch(() => setAllPrompts(["Гайд на Гранд-мастера Йоду", "Лучшие модули для Вейдера", "Как пройти 7 уровень"]));
   }, []);
 
-  // Распределение подсказок по двум рядам
   const rows = useMemo(() => {
     if (allPrompts.length === 0) return [];
     return [
@@ -52,13 +50,13 @@ export function StartScreen() {
     ];
   }, [allPrompts]);
 
-  // Логика роста высоты: строго 1 строка (24px) до 2 строк (48-50px)
+  // Управление высотой: строго 24px (1 строка) в начале
   useEffect(() => {
     const textarea = textareaRef.current;
     if (textarea) {
       textarea.style.height = '24px'; 
       const scrollHeight = textarea.scrollHeight;
-      // Если контента больше чем на две строки, фиксируем 50px и включаем скролл
+      // Растет до 2 строк (48-50px), затем скролл
       textarea.style.height = scrollHeight > 50 ? '50px' : `${scrollHeight}px`;
     }
   }, [message]);
@@ -78,28 +76,27 @@ export function StartScreen() {
         @keyframes marquee-right { from { transform: translateX(-50%); } to { transform: translateX(0); } }
         .animate-marquee-left { animation: marquee-left linear infinite; }
         .animate-marquee-right { animation: marquee-right linear infinite; }
-        .hide-scrollbar::-webkit-scrollbar { display: none; }
-        .hide-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+        .custom-scroll::-webkit-scrollbar { display: none; }
+        .custom-scroll { scrollbar-width: none; -ms-overflow-style: none; }
       `}</style>
 
-      {/* Кнопка меню: отступ слева 8 (32px), как у заголовка */}
+      {/* Кнопка меню: отступ слева 8 (32px) */}
       {!chatStarted && (
         <button 
           onClick={() => setIsMenuOpen(true)}
-          className="absolute top-6 left-8 z-40 p-1 active:scale-90 transition-transform"
+          className="absolute top-8 left-8 z-40 p-1 active:scale-90 transition-transform"
         >
-          <img src="/icons/menu.svg" alt="Menu" className="w-6 h-6 opacity-80 hover:opacity-100" />
+          <img src="/icons/menu.svg" alt="Menu" className="w-6 h-6 opacity-70" />
         </button>
       )}
 
-      {/* Выдвижное меню (теперь с эффектом "рисования" внутри самого компонента) */}
       <MenuDrawer open={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
 
       <div className="flex h-full flex-col">
         {!chatStarted ? (
           <div className="flex h-full flex-col items-center justify-center">
             
-            {/* Блок приветствия: отступ px-8 */}
+            {/* Контент: px-8 */}
             <div className="w-full max-w-[600px] px-8 mb-8 flex flex-col items-start">
               <img src="/icons/logo.svg" alt="Logo" className="w-10 h-10 mb-6" />
               <div className="space-y-0.5">
@@ -112,35 +109,24 @@ export function StartScreen() {
               </div>
             </div>
 
-            {/* Подсказаки (промпты) */}
+            {/* Ряды подсказок */}
             <div className="w-full space-y-1 mb-8 opacity-40">
               {rows.map((row, i) => (
-                <PromptRow 
-                  key={i} 
-                  items={row.items} 
-                  direction={row.dir} 
-                  speed={row.speed} 
-                  onPick={(t:string) => setMessage(t)} 
-                />
+                <PromptRow key={i} items={row.items} direction={row.dir} speed={row.speed} onPick={(t:string) => setMessage(t)} />
               ))}
             </div>
 
-            {/* Поле ввода: px-8, чтобы границы совпадали с текстом выше */}
+            {/* Строка ввода: px-8, высота 1 строка, тусклый контур */}
             <div className="w-full max-w-[600px] px-8">
-              <div className="relative flex w-full flex-col bg-[#2D2C2A] rounded-[20px] border border-white/[0.06] transition-all focus-within:border-white/10">
+              <div className="relative flex w-full flex-col bg-[#2D2C2A] rounded-[22px] border border-white/[0.04] transition-all focus-within:border-white/10">
                 <div className="flex flex-col p-3"> 
                   <textarea
                     ref={textareaRef}
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     placeholder="Спросить что-нибудь..."
-                    className="hide-scrollbar w-full flex-1 bg-transparent px-2 text-[15px] leading-[24px] text-[#E8E6E3] outline-none placeholder:text-[#6A6965] resize-none overflow-y-auto"
-                    onKeyDown={(e) => { 
-                      if (e.key === 'Enter' && !e.shiftKey) { 
-                        e.preventDefault(); 
-                        onSend(); 
-                      } 
-                    }}
+                    className="custom-scroll w-full flex-1 bg-transparent px-2 text-[15px] leading-[24px] text-[#E8E6E3] outline-none placeholder:text-[#6A6965] resize-none overflow-y-auto"
+                    onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); onSend(); } }}
                   />
 
                   <div className="flex items-center justify-end mt-2">
@@ -162,7 +148,6 @@ export function StartScreen() {
             </div>
           </div>
         ) : (
-          /* Экран активного чата */
           <div className="h-full w-full pt-8">
             <ChatThread messages={messages} />
           </div>
