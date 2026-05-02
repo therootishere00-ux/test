@@ -1,141 +1,107 @@
 "use client";
 
-import { useEffect, useRef, useState, useMemo } from "react";
-import { ChatThread, type ChatMessage } from "@/components/chat-thread";
+import { useEffect, useRef, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { MenuDrawer } from "@/components/menu-drawer";
 
-const PromptRow = ({ items, direction, speed, onPick }: any) => {
-  const scrollClass = direction === 'left' ? 'animate-marquee-left' : 'animate-marquee-right';
-  return (
-    <div className="flex overflow-hidden py-1 select-none w-full">
-      <div className={`flex shrink-0 items-center gap-2 ${scrollClass}`} style={{ animationDuration: speed }}>
-        {[...items, ...items].map((item: string, idx: number) => (
-          <button 
-            key={idx} 
-            onClick={() => onPick(item)}
-            className="whitespace-nowrap rounded-lg border border-white/5 bg-transparent px-3 py-1.5 text-[13px] text-[#9A9894] transition-all duration-200 hover:bg-white/5 hover:text-[#C5C4C0] active:scale-95"
-          >
-            {item}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-};
+// Иконка-звездочка для фона (статичная)
+const SparkleIcon = () => (
+  <svg 
+    width="36" 
+    height="36" 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    xmlns="http://www.w3.org/2000/svg"
+    className="text-[#5FA86D]"
+  >
+    <path d="M12 2L12.8 8.5L19 7L14.5 11.5L20 16L13.5 14.5L12 21L10.5 14.5L4 16L9.5 11.5L5 7L11.2 8.5L12 2Z" fill="currentColor"/>
+  </svg>
+);
 
 export function StartScreen() {
   const [message, setMessage] = useState("");
-  const [chatStarted, setChatStarted] = useState(false);
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [allPrompts, setAllPrompts] = useState<string[]>([]);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  useEffect(() => {
-    fetch('/slovar.txt')
-      .then(res => res.text())
-      .then(data => {
-        const lines = data.split(/\r?\n/).filter(line => line.trim().length > 0);
-        setAllPrompts(lines.sort(() => Math.random() - 0.5));
-      })
-      .catch(() => setAllPrompts(["Гайд на Гранд-мастера Йоду", "Лучшие модули для Вейдера", "Как пройти 7 уровень"]));
-  }, []);
-
-  const rows = useMemo(() => {
-    if (allPrompts.length === 0) return [];
-    return [
-      { items: allPrompts.slice(0, 10), dir: 'left', speed: '100s' },
-      { items: allPrompts.slice(10, 20), dir: 'right', speed: '90s' },
-    ];
-  }, [allPrompts]);
-
+  // Автоматическая высота текстового поля (макс 2 строки)
   useEffect(() => {
     const textarea = textareaRef.current;
     if (textarea) {
-      textarea.style.height = 'auto';
-      textarea.style.height = `${Math.max(Math.min(textarea.scrollHeight, 120), 24)}px`;
+      textarea.style.height = "24px";
+      const scrollHeight = textarea.scrollHeight;
+      textarea.style.height = Math.min(scrollHeight, 48) + "px";
     }
   }, [message]);
 
-  const onSend = (text?: string) => {
-    const content = text || message;
-    if (content.trim().length < 2) return;
-    setMessages([{ id: Date.now().toString(), role: "user", content: content.trim() }]);
-    setChatStarted(true);
-    setMessage("");
-  };
-
   return (
-    <main className="relative h-dvh w-full bg-[#252422] font-sans antialiased overflow-hidden text-[#E8E6E3]">
-      <style jsx global>{`
-        @keyframes marquee-left { from { transform: translateX(0); } to { transform: translateX(-50%); } }
-        @keyframes marquee-right { from { transform: translateX(-50%); } to { transform: translateX(0); } }
-        .animate-marquee-left { animation: marquee-left linear infinite; }
-        .animate-marquee-right { animation: marquee-right linear infinite; }
-        .hide-scrollbar::-webkit-scrollbar { display: none; }
-      `}</style>
+    <main className="relative h-dvh w-full bg-[#252422] flex flex-col items-center justify-center overflow-hidden">
+      
+      {/* Кнопка вызова меню (левый верхний угол) */}
+      <button 
+        onClick={() => setIsMenuOpen(true)}
+        className="absolute top-6 left-6 z-50 p-2 active:scale-90 transition-transform"
+      >
+        <img src="/icons/menu.svg" alt="Menu" className="w-6 h-6" />
+      </button>
 
-      <div className="flex h-full flex-col">
-        {!chatStarted ? (
-          <div className="flex h-full flex-col items-center justify-center">
-            
-            {/* Блок приветствия */}
-            <div className="w-full max-w-[600px] px-8 mb-8 flex flex-col items-start">
-              <img src="/icons/logo.svg" alt="Logo" className="w-10 h-10 mb-6" />
-              
-              <div className="space-y-0.5">
-                <h2 className="text-[28px] leading-tight font-serif text-[#F2F1ED] tracking-tight">
-                  Привет, <span className="text-[#5FA86D]">юзер</span>
-                </h2>
-                {/* Вторая строка сделана темнее */}
-                <h1 className="text-[28px] leading-tight font-serif text-[#A3A29D] tracking-tight">
-                  Как помочь тебе сегодня?
-                </h1>
-              </div>
+      {/* Компонент меню (Drawer) */}
+      <MenuDrawer open={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
+
+      {/* Фоновая иконка-звездочка */}
+      <div className="mb-8 opacity-80">
+        <SparkleIcon />
+      </div>
+
+      {/* Блок приветствия */}
+      <div className="w-full max-w-[600px] px-8 mb-12 flex flex-col items-start">
+        <div className="space-y-0.5">
+          <h2 className="text-[28px] leading-tight font-serif text-[#F2F1ED] tracking-tight">
+            Привет, <span className="text-[#5FA86D]">юзер</span>
+          </h2>
+          {/* Вторая строка: глубокий серый (#6A6965) */}
+          <h1 className="text-[28px] leading-tight font-serif text-[#6A6965] tracking-tight">
+            Как помочь тебе сегодня?
+          </h1>
+        </div>
+      </div>
+
+      {/* Контейнер ввода */}
+      <div className="w-full max-w-[600px] px-6">
+        <div className="relative flex flex-col w-full bg-[#2D2C2A] rounded-[24px] border border-white/5 p-4 transition-all focus-within:border-white/10">
+          
+          <textarea
+            ref={textareaRef}
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            placeholder="Спроси о тактике или персонажах..."
+            className="w-full bg-transparent text-[#F2F1ED] text-[16px] leading-6 placeholder-[#6A6965] resize-none outline-none overflow-hidden min-h-[24px]"
+            rows={1}
+          />
+
+          <div className="flex items-center justify-between mt-4">
+            {/* Левые инструменты (заглушки) */}
+            <div className="flex items-center gap-2">
+              <button className="h-8 w-8 flex items-center justify-center rounded-xl border border-white/5 text-[#6A6965] hover:bg-white/5 transition-colors">
+                <span className="text-xl leading-none">+</span>
+              </button>
             </div>
 
-            {/* Подсказки */}
-            <div className="w-full space-y-1 mb-8 opacity-60">
-              {rows.map((row, i) => (
-                <PromptRow key={i} items={row.items} direction={row.dir} speed={row.speed} onPick={(t:string) => setMessage(t)} />
-              ))}
-            </div>
-
-            {/* Строка ввода (статичная) */}
-            <div className="w-full max-w-[600px] px-6">
-              <div className="relative flex w-full flex-col bg-[#2D2C2A] rounded-[20px] border border-white/10 transition-colors">
-                <div className="flex flex-col p-3"> 
-                  <textarea
-                    ref={textareaRef}
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    placeholder="Спросить что-нибудь..."
-                    className="hide-scrollbar w-full flex-1 bg-transparent px-2 text-[15px] leading-snug text-[#E8E6E3] outline-none placeholder:text-[#6A6965] resize-none"
-                    onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); onSend(); } }}
-                    rows={1}
-                  />
-
-                  <div className="flex items-center justify-end mt-3">
-                    <button
-                      onClick={() => onSend()}
-                      disabled={message.trim().length < 2}
-                      className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-[#5FA86D] transition-all hover:bg-[#6FBD7E] disabled:opacity-10 active:scale-90"
-                    >
-                      <img 
-                        src="/icons/send.svg" 
-                        className="w-4.5 h-4.5" 
-                        style={{ filter: 'brightness(0) saturate(100%) invert(11%) sepia(4%) saturate(842%) hue-rotate(3deg) brightness(96%) contrast(89%)' }} 
-                        alt="Send" 
-                      />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
+            {/* Кнопка отправки */}
+            <button
+              disabled={!message.trim()}
+              className="flex h-8 w-10 items-center justify-center rounded-xl bg-[#5FA86D] text-[#252422] transition-all active:scale-90 disabled:opacity-20 disabled:grayscale"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 20V4M12 4L6 10M12 4L18 10" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
           </div>
-        ) : (
-          <div className="h-full w-full pt-8">
-            <ChatThread messages={messages} />
-          </div>
-        )}
+        </div>
+      </div>
+
+      {/* Подпись внизу (опционально) */}
+      <div className="absolute bottom-6 text-[11px] text-[#6A6965] tracking-widest uppercase opacity-40">
+        SWGOH Intelligence
       </div>
     </main>
   );
