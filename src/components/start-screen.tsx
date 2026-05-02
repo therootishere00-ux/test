@@ -1,11 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { ChatThread, type ChatMessage } from "@/components/chat-thread";
 import { MenuDrawer } from "@/components/menu-drawer";
 
-// Иконка-звездочка
 const SparkleIcon = () => (
   <svg 
     width="32" 
@@ -102,14 +100,14 @@ export function StartScreen() {
         {!chatStarted ? (
           <div className="flex h-full flex-col items-center justify-center">
             
-            <div className="mb-10 flex flex-col items-center gap-4 text-center">
+            <div className="mb-10 flex flex-col items-center gap-4 text-center px-4">
               <SparkleIcon />
-              <h1 className="text-[32px] leading-tight font-serif text-[#F2F1ED]">
-                О чем думаешь,<br />хм?
+              <h1 className="text-[32px] leading-tight font-serif text-[#F2F1ED] tracking-tight">
+                С чем помочь тебе,<br />хм?
               </h1>
             </div>
 
-            {/* Компактные бегущие строки */}
+            {/* Бегущие строки */}
             <div className="w-full space-y-1 mb-8 opacity-80">
               {rows.map((row, i) => (
                 <PromptRow key={i} items={row.items} direction={row.dir} speed={row.speed} onPick={(t:string) => setMessage(t)} />
@@ -118,7 +116,7 @@ export function StartScreen() {
 
             <div className="w-full max-w-[600px] px-6">
               <div className="relative flex w-full flex-col bg-[#2D2C2A] rounded-[22px] border border-white/5 focus-within:border-white/10 transition-all">
-                <div className="flex flex-col p-3 min-h-[90px]">
+                <div className="flex flex-col p-3 min-h-[85px]">
                   <textarea
                     ref={textareaRef}
                     value={message}
@@ -129,19 +127,19 @@ export function StartScreen() {
                   />
 
                   <div className="flex items-center justify-between mt-2">
-                    {/* Плашка "Думай дольше" */}
-                    <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-white/10 bg-white/[0.02] hover:bg-white/[0.05] transition-colors active:scale-95">
-                      <img src="/icons/bulb.svg" className="w-3.5 h-3.5" alt="" />
-                      <span className="text-[13px] text-[#A3A29D] font-medium">Думай дольше</span>
+                    {/* Плашка "Думай дольше" - залитая, шрифт как в заголовке */}
+                    <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 transition-colors active:scale-95">
+                      <img src="/icons/bulb.svg" className="w-3.5 h-3.5 opacity-60" style={{ filter: 'brightness(0) saturate(100%) invert(73%) sepia(5%) saturate(148%) hue-rotate(5deg) brightness(89%) contrast(83%)' }} alt="" />
+                      <span className="text-[13px] text-[#A3A29D] font-serif font-medium">Думай дольше</span>
                     </button>
 
-                    {/* Квадратная кнопка отправки */}
+                    {/* Квадратная кнопка отправки - крупнее и скруглена под стиль ввода */}
                     <button
                       onClick={() => onSend()}
                       disabled={message.trim().length < 2}
-                      className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#5FA86D] transition-all hover:bg-[#6FBD7E] disabled:opacity-20 active:scale-90"
+                      className="flex h-9 w-9 items-center justify-center rounded-[14px] bg-[#5FA86D] transition-all hover:bg-[#6FBD7E] disabled:opacity-20 active:scale-90"
                     >
-                      <img src="/icons/send.svg" className="w-4 h-4" alt="Send" />
+                      <img src="/icons/send.svg" className="w-[18px] h-[18px]" alt="Send" />
                     </button>
                   </div>
                 </div>
