@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useMemo } from "react";
 import { ChatThread, type ChatMessage } from "@/components/chat-thread";
 import { MenuDrawer } from "@/components/menu-drawer";
 
-// PromptRow остается без изменений...
+// Компонент бегущей строки для подсказок
 const PromptRow = ({ items, direction, speed, onPick }: any) => {
   const scrollClass = direction === 'left' ? 'animate-marquee-left' : 'animate-marquee-right';
   return (
@@ -32,6 +32,7 @@ export function StartScreen() {
   const [allPrompts, setAllPrompts] = useState<string[]>([]);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  // Загрузка словаря
   useEffect(() => {
     fetch('/slovar.txt')
       .then(res => res.text())
@@ -50,13 +51,12 @@ export function StartScreen() {
     ];
   }, [allPrompts]);
 
-  // Управление высотой: строго 24px (1 строка) в начале
+  // Высота инпута: 24px (1 строка) -> 50px (2 строки)
   useEffect(() => {
     const textarea = textareaRef.current;
     if (textarea) {
       textarea.style.height = '24px'; 
       const scrollHeight = textarea.scrollHeight;
-      // Растет до 2 строк (48-50px), затем скролл
       textarea.style.height = scrollHeight > 50 ? '50px' : `${scrollHeight}px`;
     }
   }, [message]);
@@ -64,8 +64,27 @@ export function StartScreen() {
   const onSend = (text?: string) => {
     const content = text || message;
     if (content.trim().length < 2) return;
-    setMessages([{ id: Date.now().toString(), role: "user", content: content.trim() }]);
+    
+    const newUserMsg: ChatMessage = { id: Date.now().toString(), role: "user", content: content.trim() };
+    
+    setMessages(prev => [...prev, newUserMsg]);
     setChatStarted(true);
+    setMessage("");
+
+    // Имитация ответа ИИ через секунду
+    setTimeout(() => {
+      const aiResponse: ChatMessage = { 
+        id: (Date.now() + 1).toString(), 
+        role: "assistant", 
+        content: "Это демонстрационный ответ. В будущем здесь будет логика вашего ИИ бэкенда." 
+      };
+      setMessages(prev => [...prev, aiResponse]);
+    }, 1000);
+  };
+
+  const handleNewChat = () => {
+    setChatStarted(false);
+    setMessages([]);
     setMessage("");
   };
 
@@ -76,11 +95,11 @@ export function StartScreen() {
         @keyframes marquee-right { from { transform: translateX(-50%); } to { transform: translateX(0); } }
         .animate-marquee-left { animation: marquee-left linear infinite; }
         .animate-marquee-right { animation: marquee-right linear infinite; }
-        .custom-scroll::-webkit-scrollbar { display: none; }
-        .custom-scroll { scrollbar-width: none; -ms-overflow-style: none; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
       `}</style>
 
-      {/* Кнопка меню: отступ слева 8 (32px) */}
+      {/* Кнопка меню (только на стартовом экране) */}
       {!chatStarted && (
         <button 
           onClick={() => setIsMenuOpen(true)}
@@ -94,9 +113,8 @@ export function StartScreen() {
 
       <div className="flex h-full flex-col">
         {!chatStarted ? (
-          <div className="flex h-full flex-col items-center justify-center">
-            
-            {/* Контент: px-8 */}
+          /* --- START VIEW --- */
+          <div className="flex flex-1 flex-col items-center justify-center">
             <div className="w-full max-w-[600px] px-8 mb-8 flex flex-col items-start">
               <img src="/icons/logo.svg" alt="Logo" className="w-10 h-10 mb-6" />
               <div className="space-y-0.5">
@@ -109,49 +127,60 @@ export function StartScreen() {
               </div>
             </div>
 
-            {/* Ряды подсказок */}
             <div className="w-full space-y-1 mb-8 opacity-40">
               {rows.map((row, i) => (
                 <PromptRow key={i} items={row.items} direction={row.dir} speed={row.speed} onPick={(t:string) => setMessage(t)} />
               ))}
             </div>
+          </div>
+        ) : (
+          /* --- CHAT VIEW --- */
+          <div className="flex-1 overflow-hidden flex flex-col px-8">
+            <ChatThread messages={messages} onNewChat={handleNewChat} />
+          </div>
+        )}
 
-            {/* Строка ввода: px-8, высота 1 строка, тусклый контур */}
-            <div className="w-full max-w-[600px] px-8">
-              <div className="relative flex w-full flex-col bg-[#2D2C2A] rounded-[22px] border border-white/[0.04] transition-all focus-within:border-white/10">
-                <div className="flex flex-col p-3"> 
-                  <textarea
-                    ref={textareaRef}
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    placeholder="Спросить что-нибудь..."
-                    className="custom-scroll w-full flex-1 bg-transparent px-2 text-[15px] leading-[24px] text-[#E8E6E3] outline-none placeholder:text-[#6A6965] resize-none overflow-y-auto"
-                    onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); onSend(); } }}
+        /* --- INPUT AREA --- */
+        <div className="w-full max-w-[600px] mx-auto px-8 pb-6">
+          <div className="relative flex w-full flex-col bg-[#2D2C2A] rounded-[22px] border border-white/[0.04] transition-all focus-within:border-white/10">
+            <div className="flex flex-col p-3"> 
+              <textarea
+                ref={textareaRef}
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder="Спросить что-нибудь..."
+                className="hide-scrollbar w-full flex-1 bg-transparent px-2 text-[15px] leading-[24px] text-[#E8E6E3] outline-none placeholder:text-[#6A6965] resize-none overflow-y-auto"
+                onKeyDown={(e) => { 
+                  if (e.key === 'Enter' && !e.shiftKey) { 
+                    e.preventDefault(); 
+                    onSend(); 
+                  } 
+                }}
+              />
+
+              <div className="flex items-center justify-end mt-2">
+                <button
+                  onClick={() => onSend()}
+                  disabled={message.trim().length < 2}
+                  className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-[#5FA86D] transition-all hover:bg-[#6FBD7E] disabled:opacity-10 active:scale-90"
+                >
+                  <img 
+                    src="/icons/send.svg" 
+                    className="w-4 h-4" 
+                    style={{ filter: 'brightness(0) saturate(100%) invert(11%) sepia(4%) saturate(842%) hue-rotate(3deg) brightness(96%) contrast(89%)' }} 
+                    alt="Send" 
                   />
-
-                  <div className="flex items-center justify-end mt-2">
-                    <button
-                      onClick={() => onSend()}
-                      disabled={message.trim().length < 2}
-                      className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-[#5FA86D] transition-all hover:bg-[#6FBD7E] disabled:opacity-10 active:scale-90"
-                    >
-                      <img 
-                        src="/icons/send.svg" 
-                        className="w-4 h-4" 
-                        style={{ filter: 'brightness(0) saturate(100%) invert(11%) sepia(4%) saturate(842%) hue-rotate(3deg) brightness(96%) contrast(89%)' }} 
-                        alt="Send" 
-                      />
-                    </button>
-                  </div>
-                </div>
+                </button>
               </div>
             </div>
           </div>
-        ) : (
-          <div className="h-full w-full pt-8">
-            <ChatThread messages={messages} />
-          </div>
-        )}
+
+          {!chatStarted && (
+            <p className="mt-4 text-center text-[11px] leading-normal text-[#6A6965] px-4">
+              Хотя мы стараемся сделать ваш опыт общения лучше, это ИИ и он может ошибаться
+            </p>
+          )}
+        </div>
       </div>
     </main>
   );
