@@ -27,7 +27,6 @@ export function StartScreen() {
   const [chatStarted, setChatStarted] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [allPrompts, setAllPrompts] = useState<string[]>([]);
-  const [isFocused, setIsFocused] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -72,15 +71,6 @@ export function StartScreen() {
         .animate-marquee-left { animation: marquee-left linear infinite; }
         .animate-marquee-right { animation: marquee-right linear infinite; }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
-        
-        @keyframes border-shimmer {
-          0% { border-color: rgba(255, 255, 255, 0.05); }
-          50% { border-color: #5FA86D; }
-          100% { border-color: rgba(255, 255, 255, 0.05); }
-        }
-        .animate-shimmer {
-          animation: border-shimmer 2s infinite ease-in-out;
-        }
       `}</style>
 
       <div className="flex h-full flex-col">
@@ -92,7 +82,7 @@ export function StartScreen() {
               <img src="/icons/logo.svg" alt="Logo" className="w-10 h-10 mb-6" />
               
               <div className="space-y-0.5">
-                <h2 className="text-[28px] leading-tight font-serif text-[#A3A29D] tracking-tight">
+                <h2 className="text-[28px] leading-tight font-serif text-[#F2F1ED] tracking-tight">
                   Привет, <span className="text-[#5FA86D]">юзер</span>
                 </h2>
                 <h1 className="text-[28px] leading-tight font-serif text-[#F2F1ED] tracking-tight">
@@ -101,7 +91,7 @@ export function StartScreen() {
               </div>
             </div>
 
-            {/* Подсказки (не трогаем по просьбе) */}
+            {/* Подсказки */}
             <div className="w-full space-y-1 mb-8 opacity-60">
               {rows.map((row, i) => (
                 <PromptRow key={i} items={row.items} direction={row.dir} speed={row.speed} onPick={(t:string) => setMessage(t)} />
@@ -110,17 +100,11 @@ export function StartScreen() {
 
             {/* Строка ввода */}
             <div className="w-full max-w-[600px] px-6">
-              <div 
-                className={`relative flex w-full flex-col bg-[#2D2C2A] rounded-[20px] border transition-all duration-500 ${
-                  isFocused ? 'animate-shimmer border-[#5FA86D]' : 'border-white/5'
-                }`}
-              >
+              <div className="relative flex w-full flex-col bg-[#2D2C2A] rounded-[20px] border border-white/5 focus-within:border-white/20 transition-all duration-300">
                 <div className="flex flex-col p-3"> 
                   <textarea
                     ref={textareaRef}
                     value={message}
-                    onFocus={() => setIsFocused(true)}
-                    onBlur={() => setIsFocused(false)}
                     onChange={(e) => setMessage(e.target.value)}
                     placeholder="Спросить что-нибудь..."
                     className="hide-scrollbar w-full flex-1 bg-transparent px-2 text-[15px] leading-snug text-[#E8E6E3] outline-none placeholder:text-[#6A6965] resize-none"
