@@ -22,16 +22,11 @@ export function MenuDrawer({ open, onClose }: MenuDrawerProps) {
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        {/* Шапка */}
+        {/* Шапка (иконку логотипа убрали) */}
         <div className="flex items-center justify-between px-6 py-5">
-          <div className="flex items-center gap-3">
-            <img
-              src="/icons/applogo.PNG"
-              alt=""
-              className="h-7 w-7 object-contain"
-            />
+          <div className="flex items-center">
             <span
-              className="text-[22px] font-bold italic tracking-[-0.04em] text-[#305327]"
+              className="text-[22px] font-black tracking-[-0.04em] text-[#305327]"
               style={{ fontFamily: "var(--font-menu, sans-serif)" }}
             >
               swgoh<span className="opacity-70">.ai</span>
@@ -48,7 +43,7 @@ export function MenuDrawer({ open, onClose }: MenuDrawerProps) {
           <img 
             src="/icons/empty.PNG" 
             alt="" 
-            className="h-32 w-32 object-contain mb-5" // Увеличил размер
+            className="h-32 w-32 object-contain mb-5 opacity-[0.65]" // Прозрачность 0.65
           />
           <p className="text-[15px] font-medium text-[#171717]/80">
             Чатов нет
@@ -73,7 +68,7 @@ export function MenuDrawer({ open, onClose }: MenuDrawerProps) {
               <img 
                 src="/icons/suggestion.PNG" 
                 alt="" 
-                className="h-14 w-14 object-contain" // Чуть крупнее
+                className="h-14 w-14 object-contain"
               />
               <img 
                 src="/icons/right.PNG" 
@@ -98,7 +93,7 @@ export function MenuDrawer({ open, onClose }: MenuDrawerProps) {
             <img 
               src="/icons/dots.PNG" 
               alt="" 
-              className="h-5 w-5 object-contain opacity-40" // Вместо шеврона
+              className="h-5 w-5 object-contain opacity-40"
             />
           </div>
         </div>
