@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { Inter } from "next/font/google";
+import Script from "next/script"; // Импортируем компонент для скриптов
 import "./globals.css";
 
 const inter = Inter({
@@ -28,6 +29,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ru">
+      <head>
+        {/* Подключаем Telegram Web Apps SDK до интерактивности страницы */}
+        <Script 
+          src="https://telegram.org/js/telegram-web-app.js" 
+          strategy="beforeInteractive" 
+        />
+      </head>
       <body className={inter.className}>{children}</body>
     </html>
   );
