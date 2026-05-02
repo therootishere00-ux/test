@@ -49,11 +49,11 @@ export function StartScreen() {
     ];
   }, [allPrompts]);
 
-  // Рост строки: от 1 (24px) до 2 строк (52px)
+  // Рост от 1 до 2 строк
   useEffect(() => {
     const textarea = textareaRef.current;
     if (textarea) {
-      textarea.style.height = '24px'; // Исходная высота в 1 строку
+      textarea.style.height = '24px'; // Исходная высота (1 строка)
       const nextHeight = Math.min(textarea.scrollHeight, 52); // Максимум 2 строки
       textarea.style.height = `${nextHeight}px`;
     }
@@ -74,13 +74,16 @@ export function StartScreen() {
         @keyframes marquee-right { from { transform: translateX(-50%); } to { transform: translateX(0); } }
         .animate-marquee-left { animation: marquee-left linear infinite; }
         .animate-marquee-right { animation: marquee-right linear infinite; }
-        .custom-input-scroll::-webkit-scrollbar { display: none; }
-        .custom-input-scroll { scrollbar-width: none; -ms-overflow-style: none; }
+        .custom-scroll::-webkit-scrollbar { display: none; }
       `}</style>
 
+      {/* Кнопка открытия меню */}
       {!chatStarted && (
-        <button onClick={() => setIsMenuOpen(true)} className="absolute top-6 left-6 z-50 p-2 active:scale-90 transition-transform">
-          <img src="/icons/menu.svg" alt="Menu" className="w-6 h-6 opacity-80 hover:opacity-100" />
+        <button 
+          onClick={() => setIsMenuOpen(true)}
+          className="absolute top-6 left-6 z-40 p-2 active:scale-90 transition-transform"
+        >
+          <img src="/icons/menu.svg" alt="Menu" className="w-6 h-6" />
         </button>
       )}
 
@@ -89,6 +92,7 @@ export function StartScreen() {
       <div className="flex h-full flex-col">
         {!chatStarted ? (
           <div className="flex h-full flex-col items-center justify-center">
+            
             <div className="w-full max-w-[600px] px-8 mb-8 flex flex-col items-start">
               <img src="/icons/logo.svg" alt="Logo" className="w-10 h-10 mb-6" />
               <div className="space-y-0.5">
@@ -108,23 +112,29 @@ export function StartScreen() {
             </div>
 
             <div className="w-full max-w-[600px] px-6">
-              <div className="relative flex w-full flex-col bg-[#2D2C2A] rounded-[20px] border border-white/10 transition-colors focus-within:border-white/20">
+              <div className="relative flex w-full flex-col bg-[#2D2C2A] rounded-[20px] border border-white/10 transition-colors">
                 <div className="flex flex-col p-3"> 
                   <textarea
                     ref={textareaRef}
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     placeholder="Спросить что-нибудь..."
-                    className="custom-input-scroll w-full flex-1 bg-transparent px-2 text-[15px] leading-snug text-[#E8E6E3] outline-none placeholder:text-[#6A6965] resize-none overflow-y-auto"
+                    className="custom-scroll w-full flex-1 bg-transparent px-2 text-[15px] leading-snug text-[#E8E6E3] outline-none placeholder:text-[#6A6965] resize-none overflow-y-auto"
                     onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); onSend(); } }}
                   />
+
                   <div className="flex items-center justify-end mt-3">
                     <button
                       onClick={() => onSend()}
                       disabled={message.trim().length < 2}
                       className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-[#5FA86D] transition-all hover:bg-[#6FBD7E] disabled:opacity-10 active:scale-90"
                     >
-                      <img src="/icons/send.svg" className="w-4.5 h-4.5" style={{ filter: 'brightness(0) invert(1)' }} alt="Send" />
+                      <img 
+                        src="/icons/send.svg" 
+                        className="w-4.5 h-4.5" 
+                        style={{ filter: 'brightness(0) saturate(100%) invert(11%) sepia(4%) saturate(842%) hue-rotate(3deg) brightness(96%) contrast(89%)' }} 
+                        alt="Send" 
+                      />
                     </button>
                   </div>
                 </div>
