@@ -85,7 +85,8 @@ export function StartScreen() {
                 <h2 className="text-[28px] leading-tight font-serif text-[#F2F1ED] tracking-tight">
                   Привет, <span className="text-[#5FA86D]">юзер</span>
                 </h2>
-                <h1 className="text-[28px] leading-tight font-serif text-[#F2F1ED] tracking-tight">
+                {/* Вторая строка сделана темнее */}
+                <h1 className="text-[28px] leading-tight font-serif text-[#A3A29D] tracking-tight">
                   Как помочь тебе сегодня?
                 </h1>
               </div>
@@ -98,9 +99,9 @@ export function StartScreen() {
               ))}
             </div>
 
-            {/* Строка ввода */}
+            {/* Строка ввода (статичная) */}
             <div className="w-full max-w-[600px] px-6">
-              <div className="relative flex w-full flex-col bg-[#2D2C2A] rounded-[20px] border border-white/5 focus-within:border-white/20 transition-all duration-300">
+              <div className="relative flex w-full flex-col bg-[#2D2C2A] rounded-[20px] border border-white/10 transition-colors">
                 <div className="flex flex-col p-3"> 
                   <textarea
                     ref={textareaRef}
