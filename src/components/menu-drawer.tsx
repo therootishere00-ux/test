@@ -18,15 +18,20 @@ export function MenuDrawer({ open, onClose }: MenuDrawerProps) {
       />
 
       <aside
-        className={`fixed left-0 top-0 z-[70] h-dvh w-[84%] max-w-[340px] bg-[#F5F5F0] shadow-2xl transition-transform duration-300 ease-[0.23,1,0.32,1] flex flex-col ${
+        className={`fixed left-0 top-0 z-[70] h-dvh w-[84%] max-w-[340px] bg-[#F5F5F0] transition-transform duration-300 ease-[0.23,1,0.32,1] flex flex-col ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        {/* Шапка (иконку логотипа убрали) */}
+        {/* Шапка (без тени и разделителя сверху) */}
         <div className="flex items-center justify-between px-6 py-5">
-          <div className="flex items-center">
+          <div className="flex items-center gap-3">
+            <img
+              src="/icons/applogo.PNG"
+              alt=""
+              className="h-7 w-7 object-contain"
+            />
             <span
-              className="text-[22px] font-black tracking-[-0.04em] text-[#305327]"
+              className="text-[22px] font-black tracking-[-0.04em] text-[#305327]" // font-black для эффекта "fat"
               style={{ fontFamily: "var(--font-menu, sans-serif)" }}
             >
               swgoh<span className="opacity-70">.ai</span>
@@ -55,8 +60,9 @@ export function MenuDrawer({ open, onClose }: MenuDrawerProps) {
 
         {/* Низ: Реклама и Юзер */}
         <div className="mt-auto flex flex-col">
-          <div className="mx-4 mb-5 flex items-center justify-between bg-[#E9EDE7] rounded-[20px] p-4 pr-3 cursor-pointer active:scale-[0.98] transition-transform group">
-            <div className="flex flex-col flex-1 pr-2">
+          {/* Баннер (без иконки) */}
+          <div className="mx-4 mb-5 flex items-center justify-between bg-[#E9EDE7] rounded-[20px] p-4 pr-5 cursor-pointer active:scale-[0.98] transition-transform group">
+            <div className="flex flex-col flex-1">
               <span className="text-[15px] font-bold text-[#171717] leading-tight mb-1">
                 Не знаешь с чего начать?
               </span>
@@ -64,23 +70,17 @@ export function MenuDrawer({ open, onClose }: MenuDrawerProps) {
                 Вот несколько популярных тем, которые могут быть полезны.
               </span>
             </div>
-            <div className="flex items-center gap-2">
-              <img 
-                src="/icons/suggestion.PNG" 
-                alt="" 
-                className="h-14 w-14 object-contain"
-              />
-              <img 
-                src="/icons/right.PNG" 
-                alt="" 
-                className="h-3 w-3 object-contain opacity-30" 
-              />
-            </div>
+            <img 
+              src="/icons/right.PNG" 
+              alt="" 
+              className="h-3 w-3 object-contain opacity-30" 
+            />
           </div>
 
-          <div className="border-t border-[#E5E5DF] px-6 py-5 flex items-center justify-between transition-colors active:bg-black/5 cursor-pointer">
+          {/* Блок Юзера (фон как у разделителя) */}
+          <div className="bg-[#E5E5DF] px-6 py-5 flex items-center justify-between transition-colors active:bg-black/5 cursor-pointer">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-full bg-[#E5E5DF] overflow-hidden flex-shrink-0" />
+              <div className="h-10 w-10 rounded-full bg-[#F5F5F0] overflow-hidden flex-shrink-0" /> {/* Круг светлее фона */}
               <div className="flex flex-col">
                 <span className="text-[15px] font-bold text-[#171717]/85 leading-tight">
                   Юзер
@@ -93,7 +93,7 @@ export function MenuDrawer({ open, onClose }: MenuDrawerProps) {
             <img 
               src="/icons/dots.PNG" 
               alt="" 
-              className="h-5 w-5 object-contain opacity-40"
+              className="h-5 w-5 object-contain opacity-40" 
             />
           </div>
         </div>
