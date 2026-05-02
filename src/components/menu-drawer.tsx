@@ -1,61 +1,28 @@
 "use client";
 
-import { useEffect, useState } from "react";
-
-// Определяем интерфейс пользователя для TypeScript
-interface TelegramUser {
-  id: number;
-  first_name: string;
-  last_name?: string;
-  username?: string;
-  photo_url?: string;
-}
-
 type MenuDrawerProps = {
   open: boolean;
   onClose: () => void;
 };
 
 export function MenuDrawer({ open, onClose }: MenuDrawerProps) {
-  const [userData, setUserData] = useState<{
-    name: string;
-    username: string;
-    photo?: string;
-  }>({
-    name: "Юзер",
-    username: "user",
-  });
-
-  useEffect(() => {
-    // Безопасная проверка наличия Telegram SDK
-    const tg = (window as any).Telegram?.WebApp;
-    const user = tg?.initDataUnsafe?.user as TelegramUser | undefined;
-
-    if (user) {
-      setUserData({
-        // Используем опциональную цепочку и проверку наличия last_name
-        name: `${user.first_name}${user.last_name ? " " + user.last_name : ""}`,
-        username: user.username || "user",
-        photo: user.photo_url,
-      });
-    }
-  }, []);
-
   return (
     <>
       <button
         type="button"
         aria-label="Закрыть меню"
         onClick={onClose}
-        className={`fixed inset-0 z-[60] bg-[#171717]/10 backdrop-blur-[6px] transition-all duration-300 ${
+        className={`fixed inset-0 z-[60] bg-[#171717]/15 backdrop-blur-[6px] transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
           open ? "opacity-100" : "pointer-events-none opacity-0"
         }`}
+        style={{ willChange: "opacity, backdrop-filter" }}
       />
 
       <aside
-        className={`fixed left-0 top-0 z-[70] h-dvh w-[84%] max-w-[340px] bg-[#F5F5F0] transition-transform duration-300 ease-[0.23,1,0.32,1] flex flex-col ${
+        className={`fixed left-0 top-0 z-[70] h-dvh w-[84%] max-w-[340px] bg-[#F5F5F0] transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] flex flex-col ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
+        style={{ willChange: "transform" }}
       >
         {/* Шапка */}
         <div className="flex items-center justify-between px-6 py-5">
@@ -73,7 +40,10 @@ export function MenuDrawer({ open, onClose }: MenuDrawerProps) {
             </span>
           </div>
 
-          <button onClick={onClose} className="transition-transform active:scale-90">
+          <button 
+            onClick={onClose} 
+            className="transition-transform duration-200 active:scale-[0.92]"
+          >
             <img src="/icons/cross.PNG" alt="" className="h-5 w-5 object-contain" />
           </button>
         </div>
@@ -83,7 +53,7 @@ export function MenuDrawer({ open, onClose }: MenuDrawerProps) {
           <img 
             src="/icons/empty.PNG" 
             alt="" 
-            className="h-32 w-32 object-contain mb-5 opacity-[0.65]"
+            className="h-32 w-32 object-contain mb-5 opacity-[0.65]" 
           />
           <p className="text-[15px] font-medium text-[#171717]/80">
             Чатов нет
@@ -95,7 +65,8 @@ export function MenuDrawer({ open, onClose }: MenuDrawerProps) {
 
         {/* Низ: Реклама и Юзер */}
         <div className="mt-auto flex flex-col">
-          <div className="mx-4 mb-5 flex items-center justify-between bg-[#E9EDE7] rounded-[20px] p-4 pr-5 cursor-pointer active:scale-[0.98] transition-transform group">
+          {/* Баннер */}
+          <div className="mx-4 mb-5 flex items-center justify-between bg-[#E9EDE7] rounded-[20px] p-4 pr-5 cursor-pointer active:scale-[0.97] transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] group">
             <div className="flex flex-col flex-1">
               <span className="text-[15px] font-bold text-[#171717] leading-tight mb-1">
                 Не знаешь с чего начать?
@@ -107,23 +78,20 @@ export function MenuDrawer({ open, onClose }: MenuDrawerProps) {
             <img 
               src="/icons/right.PNG" 
               alt="" 
-              className="h-3 w-3 object-contain opacity-30" 
+              className="h-3 w-3 object-contain opacity-30 transition-opacity duration-200 group-hover:opacity-50" 
             />
           </div>
 
-          <div className="bg-[#E5E5DF] px-6 py-5 flex items-center justify-between transition-colors active:bg-black/5 cursor-pointer">
+          {/* Блок Юзера */}
+          <div className="bg-[#E5E5DF] px-6 py-5 flex items-center justify-between transition-colors active:bg-[#DCDCD5] cursor-pointer">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-full bg-[#F5F5F0] overflow-hidden flex-shrink-0">
-                {userData.photo ? (
-                  <img src={userData.photo} alt={userData.name} className="h-full w-full object-cover" />
-                ) : null}
-              </div>
+              <div className="h-10 w-10 rounded-full bg-[#F5F5F0] overflow-hidden flex-shrink-0" />
               <div className="flex flex-col">
                 <span className="text-[15px] font-bold text-[#171717]/85 leading-tight">
-                  {userData.name}
+                  Юзер
                 </span>
                 <span className="text-[12px] font-medium text-[#171717]/40">
-                  @{userData.username}
+                  @user
                 </span>
               </div>
             </div>
