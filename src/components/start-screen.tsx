@@ -16,7 +16,7 @@ const PromptRow = ({ items, direction, speed, offset, onPick }: any) => {
             <button 
               key={idx} 
               onClick={() => onPick(item)}
-              className={`whitespace-nowrap rounded-full px-5 py-2.5 text-[14px] font-medium transition-all active:scale-95 ${
+              className={`whitespace-nowrap rounded-full px-5 py-2.5 text-[14px] font-medium transition-all duration-200 active:scale-[0.96] ${
                 isGreen ? "bg-[#39704E]/10 text-[#39704E]" : "border border-[#E5E5DF] text-[#171717]/60"
               }`}
             >
@@ -90,15 +90,23 @@ export function StartScreen() {
         .hide-scrollbar::-webkit-scrollbar { display: none; }
       `}</style>
 
-      {/* Обертка для размытия фона при открытом меню */}
-      <div className={`flex h-full flex-col transition-all duration-300 ease-in-out ${isMenuOpen ? 'blur-[5px] scale-[0.98] opacity-70' : 'blur-0 scale-100 opacity-100'}`}>
+      {/* Обертка для размытия фона с оптимизированной анимацией */}
+      <div 
+        className={`flex h-full flex-col transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] origin-center ${
+          isMenuOpen ? 'blur-[4px] scale-[0.99] opacity-80' : 'blur-0 scale-100 opacity-100'
+        }`}
+        style={{ willChange: "transform, filter, opacity" }}
+      >
         
         {/* Верхняя панель */}
         <div className="absolute left-0 right-0 top-0 z-50 flex items-center justify-between px-7 py-6">
-          <button onClick={() => setIsMenuOpen(true)} className="transition-transform active:scale-90">
+          <button 
+            onClick={() => setIsMenuOpen(true)} 
+            className="transition-transform duration-200 active:scale-[0.92]"
+          >
             <img src="/icons/menu.PNG" className="h-5 w-5 object-contain" alt="Menu" />
           </button>
-          <button className="transition-transform active:scale-90">
+          <button className="transition-transform duration-200 active:scale-[0.92]">
             <img src="/icons/profile.PNG" className="h-5 w-5 object-contain" alt="Profile" />
           </button>
         </div>
@@ -111,13 +119,13 @@ export function StartScreen() {
               <h1 className="text-[26px] font-medium tracking-tight">Чем помочь тебе, хм?</h1>
             </div>
 
-            {/* Подсказки (fade-in) */}
+            {/* Подсказки */}
             <div className="min-h-[120px] w-full flex flex-col justify-center">
               {rows.length > 0 && (
                 <motion.div 
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.4, ease: "easeOut" }}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
                   className="w-full space-y-1 opacity-90"
                 >
                   {rows.map((row, i) => (
@@ -130,11 +138,16 @@ export function StartScreen() {
             <div className="mt-12 w-full px-[25px] max-w-[650px]">
               <div className="relative w-full">
                 
-                {/* Задняя плашка (вырастает снизу) */}
+                {/* Задняя плашка (теперь с физикой пружины) */}
                 <motion.div 
                   initial={{ scaleY: 0, opacity: 0 }}
                   animate={{ scaleY: 1, opacity: 1 }}
-                  transition={{ delay: 0.1, duration: 0.25, ease: "easeOut" }}
+                  transition={{ 
+                    type: "spring", 
+                    stiffness: 260, 
+                    damping: 25, 
+                    delay: 0.1 
+                  }}
                   style={{ transformOrigin: "bottom" }}
                   className="absolute -top-[38px] left-0 right-0 bottom-0 bg-[#262626]/85 rounded-[24px] z-0 flex items-start pt-3 px-6 shadow-sm"
                 >
@@ -152,15 +165,15 @@ export function StartScreen() {
                 </motion.div>
 
                 {/* Поле ввода */}
-                <div className="relative flex w-full flex-col bg-[#262626] rounded-[24px] z-10 shadow-sm">
+                <div className="relative flex w-full flex-col bg-[#262626] rounded-[24px] z-10 shadow-sm transition-transform duration-200 focus-within:scale-[1.01]">
                   <div className="relative flex items-center min-h-[56px]">
                     <AnimatePresence mode="wait">
                       {isAnimating && (
                         <motion.div
                           key="animating-text"
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          exit={{ opacity: 0 }}
+                          initial={{ opacity: 0, scale: 0.98 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.98 }}
                           transition={{ duration: 0.2 }}
                           className="absolute left-0 top-0 w-full py-[16px] pl-6 pr-14 text-[16px] leading-[1.5] text-white/90 pointer-events-none"
                         >
@@ -174,7 +187,7 @@ export function StartScreen() {
                       value={message}
                       onChange={(e) => setMessage(e.target.value)}
                       placeholder={isAnimating ? "" : "Спросить что-нибудь…"}
-                      className={`hide-scrollbar w-full bg-transparent py-[16px] pl-6 pr-14 text-[16px] leading-[1.5] text-white outline-none placeholder:text-white/20 resize-none transition-opacity duration-150 ${isAnimating ? 'opacity-0' : 'opacity-100'}`}
+                      className={`hide-scrollbar w-full bg-transparent py-[16px] pl-6 pr-14 text-[16px] leading-[1.5] text-white outline-none placeholder:text-white/20 resize-none transition-opacity duration-200 ${isAnimating ? 'opacity-0' : 'opacity-100'}`}
                       onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); onSend(); } }}
                     />
 
@@ -182,7 +195,7 @@ export function StartScreen() {
                       <button
                         onClick={() => onSend()}
                         disabled={message.trim().length < 2 || isAnimating}
-                        className="flex h-10 w-10 items-center justify-center rounded-full bg-[#F5F5F0] transition-all active:scale-90 disabled:opacity-10"
+                        className="flex h-10 w-10 items-center justify-center rounded-full bg-[#F5F5F0] transition-all duration-200 active:scale-[0.92] disabled:opacity-10"
                       >
                         <img src="/icons/send.PNG" className="h-4 w-4 brightness-0" alt="" />
                       </button>
@@ -204,7 +217,6 @@ export function StartScreen() {
         )}
       </div>
 
-      {/* MenuDrawer (вне размываемой области) */}
       <MenuDrawer open={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
     </main>
   );
