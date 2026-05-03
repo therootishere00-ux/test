@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export type ChatMessage = {
@@ -9,107 +9,94 @@ export type ChatMessage = {
   content: string;
 };
 
-type ChatThreadProps = {
-  messages: ChatMessage[];
-  onNewChat: () => void;
-  onOpenMenu: () => void;
-};
+// Анимация появления ГРУППАМИ слов
+function AnimatedAIResponse({ text, onComplete }: { text: string, onComplete: () => void }) {
+  // Разбиваем текст на группы по 4-6 слов
+  const groups = useMemo(() => {
+    const words = text.split(" ");
+    const result = [];
+    for (let i = 0; i < words.length; i += 5) {
+      result.push(words.slice(i, i + 5).join(" "));
+    }
+    return result;
+  }, [text]);
 
-// Компонент для ускоренной анимации текста «на месте»
-function AnimatedAIResponse({ text, onComplete }: { text: string; onComplete: () => void }) {
-  // Разбиваем текст на группы по 4-5 слов для эффекта быстрого заполнения
-  const words = text.split(" ");
-  const groups: string[][] = [];
-  for (let i = 0; i < words.length; i += 5) {
-    groups.push(words.slice(i, i + 5));
-  }
+  const container = {
+    hidden: { opacity: 1 },
+    visible: {
+      opacity: 1,
+      transition: { staggerChildren: 0.12 } // Скорость появления групп
+    }
+  };
+
+  const groupAnim = {
+    hidden: { opacity: 0 },
+    visible: { 
+      opacity: 1, 
+      transition: { duration: 0.3, ease: "linear" }
+    }
+  };
 
   return (
     <motion.div 
-      initial="hidden"
+      variants={container} 
+      initial="hidden" 
       animate="visible"
       onAnimationComplete={onComplete}
-      className="text-[#E8E6E3] text-[16px] leading-[1.6] font-serif"
+      className="text-[#E8E6E3] text-[16px] leading-[1.65] font-serif"
     >
-      {groups.map((group, groupIdx) => (
-        <motion.span
-          key={groupIdx}
-          variants={{
-            hidden: { opacity: 0 },
-            visible: { opacity: 1 }
-          }}
-          transition={{
-            duration: 0.1,
-            delay: groupIdx * 0.15, // Скорость появления групп
-            ease: "linear"
-          }}
-          className="inline-block mr-1.5"
-        >
-          {group.join(" ")}
+      {groups.map((group, index) => (
+        <motion.span key={index} variants={groupAnim} className="inline mr-1.5">
+          {group}{" "}
         </motion.span>
       ))}
     </motion.div>
   );
 }
 
-export function ChatThread({ messages, onNewChat, onOpenMenu }: ChatThreadProps) {
+export function ChatThread({ messages, onNewChat, onOpenMenu }: any) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Автоматический скролл вниз при добавлении сообщений
+  // Скролл при каждом изменении сообщений
   useEffect(() => {
     if (scrollRef.current) {
-      scrollRef.current.scrollTo({
-        top: scrollRef.current.scrollHeight,
-        behavior: "smooth",
-      });
+      const scroll = scrollRef.current;
+      scroll.scrollTo({ top: scroll.scrollHeight, behavior: "smooth" });
     }
   }, [messages]);
 
   return (
-    <div className="flex flex-col h-full w-full max-w-[600px] mx-auto relative bg-[#252422]">
-      {/* Шапка: невысокая, без блюра, шрифт без закорючек */}
-      <div className="flex items-center justify-between px-0 py-3 z-20 bg-[#252422]">
+    <div className="flex flex-col h-full w-full max-w-[600px] mx-auto relative pt-4">
+      <div className="w-full flex items-center justify-between py-2 z-10 bg-[#252422]">
         <button onClick={onOpenMenu} className="p-1 active:scale-90 transition-transform">
-          <img src="/icons/menu.svg" alt="Menu" className="w-6 h-6 opacity-40 hover:opacity-100 invert" />
+          <img src="/icons/menu.svg" alt="Menu" className="w-[22px] h-[22px] opacity-40 hover:opacity-80 invert" />
         </button>
-        
-        <h2 className="text-[15px] font-sans font-medium text-[#F2F1ED] tracking-wide">
-          Новый чат
-        </h2>
-        
+        <span className="text-[14px] text-[#F2F1ED] font-sans">Новый чат</span>
         <button onClick={onNewChat} className="p-1 active:scale-90 transition-transform">
-          <img src="/icons/newchat.svg" alt="New Chat" className="w-6 h-6 opacity-40 hover:opacity-100 invert" />
+          <img src="/icons/newchat.svg" alt="New Chat" className="w-[22px] h-[22px] opacity-40 hover:opacity-80 invert" />
         </button>
       </div>
 
-      {/* Контейнер сообщений */}
-      <div 
-        ref={scrollRef}
-        className="flex-1 overflow-y-auto hide-scrollbar space-y-12 pb-10 pt-4 px-1"
-      >
+      <div ref={scrollRef} className="flex-1 overflow-y-auto hide-scrollbar space-y-10 pb-20 pt-6">
         <AnimatePresence initial={false}>
-          {messages.map((msg, index) => (
-            <MessageBlock 
-              key={msg.id} 
-              message={msg} 
-              isLatest={index === messages.length - 1} 
-            />
+          {messages.map((msg: ChatMessage) => (
+            <MessageItem key={msg.id} message={msg} />
           ))}
         </AnimatePresence>
         
-        {/* Заранее подготовленный пустой блок, если ждем ответ (Placeholder) */}
-        {messages.length > 0 && messages[messages.length - 1].role === 'user' && (
-          <div className="h-32 opacity-0">Загрузка...</div>
+        {/* "Блок-заполнитель" — если последнее сообщение от пользователя, резервируем место под ответ */}
+        {messages[messages.length - 1]?.role === "user" && (
+          <div className="h-[200px] w-full" /> 
         )}
       </div>
     </div>
   );
 }
 
-function MessageBlock({ message, isLatest }: { message: ChatMessage; isLatest: boolean }) {
+function MessageItem({ message }: { message: ChatMessage }) {
   const isUser = message.role === "user";
-  const [isDone, setIsDone] = useState(!isLatest); // Если не последнее, значит уже нарисовано
   const [feedback, setFeedback] = useState<'like' | 'dislike' | null>(null);
+  const [isTyping, setIsTyping] = useState(!isUser);
 
   return (
     <motion.div
@@ -117,90 +104,69 @@ function MessageBlock({ message, isLatest }: { message: ChatMessage; isLatest: b
       animate={{ opacity: 1, y: 0 }}
       className={`flex w-full ${isUser ? "justify-end" : "justify-start"}`}
     >
-      <div className={`flex flex-col ${isUser ? "items-end max-w-[90%]" : "items-start w-full"}`}>
+      <div className={`flex flex-col ${isUser ? "items-end max-w-[85%]" : "items-start w-full"}`}>
         {isUser ? (
-          <div className="px-1">
-            <p className="text-[17px] leading-relaxed font-serif text-[#F2F1ED] opacity-95">
-              {message.content}
-            </p>
+          <div className="px-2 py-1">
+            <p className="text-[17px] leading-relaxed whitespace-pre-wrap font-serif text-[#F2F1ED] opacity-90">{message.content}</p>
           </div>
         ) : (
-          <div className="flex flex-col w-full space-y-4">
-            {/* Иконка-логотип: GIF меняется на PNG */}
-            <div className="relative w-7 h-7">
+          <div className="flex flex-col w-full space-y-3">
+            {/* Смена GIF на PNG */}
+            <div className="relative w-7 h-7 mb-1">
               <AnimatePresence mode="wait">
-                {!isDone ? (
-                  <motion.img
+                {isTyping ? (
+                  <motion.img 
                     key="gif"
-                    src="/icons/logo.GIF"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="absolute inset-0 w-full h-full object-contain"
-                    alt="Generating..."
+                    src="/icons/logo.GIF" 
+                    initial={{ opacity: 0 }} animate={{ opacity: 0.9 }} exit={{ opacity: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="absolute inset-0 w-7 h-7" 
                   />
                 ) : (
-                  <motion.img
+                  <motion.img 
                     key="png"
-                    src="/icons/logo.PNG"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 0.9 }}
+                    src="/icons/logo.PNG" 
+                    initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 0.9, scale: 1 }}
                     transition={{ duration: 0.3 }}
-                    className="absolute inset-0 w-full h-full object-contain"
-                    alt="AI"
+                    className="absolute inset-0 w-7 h-7" 
                   />
                 )}
               </AnimatePresence>
             </div>
             
-            {/* Текст ответа */}
-            <div className="min-h-[20px] w-full">
-              {isLatest && !isDone ? (
-                <AnimatedAIResponse 
-                  text={message.content} 
-                  onComplete={() => setIsDone(true)} 
-                />
-              ) : (
-                <p className="text-[#E8E6E3] text-[16px] leading-[1.6] font-serif">
-                  {message.content}
-                </p>
-              )}
-            </div>
+            <AnimatedAIResponse 
+              text={message.content} 
+              onComplete={() => setIsTyping(false)} 
+            />
             
-            {/* Футер сообщения (кнопки) появляется только когда текст готов */}
-            <AnimatePresence>
-              {isDone && (
-                <motion.div 
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="flex items-center gap-5 ml-0.5 pt-2"
-                >
-                  <button className="active:scale-90 transition-all opacity-30 hover:opacity-80">
-                    <img src="/icons/redo.svg" alt="Redo" className="w-[17px] h-[17px] invert" />
+            {!isTyping && (
+              <motion.div 
+                initial={{ opacity: 0 }} 
+                animate={{ opacity: 1 }}
+                className="flex items-center gap-4 ml-1 pt-2"
+              >
+                <button className="active:scale-90 transition-all opacity-40 hover:opacity-80">
+                  <img src="/icons/redo.svg" alt="Redo" className="w-[18px] h-[18px] invert" />
+                </button>
+                
+                <div className="flex items-center gap-3">
+                  <button onClick={() => setFeedback(feedback === 'like' ? null : 'like')} className="active:scale-90">
+                    <img 
+                      src="/icons/like.svg" 
+                      className={`w-[18px] h-[18px] ${feedback === 'like' ? 'opacity-100' : 'opacity-40 invert'}`}
+                      style={feedback === 'like' ? { filter: 'invert(58%) sepia(13%) saturate(1067%) hue-rotate(82deg) brightness(96%) contrast(87%)' } : {}}
+                    />
                   </button>
-                  
-                  <div className="flex items-center gap-4">
-                    <button onClick={() => setFeedback(feedback === 'like' ? null : 'like')}>
-                      <img 
-                        src="/icons/like.svg" 
-                        alt="Like" 
-                        className={`w-[17px] h-[17px] transition-all ${feedback === 'like' ? 'opacity-100' : 'opacity-30 hover:opacity-80 invert'}`}
-                        style={feedback === 'like' ? { filter: 'invert(58%) sepia(13%) saturate(1067%) hue-rotate(82deg) brightness(96%) contrast(87%)' } : {}}
-                      />
-                    </button>
-                    <button onClick={() => setFeedback(feedback === 'dislike' ? null : 'dislike')}>
-                      <img 
-                        src="/icons/dislike.svg" 
-                        alt="Dislike" 
-                        className={`w-[17px] h-[17px] transition-all ${feedback === 'dislike' ? 'opacity-100' : 'opacity-30 hover:opacity-80 invert'}`}
-                        style={feedback === 'dislike' ? { filter: 'invert(58%) sepia(13%) saturate(1067%) hue-rotate(82deg) brightness(96%) contrast(87%)' } : {}}
-                      />
-                    </button>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                  <button onClick={() => setFeedback(feedback === 'dislike' ? null : 'dislike')} className="active:scale-90">
+                    <img 
+                      src="/icons/dislike.svg" 
+                      className={`w-[18px] h-[18px] ${feedback === 'dislike' ? 'opacity-100' : 'opacity-40 invert'}`}
+                      style={feedback === 'dislike' ? { filter: 'invert(58%) sepia(13%) saturate(1067%) hue-rotate(82deg) brightness(96%) contrast(87%)' } : {}}
+                    />
+                  </button>
+                </div>
+              </motion.div>
+            )}
           </div>
         )}
       </div>
