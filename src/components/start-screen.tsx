@@ -30,7 +30,12 @@ export function StartScreen() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [allPrompts, setAllPrompts] = useState<string[]>([]);
+  
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  
+  // Состояния для расширения поля ввода
+  const [showExpand, setShowExpand] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   useEffect(() => {
     fetch('/slovar.txt')
@@ -50,13 +55,25 @@ export function StartScreen() {
     ];
   }, [allPrompts]);
 
-  const handleInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setMessage(e.target.value);
-    const textarea = e.target;
-    textarea.style.height = '24px';
-    const scrollHeight = textarea.scrollHeight;
-    textarea.style.height = `${Math.min(scrollHeight, 120)}px`;
-  };
+  // Умный расчет высоты и кнопки расширения
+  useEffect(() => {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    
+    ta.style.height = '24px';
+    const sh = ta.scrollHeight;
+    
+    // Если больше 2 строк (40px + padding), показываем кнопку more.svg
+    if (sh > 44) {
+      setShowExpand(true);
+    } else {
+      setShowExpand(false);
+      setIsExpanded(false);
+    }
+
+    // Если раскрыто - до 6 строк (~120px), иначе макс 2 строки (~44px)
+    ta.style.height = isExpanded ? `${Math.min(sh, 120)}px` : `${Math.min(sh, 44)}px`;
+  }, [message, isExpanded]);
 
   const onSend = (text?: string) => {
     const content = text || message;
@@ -90,9 +107,18 @@ export function StartScreen() {
   const inputAreaContent = (
     <div className={`w-full max-w-[600px] mx-auto px-8 ${chatStarted ? 'pb-4 pt-2' : ''}`}>
       <div className="relative flex w-full flex-col bg-[#2D2C2A] rounded-[20px] border border-white/[0.04] transition-all focus-within:border-white/10 shadow-sm">
-        {chatStarted && (
-          <button className="absolute top-3 right-3 opacity-30 hover:opacity-80 transition-opacity">
-            <img src="/icons/arrows.svg" alt="Expand" className="w-4 h-4 invert" />
+        
+        {/* Кнопка расширения текстового поля */}
+        {showExpand && (
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="absolute right-4 top-3 z-10 active:scale-90 transition-transform opacity-40 hover:opacity-100"
+          >
+            <img 
+              src={isExpanded ? "/icons/mini.svg" : "/icons/more.svg"} 
+              alt="Expand" 
+              className="w-[18px] h-[18px] invert" 
+            />
           </button>
         )}
         
@@ -100,10 +126,11 @@ export function StartScreen() {
           <textarea
             ref={textareaRef}
             value={message}
-            onChange={handleInput}
+            onChange={(e) => setMessage(e.target.value)}
             placeholder="Спросить что-нибудь..."
-            className={`hide-scrollbar w-full flex-1 bg-transparent px-2 text-[15px] text-[#E8E6E3] outline-none placeholder:text-[#6A6965] resize-none overflow-y-auto ${chatStarted ? 'pr-6' : ''}`}
-            style={{ lineHeight: '20px', minHeight: '24px', height: '24px' }}
+            // Если кнопка расширения видна, делаем отступ справа, чтобы текст не залазил под нее
+            className={`hide-scrollbar w-full flex-1 bg-transparent px-2 text-[15px] text-[#E8E6E3] outline-none placeholder:text-[#6A6965] resize-none overflow-y-auto ${showExpand ? 'pr-8' : ''}`}
+            style={{ lineHeight: '20px', minHeight: '24px', height: '24px', transition: 'height 0.2s ease-out' }}
           />
           <div className="flex items-center justify-end mt-2">
             <button
@@ -161,7 +188,8 @@ export function StartScreen() {
             transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
             className="absolute inset-0 flex flex-col items-center justify-center bg-[#252422] z-40"
           >
-            <div className="w-full max-w-[600px] flex flex-col items-center relative -mt-[4vh]">
+            {/* Обертка теперь без items-center, чтобы стартовое сообщение стояло строго слева в рамках 600px */}
+            <div className="w-full max-w-[600px] mx-auto flex flex-col relative -mt-[4vh]">
               <div className="w-full px-8 mb-8 flex flex-col items-start">
                 <img src="/icons/logo.PNG" alt="Logo" className="w-10 h-10 mb-6 opacity-90" />
                 <div className="space-y-0.5">
