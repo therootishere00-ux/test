@@ -39,7 +39,7 @@ export function StartScreen() {
         const lines = data.split(/\r?\n/).filter(line => line.trim().length > 0);
         setAllPrompts(lines.sort(() => Math.random() - 0.5));
       })
-      .catch(() => setAllPrompts(["Гайд на Гранд-мастера Йоду", "Модули для Вейдера"]));
+      .catch(() => setAllPrompts(["Гайд на Гранд-мастера Йоду", "Лучшие модули для Вейдера"]));
   }, []);
 
   const rows = useMemo(() => {
@@ -50,70 +50,29 @@ export function StartScreen() {
     ];
   }, [allPrompts]);
 
-  // Стабильная высота инпута без "прыжков"
-  useEffect(() => {
-    const textarea = textareaRef.current;
-    if (textarea) {
-      textarea.style.height = '40px'; 
-      const scrollHeight = textarea.scrollHeight;
-      textarea.style.height = scrollHeight > 100 ? '100px' : `${scrollHeight}px`;
-    }
-  }, [message]);
-
   const onSend = (text?: string) => {
     const content = text || message;
     if (content.trim().length < 2) return;
     
-    // Показываем стартовое сообщение: добавляем его в массив сразу
     const userMsg: ChatMessage = { id: Date.now().toString(), role: "user", content: content.trim() };
-    setMessages([userMsg]);
+    const placeholderAi: ChatMessage = { id: "loading", role: "assistant", content: "", isLoading: true };
+    
+    setMessages([userMsg, placeholderAi]);
     setChatStarted(true);
     setMessage("");
 
-    // Симулируем начало ответа ИИ (готовим блок)
+    // Имитация ответа
     setTimeout(() => {
-      setMessages(prev => [...prev, { 
-        id: (Date.now() + 1).toString(), 
-        role: "assistant", 
-        content: "Это демонстрационный ответ. Он будет появляться группами слов, плавно и быстро, заполняя пространство блока. Иконка сверху изменится после завершения.",
-        isGenerating: true 
-      }]);
-    }, 400);
+      setMessages([
+        userMsg,
+        { 
+          id: (Date.now() + 1).toString(), 
+          role: "assistant", 
+          content: "Конечно! Вот актуальная информация по твоему запросу. Для достижения максимальной эффективности советую обратить внимание на скорость и критический урон в модулях. Это база для большинства персонажей в текущей мете SWGOH." 
+        }
+      ]);
+    }, 1000);
   };
-
-  const InputArea = () => (
-    <div className={`w-full max-w-[600px] mx-auto px-6 ${chatStarted ? 'pb-8' : ''}`}>
-      <div className="relative flex w-full flex-col bg-[#2D2C2A] rounded-[20px] border border-white/[0.04] shadow-sm">
-        {chatStarted && (
-          <button className="absolute top-4 right-4 opacity-30 hover:opacity-80 transition-opacity z-10">
-            <img src="/icons/arrows.svg" alt="Expand" className="w-4 h-4 invert" />
-          </button>
-        )}
-        <div className="flex flex-col p-4"> 
-          <textarea
-            ref={textareaRef}
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            placeholder="Спросить что-нибудь..."
-            className="hide-scrollbar w-full flex-1 bg-transparent px-1 text-[16px] text-[#E8E6E3] outline-none placeholder:text-[#6A6965] resize-none"
-            style={{ minHeight: '40px', lineHeight: '1.4' }}
-            onKeyDown={(e) => { 
-              if (e.key === 'Enter') { e.preventDefault(); } // Enter не отправляет
-            }}
-          />
-          <div className="flex items-center justify-end mt-2">
-            <button
-              onClick={() => onSend()}
-              disabled={message.trim().length < 2}
-              className="flex h-[40px] w-[40px] items-center justify-center rounded-[12px] bg-[#5FA86D] transition-all hover:bg-[#6FBD7E] disabled:opacity-10 active:scale-95"
-            >
-              <img src="/icons/send.svg" className="w-5 h-5 invert brightness-0" alt="Send" />
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
 
   return (
     <main className="relative h-dvh w-full bg-[#252422] font-sans antialiased overflow-hidden text-[#E8E6E3]">
@@ -123,6 +82,7 @@ export function StartScreen() {
         .animate-marquee-left { animation: marquee-left linear infinite; }
         .animate-marquee-right { animation: marquee-right linear infinite; }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
       `}</style>
 
       <MenuDrawer open={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
@@ -137,16 +97,19 @@ export function StartScreen() {
             transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
             className="absolute inset-0 flex flex-col items-center justify-center pb-[10vh] bg-[#252422] z-40"
           >
+            {/* Menu Icon Only on Start */}
             <div className="absolute top-8 left-8">
               <button onClick={() => setIsMenuOpen(true)} className="p-1 active:scale-90 transition-transform">
-                <img src="/icons/menu.svg" className="w-6 h-6 opacity-40 invert" alt="Menu" />
+                <img src="/icons/menu.svg" className="w-6 h-6 opacity-40 invert" alt="M" />
               </button>
             </div>
-            
+
             <div className="w-full max-w-[600px] px-8 mb-8">
-              <img src="/icons/logo.PNG" alt="Logo" className="w-12 h-12 mb-6" />
-              <h2 className="text-[32px] font-serif text-[#F2F1ED] leading-tight">Привет, <span className="text-[#5FA86D]">юзер</span></h2>
-              <h1 className="text-[32px] font-serif text-[#6A6965] leading-tight">Как помочь тебе сегодня?</h1>
+              <img src="/icons/logo.PNG" alt="Logo" className="w-10 h-10 mb-6 opacity-90" />
+              <div className="space-y-0.5">
+                <h2 className="text-[28px] font-serif text-[#F2F1ED]">Привет, <span className="text-[#5FA86D]">юзер</span></h2>
+                <h1 className="text-[28px] font-serif text-[#6A6965]">Как помочь тебе сегодня?</h1>
+              </div>
             </div>
 
             <div className="w-full space-y-1 mb-8 opacity-60">
@@ -154,23 +117,39 @@ export function StartScreen() {
                 <PromptRow key={i} items={row.items} direction={row.dir} speed={row.speed} onPick={(t:string) => setMessage(t)} />
               ))}
             </div>
-            <InputArea />
+
+            <div className="w-full max-w-[600px] px-8">
+               <div className="relative flex w-full flex-col bg-[#2D2C2A] rounded-[20px] border border-white/[0.04] p-3 shadow-sm">
+                 <textarea
+                    ref={textareaRef}
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    placeholder="Спросить что-нибудь..."
+                    className="hide-scrollbar w-full h-[24px] bg-transparent px-2 text-[15px] text-[#E8E6E3] outline-none placeholder:text-[#6A6965] resize-none"
+                  />
+                  <div className="flex items-center justify-end mt-2">
+                    <button onClick={() => onSend()} className="flex h-[36px] w-[36px] items-center justify-center rounded-[10px] bg-[#5FA86D] active:scale-95">
+                      <img src="/icons/send.svg" className="w-[16px] h-[16px] invert" alt="S" />
+                    </button>
+                  </div>
+               </div>
+            </div>
           </motion.div>
         ) : (
           <motion.div 
             key="chat-screen"
-            initial={{ y: "100%", opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: "100%", opacity: 0 }}
+            initial={{ y: "100%" }}
+            animate={{ y: 0 }}
+            exit={{ y: "100%" }}
             transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
             className="absolute inset-0 flex flex-col z-50 bg-[#252422]"
           >
             <ChatThread 
               messages={messages} 
-              onNewChat={() => { setChatStarted(false); setMessages([]); }} 
+              onNewChat={() => setChatStarted(false)} 
               onOpenMenu={() => setIsMenuOpen(true)}
+              onSendMessage={(txt) => onSend(txt)}
             />
-            <InputArea />
           </motion.div>
         )}
       </AnimatePresence>
