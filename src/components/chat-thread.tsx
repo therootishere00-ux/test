@@ -66,13 +66,11 @@ export function ChatThread({ messages, onNewChat, onOpenMenu }: ChatThreadProps)
 
   return (
     <div className="flex flex-col h-full w-full max-w-[600px] mx-auto relative pt-4">
-      {/* Header */}
       <div className="w-full flex items-center justify-between py-2 z-10 bg-[#252422]">
-        <button onClick={onOpenMenu} className="p-1 active:scale-95 transition-transform">
-          <img src="/icons/menu.svg" alt="Menu" className="w-[22px] h-[22px] opacity-40 invert" />
+        <button onClick={onOpenMenu} className="p-1 active:scale-95 transition-transform opacity-40">
+          <img src="/icons/menu.svg" alt="Menu" className="w-[22px] h-[22px] invert" />
         </button>
 
-        {/* Title / Rename Block */}
         <div className="flex-1 flex justify-center px-4">
           {isEditingTitle ? (
             <input
@@ -94,8 +92,8 @@ export function ChatThread({ messages, onNewChat, onOpenMenu }: ChatThreadProps)
           )}
         </div>
 
-        <button onClick={onNewChat} className="p-1 active:scale-95 transition-transform">
-          <img src="/icons/newchat.svg" alt="New Chat" className="w-[22px] h-[22px] opacity-40 invert" />
+        <button onClick={onNewChat} className="p-1 active:scale-95 transition-transform opacity-40">
+          <img src="/icons/newchat.svg" alt="New Chat" className="w-[22px] h-[22px] invert" />
         </button>
       </div>
 
@@ -152,14 +150,13 @@ function MessageItem({ message }: { message: ChatMessage }) {
                 <div className="flex justify-end mt-2 pr-2">
                   <button 
                     onClick={() => setIsModalOpen(true)}
-                    className="flex items-center gap-1.5 active:scale-95 opacity-60"
+                    className="flex items-center gap-1.5 active:scale-95 opacity-40"
                   >
                     <span className="text-[13px] font-sans text-[#F2F1ED]">Больше</span>
                     <img src="/icons/more.svg" alt="More" className="w-[16px] h-[16px] invert" />
                   </button>
                 </div>
               ) : (
-                /* Иконки под юзером: размер 18px и прозрачность 40% (как у ИИ) */
                 <div className="flex justify-end gap-4 mt-2 pr-2 opacity-40">
                   <button className="active:scale-95">
                     <img src="/icons/edit.svg" alt="Edit" className="w-[18px] h-[18px] invert" />
@@ -223,7 +220,6 @@ function MessageItem({ message }: { message: ChatMessage }) {
                           </button>
                         </div>
 
-                        {/* Кнопки лайка/дизлайка: полная непрозрачность при активации */}
                         <button 
                           onClick={() => setFeedback(feedback === 'like' ? null : 'like')} 
                           className="active:scale-95"
