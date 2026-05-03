@@ -7,33 +7,42 @@ export type ChatMessage = {
   id: string;
   role: "user" | "assistant";
   content: string;
+  isPlaceholder?: boolean;
 };
 
-// Анимация появления ГРУППАМИ слов
-function AnimatedAIResponse({ text, onComplete }: { text: string, onComplete: () => void }) {
-  // Разбиваем текст на группы по 4-6 слов
-  const groups = useMemo(() => {
+type ChatThreadProps = {
+  messages: ChatMessage[];
+  onNewChat: () => void;
+  onOpenMenu: () => void;
+};
+
+function AnimatedAIResponse({ text, onComplete }: { text: string; onComplete: () => void }) {
+  const chunks = useMemo(() => {
     const words = text.split(" ");
     const result = [];
-    for (let i = 0; i < words.length; i += 5) {
-      result.push(words.slice(i, i + 5).join(" "));
+    for (let i = 0; i < words.length; i += 4) {
+      result.push(words.slice(i, i + 4).join(" "));
     }
     return result;
   }, [text]);
-
+  
   const container = {
-    hidden: { opacity: 1 },
+    hidden: { opacity: 0 },
     visible: {
       opacity: 1,
-      transition: { staggerChildren: 0.12 } // Скорость появления групп
+      transition: { 
+        staggerChildren: 0.12,
+        onComplete: onComplete 
+      }
     }
   };
 
-  const groupAnim = {
-    hidden: { opacity: 0 },
+  const chunkAnim = {
+    hidden: { opacity: 0, filter: "blur(4px)" },
     visible: { 
       opacity: 1, 
-      transition: { duration: 0.3, ease: "linear" }
+      filter: "blur(0px)",
+      transition: { duration: 0.3, ease: "easeOut" }
     }
   };
 
@@ -42,26 +51,26 @@ function AnimatedAIResponse({ text, onComplete }: { text: string, onComplete: ()
       variants={container} 
       initial="hidden" 
       animate="visible"
-      onAnimationComplete={onComplete}
       className="text-[#E8E6E3] text-[16px] leading-[1.65] font-serif"
     >
-      {groups.map((group, index) => (
-        <motion.span key={index} variants={groupAnim} className="inline mr-1.5">
-          {group}{" "}
+      {chunks.map((chunk, index) => (
+        <motion.span key={index} variants={chunkAnim} className="inline-block mr-1.5">
+          {chunk}
         </motion.span>
       ))}
     </motion.div>
   );
 }
 
-export function ChatThread({ messages, onNewChat, onOpenMenu }: any) {
+export function ChatThread({ messages, onNewChat, onOpenMenu }: ChatThreadProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Скролл при каждом изменении сообщений
   useEffect(() => {
     if (scrollRef.current) {
-      const scroll = scrollRef.current;
-      scroll.scrollTo({ top: scroll.scrollHeight, behavior: "smooth" });
+      scrollRef.current.scrollTo({
+        top: scrollRef.current.scrollHeight,
+        behavior: "smooth",
+      });
     }
   }, [messages]);
 
@@ -77,17 +86,13 @@ export function ChatThread({ messages, onNewChat, onOpenMenu }: any) {
         </button>
       </div>
 
-      <div ref={scrollRef} className="flex-1 overflow-y-auto hide-scrollbar space-y-10 pb-20 pt-6">
+      {/* Добавлен overflow-x-hidden для устранения горизонтального дребезжания */}
+      <div ref={scrollRef} className="flex-1 overflow-y-auto overflow-x-hidden hide-scrollbar space-y-10 pb-10 pt-6">
         <AnimatePresence initial={false}>
-          {messages.map((msg: ChatMessage) => (
+          {messages.map((msg) => (
             <MessageItem key={msg.id} message={msg} />
           ))}
         </AnimatePresence>
-        
-        {/* "Блок-заполнитель" — если последнее сообщение от пользователя, резервируем место под ответ */}
-        {messages[messages.length - 1]?.role === "user" && (
-          <div className="h-[200px] w-full" /> 
-        )}
       </div>
     </div>
   );
@@ -96,7 +101,7 @@ export function ChatThread({ messages, onNewChat, onOpenMenu }: any) {
 function MessageItem({ message }: { message: ChatMessage }) {
   const isUser = message.role === "user";
   const [feedback, setFeedback] = useState<'like' | 'dislike' | null>(null);
-  const [isTyping, setIsTyping] = useState(!isUser);
+  const [isTypingComplete, setIsTypingComplete] = useState(false);
 
   return (
     <motion.div
@@ -107,65 +112,81 @@ function MessageItem({ message }: { message: ChatMessage }) {
       <div className={`flex flex-col ${isUser ? "items-end max-w-[85%]" : "items-start w-full"}`}>
         {isUser ? (
           <div className="px-2 py-1">
-            <p className="text-[17px] leading-relaxed whitespace-pre-wrap font-serif text-[#F2F1ED] opacity-90">{message.content}</p>
+            <p className="text-[16px] leading-relaxed whitespace-pre-wrap font-serif text-[#F2F1ED] opacity-90">
+              {message.content}
+            </p>
           </div>
         ) : (
-          <div className="flex flex-col w-full space-y-3">
-            {/* Смена GIF на PNG */}
+          <div className="flex flex-col w-full space-y-3 min-h-[100px]">
             <div className="relative w-7 h-7 mb-1">
-              <AnimatePresence mode="wait">
-                {isTyping ? (
+               <AnimatePresence mode="wait">
+                {!isTypingComplete ? (
                   <motion.img 
                     key="gif"
-                    src="/icons/logo.GIF" 
                     initial={{ opacity: 0 }} animate={{ opacity: 0.9 }} exit={{ opacity: 0 }}
-                    transition={{ duration: 0.3 }}
+                    src="/icons/logo.GIF" 
                     className="absolute inset-0 w-7 h-7" 
                   />
                 ) : (
                   <motion.img 
                     key="png"
+                    initial={{ opacity: 0 }} animate={{ opacity: 0.9 }}
                     src="/icons/logo.PNG" 
-                    initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 0.9, scale: 1 }}
-                    transition={{ duration: 0.3 }}
                     className="absolute inset-0 w-7 h-7" 
                   />
                 )}
-              </AnimatePresence>
+               </AnimatePresence>
             </div>
             
-            <AnimatedAIResponse 
-              text={message.content} 
-              onComplete={() => setIsTyping(false)} 
-            />
-            
-            {!isTyping && (
-              <motion.div 
-                initial={{ opacity: 0 }} 
-                animate={{ opacity: 1 }}
-                className="flex items-center gap-4 ml-1 pt-2"
-              >
-                <button className="active:scale-90 transition-all opacity-40 hover:opacity-80">
-                  <img src="/icons/redo.svg" alt="Redo" className="w-[18px] h-[18px] invert" />
-                </button>
+            {message.isPlaceholder ? (
+              <div className="flex gap-1.5 pt-2">
+                <div className="w-1.5 h-1.5 bg-white/20 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                <div className="w-1.5 h-1.5 bg-white/20 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                <div className="w-1.5 h-1.5 bg-white/20 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+              </div>
+            ) : (
+              <>
+                <AnimatedAIResponse 
+                  text={message.content} 
+                  onComplete={() => setIsTypingComplete(true)} 
+                />
                 
-                <div className="flex items-center gap-3">
-                  <button onClick={() => setFeedback(feedback === 'like' ? null : 'like')} className="active:scale-90">
-                    <img 
-                      src="/icons/like.svg" 
-                      className={`w-[18px] h-[18px] ${feedback === 'like' ? 'opacity-100' : 'opacity-40 invert'}`}
-                      style={feedback === 'like' ? { filter: 'invert(58%) sepia(13%) saturate(1067%) hue-rotate(82deg) brightness(96%) contrast(87%)' } : {}}
-                    />
-                  </button>
-                  <button onClick={() => setFeedback(feedback === 'dislike' ? null : 'dislike')} className="active:scale-90">
-                    <img 
-                      src="/icons/dislike.svg" 
-                      className={`w-[18px] h-[18px] ${feedback === 'dislike' ? 'opacity-100' : 'opacity-40 invert'}`}
-                      style={feedback === 'dislike' ? { filter: 'invert(58%) sepia(13%) saturate(1067%) hue-rotate(82deg) brightness(96%) contrast(87%)' } : {}}
-                    />
-                  </button>
-                </div>
-              </motion.div>
+                {isTypingComplete && (
+                  <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="flex items-center gap-4 ml-1 pt-2"
+                  >
+                    <button className="active:scale-90 transition-all opacity-40 hover:opacity-80">
+                      <img src="/icons/redo.svg" alt="Redo" className="w-[18px] h-[18px] invert" />
+                    </button>
+                    <div className="flex items-center gap-3">
+                      <button onClick={() => setFeedback(feedback === 'like' ? null : 'like')} className="active:scale-90 transition-all">
+                        <img 
+                          src="/icons/like.svg" 
+                          className={`w-[18px] h-[18px] transition-all ${feedback === 'like' ? '' : 'opacity-40 hover:opacity-80 invert'}`}
+                          style={feedback === 'like' ? { filter: 'invert(58%) sepia(13%) saturate(1067%) hue-rotate(82deg) brightness(96%) contrast(87%)' } : {}}
+                        />
+                      </button>
+                      
+                      {/* Обновленная логика дизлайка с редиректом */}
+                      <button 
+                        onClick={() => {
+                          setFeedback('dislike');
+                          window.open('https://t.me/swgohbugbot', '_blank');
+                        }} 
+                        className="active:scale-90 transition-all"
+                      >
+                        <img 
+                          src="/icons/dislike.svg" 
+                          className={`w-[18px] h-[18px] transition-all ${feedback === 'dislike' ? '' : 'opacity-40 hover:opacity-80 invert'}`}
+                          style={feedback === 'dislike' ? { filter: 'invert(58%) sepia(13%) saturate(1067%) hue-rotate(82deg) brightness(96%) contrast(87%)' } : {}}
+                        />
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </>
             )}
           </div>
         )}
