@@ -12,9 +12,49 @@ export type ChatMessage = {
 type ChatThreadProps = {
   messages: ChatMessage[];
   onNewChat: () => void;
+  onOpenMenu: () => void;
 };
 
-export function ChatThread({ messages, onNewChat }: ChatThreadProps) {
+// Компонент для пословной анимации текста ИИ
+function AnimatedAIResponse({ text }: { text: string }) {
+  const words = text.split(" ");
+  
+  const container = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      // 0.16s задержка = ~6 слов в секунду
+      transition: { staggerChildren: 0.16 }
+    }
+  };
+
+  const wordAnim = {
+    hidden: { opacity: 0, filter: "blur(4px)", y: 2 },
+    visible: { 
+      opacity: 1, 
+      filter: "blur(0px)",
+      y: 0,
+      transition: { duration: 0.2, ease: "easeOut" }
+    }
+  };
+
+  return (
+    <motion.div 
+      variants={container} 
+      initial="hidden" 
+      animate="visible"
+      className="text-[#E8E6E3] text-[16px] leading-[1.65] font-serif"
+    >
+      {words.map((word, index) => (
+        <motion.span key={index} variants={wordAnim} className="inline-block mr-1.5">
+          {word}
+        </motion.span>
+      ))}
+    </motion.div>
+  );
+}
+
+export function ChatThread({ messages, onNewChat, onOpenMenu }: ChatThreadProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -27,13 +67,21 @@ export function ChatThread({ messages, onNewChat }: ChatThreadProps) {
   }, [messages]);
 
   return (
-    <div className="flex flex-col h-full w-full max-w-[600px] mx-auto relative pt-8">
-      {/* Хедер с блюром */}
-      <div className="absolute top-0 left-0 w-full flex items-center justify-between py-6 z-10 bg-transparent backdrop-blur-xl border-b border-white/[0.02]">
-        <span className="text-[12px] text-[#6A6965] font-medium tracking-widest uppercase ml-12">Чат сессия</span>
+    <div className="flex flex-col h-full w-full max-w-[600px] mx-auto relative pt-4">
+      {/* Жесткая невысокая шапка без блюра */}
+      <div className="w-full flex items-center justify-between py-2 z-10 bg-[#252422]">
+        <button 
+          onClick={onOpenMenu}
+          className="p-1 active:scale-90 transition-transform"
+        >
+          <img src="/icons/menu.svg" alt="Menu" className="w-[22px] h-[22px] opacity-40 hover:opacity-80 invert" />
+        </button>
+        
+        <span className="text-[14px] text-[#F2F1ED] font-sans">Новый чат</span>
+        
         <button 
           onClick={onNewChat}
-          className="p-1 active:scale-90 transition-transform hover:bg-white/5 rounded-lg"
+          className="p-1 active:scale-90 transition-transform"
         >
           <img src="/icons/newchat.svg" alt="New Chat" className="w-[22px] h-[22px] opacity-40 hover:opacity-80 invert" />
         </button>
@@ -42,7 +90,7 @@ export function ChatThread({ messages, onNewChat }: ChatThreadProps) {
       {/* Messages */}
       <div 
         ref={scrollRef}
-        className="flex-1 overflow-y-auto hide-scrollbar space-y-10 pb-[120px] pt-20"
+        className="flex-1 overflow-y-auto hide-scrollbar space-y-10 pb-6 pt-6"
       >
         <AnimatePresence initial={false}>
           {messages.map((msg) => (
@@ -67,20 +115,16 @@ function MessageItem({ message }: { message: ChatMessage }) {
     >
       <div className={`flex flex-col ${isUser ? "items-end max-w-[85%]" : "items-start w-full"}`}>
         {isUser ? (
-          /* Сообщение пользователя: без фона, font-serif */
           <div className="px-2 py-1">
             <p className="text-[16px] leading-relaxed whitespace-pre-wrap font-serif text-[#F2F1ED] opacity-90">{message.content}</p>
           </div>
         ) : (
           <div className="flex flex-col w-full space-y-3">
-            {/* Анимация logo.GIF над ответом ИИ */}
             <img src="/icons/logo.GIF" alt="AI" className="w-7 h-7 mb-1 opacity-90" />
             
-            <div className="text-[#E8E6E3] text-[16px] leading-[1.65] whitespace-pre-wrap font-serif">
-              {message.content}
-            </div>
+            {/* Пословная анимация ответа ИИ */}
+            <AnimatedAIResponse text={message.content} />
             
-            {/* Feedback Toolbar */}
             <div className="flex items-center gap-4 ml-1 pt-2">
               <button className="active:scale-90 transition-all opacity-40 hover:opacity-80">
                 <img src="/icons/redo.svg" alt="Redo" className="w-[18px] h-[18px] invert" />
