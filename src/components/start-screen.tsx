@@ -14,7 +14,7 @@ const PromptRow = ({ items, direction, speed, onPick }: any) => {
           <button 
             key={idx} 
             onClick={() => onPick(item)}
-            className="whitespace-nowrap rounded-lg border border-white/5 bg-transparent px-3 py-1.5 text-[13px] text-[#9A9894] transition-all duration-200 active:scale-95"
+            className="whitespace-nowrap rounded-lg border border-white/5 bg-transparent px-3 py-1.5 text-[13px] text-[#9A9894] transition-transform duration-200 active:scale-95"
           >
             {item}
           </button>
@@ -67,7 +67,11 @@ export function StartScreen() {
       setIsExpanded(false);
     }
 
-    ta.style.height = isExpanded ? `${Math.min(sh, 120)}px` : `${Math.min(sh, 44)}px`;
+    if (isExpanded) {
+      ta.style.height = '120px';
+    } else {
+      ta.style.height = `${Math.min(sh, 44)}px`;
+    }
   }, [message, isExpanded]);
 
   const onSend = (text?: string) => {
@@ -85,6 +89,7 @@ export function StartScreen() {
     
     setChatStarted(true);
     setMessage("");
+    setIsExpanded(false);
 
     if (textareaRef.current) {
       textareaRef.current.style.height = '24px';
@@ -105,7 +110,10 @@ export function StartScreen() {
         
         {showExpand && (
           <button
-            onClick={() => setIsExpanded(!isExpanded)}
+            onClick={(e) => {
+              e.preventDefault();
+              setIsExpanded(!isExpanded);
+            }}
             className="absolute right-4 top-3 z-10 active:scale-90 transition-transform opacity-40"
           >
             <img 
@@ -123,13 +131,17 @@ export function StartScreen() {
             onChange={(e) => setMessage(e.target.value)}
             placeholder="Спросить что-нибудь..."
             className={`hide-scrollbar w-full flex-1 bg-transparent px-2 text-[15px] text-[#E8E6E3] outline-none placeholder:text-[#6A6965] resize-none overflow-y-auto ${showExpand ? 'pr-8' : ''}`}
-            style={{ lineHeight: '20px', minHeight: '24px', height: '24px', transition: 'height 0.15s cubic-bezier(0.25, 1, 0.5, 1)' }}
+            style={{ 
+              lineHeight: '20px', 
+              minHeight: '24px', 
+              transition: 'height 0.3s cubic-bezier(0.4, 0, 0.2, 1)' 
+            }}
           />
           <div className="flex items-center justify-end mt-2">
             <button
               onClick={() => onSend()}
               disabled={message.trim().length < 2}
-              className="flex h-[36px] w-[36px] items-center justify-center rounded-[10px] bg-[#5FA86D] transition-all disabled:opacity-20 active:scale-95"
+              className="flex h-[36px] w-[36px] items-center justify-center rounded-[10px] bg-[#5FA86D] disabled:opacity-20 active:scale-95 transition-transform"
             >
               <img 
                 src="/icons/send.svg" 
@@ -175,8 +187,8 @@ export function StartScreen() {
         {!chatStarted ? (
           <motion.div 
             key="start-screen"
-            initial={{ opacity: 0, scale: 0.98 }}
-            animate={{ opacity: 1, scale: 1 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
             className="absolute inset-0 flex flex-col items-center justify-center bg-[#252422] z-40"
@@ -206,13 +218,13 @@ export function StartScreen() {
         ) : (
           <motion.div 
             key="chat-screen"
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.98 }}
-            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.4 }}
             className="absolute inset-0 flex flex-col z-50 bg-[#252422]"
           >
-            <div className="flex-1 overflow-hidden flex flex-col px-8 relative">
+            <div className="flex-1 overflow-hidden flex flex-col relative">
               <ChatThread 
                 messages={messages} 
                 onNewChat={() => { setChatStarted(false); setMessages([]); }} 
@@ -220,7 +232,7 @@ export function StartScreen() {
               />
             </div>
             
-            <div className="w-full bg-[#252422]">
+            <div className="w-full bg-[#252422] shrink-0">
               {inputAreaContent}
             </div>
           </motion.div>
