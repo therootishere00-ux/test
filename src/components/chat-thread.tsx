@@ -52,6 +52,8 @@ function AnimatedAIResponse({ text, onComplete }: { text: string; onComplete: ()
 
 export function ChatThread({ messages, onNewChat, onOpenMenu }: ChatThreadProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [chatTitle, setChatTitle] = useState("Новый чат");
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -65,17 +67,39 @@ export function ChatThread({ messages, onNewChat, onOpenMenu }: ChatThreadProps)
   return (
     <div className="flex flex-col h-full w-full max-w-[600px] mx-auto relative pt-4">
       {/* Header */}
-      <div className="w-full flex items-center justify-between py-2 z-10 bg-[#252422] px-4">
+      <div className="w-full flex items-center justify-between py-2 z-10 bg-[#252422]">
         <button onClick={onOpenMenu} className="p-1 active:scale-95 transition-transform">
           <img src="/icons/menu.svg" alt="Menu" className="w-[22px] h-[22px] opacity-40 invert" />
         </button>
-        <span className="text-[14px] text-[#F2F1ED] font-sans">Новый чат</span>
+
+        {/* Title / Rename Block */}
+        <div className="flex-1 flex justify-center px-4">
+          {isEditingTitle ? (
+            <input
+              autoFocus
+              maxLength={15}
+              value={chatTitle}
+              onChange={(e) => setChatTitle(e.target.value)}
+              onBlur={() => setIsEditingTitle(false)}
+              onKeyDown={(e) => e.key === "Enter" && setIsEditingTitle(false)}
+              className="bg-black/20 text-[14px] text-[#F2F1ED] font-sans text-center border-none outline-none rounded-md px-2 py-0.5 w-full max-w-[140px]"
+            />
+          ) : (
+            <span 
+              onClick={() => setIsEditingTitle(true)}
+              className="text-[14px] text-[#F2F1ED] font-sans truncate"
+            >
+              {chatTitle}
+            </span>
+          )}
+        </div>
+
         <button onClick={onNewChat} className="p-1 active:scale-95 transition-transform">
           <img src="/icons/newchat.svg" alt="New Chat" className="w-[22px] h-[22px] opacity-40 invert" />
         </button>
       </div>
 
-      <div ref={scrollRef} className="flex-1 overflow-y-auto overflow-x-hidden hide-scrollbar space-y-10 pb-10 pt-6 px-4">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto overflow-x-hidden hide-scrollbar space-y-10 pb-10 pt-6">
         <AnimatePresence initial={false}>
           {messages.map((msg) => (
             <MessageItem key={msg.id} message={msg} />
@@ -101,10 +125,6 @@ function MessageItem({ message }: { message: ChatMessage }) {
     setTimeout(() => setCopied(false), 1700);
   };
 
-  // Единый стиль для иконок под сообщениями
-  const actionIconClass = "w-[18px] h-[18px] invert transition-all";
-  const activeGreenFilter = "invert(58%) sepia(13%) saturate(1067%) hue-rotate(82deg) brightness(96%) contrast(87%)";
-
   return (
     <>
       <MoreModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} content={message.content} />
@@ -114,7 +134,7 @@ function MessageItem({ message }: { message: ChatMessage }) {
         animate={{ opacity: 1, y: 0 }}
         className={`flex w-full ${isUser ? "justify-end" : "justify-start"}`}
       >
-        <div className={`flex flex-col ${isUser ? "items-end max-w-[85%]" : "items-start w-full"}`}>
+        <div className={`flex flex-col ${isUser ? "items-end max-w-[75%]" : "items-start w-full"}`}>
           {isUser ? (
             <div className="flex flex-col w-full items-end">
               <div className="bg-[#2D2C2A] rounded-[20px] px-4 py-3 w-full shadow-sm">
@@ -128,25 +148,27 @@ function MessageItem({ message }: { message: ChatMessage }) {
                 </div>
               </div>
               
-              <div className="flex justify-end gap-5 mt-3 pr-2">
-                {isLong && (
+              {isLong ? (
+                <div className="flex justify-end mt-2 pr-2">
                   <button 
                     onClick={() => setIsModalOpen(true)}
-                    className="flex items-center gap-1.5 active:scale-95 opacity-40"
+                    className="flex items-center gap-1.5 active:scale-95 opacity-60"
                   >
                     <span className="text-[13px] font-sans text-[#F2F1ED]">Больше</span>
-                    <img src="/icons/more.svg" alt="More" className="w-[18px] h-[18px] invert" />
-                  </button>
-                )}
-                <div className="flex items-center gap-5 opacity-40">
-                  <button className="active:scale-95">
-                    <img src="/icons/edit.svg" alt="Edit" className={actionIconClass} />
-                  </button>
-                  <button onClick={handleCopy} className="active:scale-95">
-                    <img src={copied ? "/icons/tick.svg" : "/icons/copy.svg"} alt="Copy" className={actionIconClass} />
+                    <img src="/icons/more.svg" alt="More" className="w-[16px] h-[16px] invert" />
                   </button>
                 </div>
-              </div>
+              ) : (
+                /* Иконки под юзером: размер 18px и прозрачность 40% (как у ИИ) */
+                <div className="flex justify-end gap-4 mt-2 pr-2 opacity-40">
+                  <button className="active:scale-95">
+                    <img src="/icons/edit.svg" alt="Edit" className="w-[18px] h-[18px] invert" />
+                  </button>
+                  <button onClick={handleCopy} className="active:scale-95">
+                    <img src={copied ? "/icons/tick.svg" : "/icons/copy.svg"} alt="Copy" className="w-[18px] h-[18px] invert" />
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
             <div className="flex flex-col w-full space-y-4 min-h-[100px]">
@@ -189,51 +211,45 @@ function MessageItem({ message }: { message: ChatMessage }) {
                     <motion.div 
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      className="flex items-center gap-5 pt-1"
+                      className="flex items-center gap-4 pt-1"
                     >
-                      <div className="flex items-center gap-5">
-                        <button className="active:scale-95 opacity-40">
-                          <img src="/icons/redo.svg" alt="Redo" className={actionIconClass} />
-                        </button>
-                        <button onClick={handleCopy} className="active:scale-95 opacity-40">
-                          <img src={copied ? "/icons/tick.svg" : "/icons/copy.svg"} alt="Copy" className={actionIconClass} />
-                        </button>
-                        
-                        {/* Лайк */}
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-4 opacity-40">
+                          <button className="active:scale-95">
+                            <img src="/icons/redo.svg" alt="Redo" className="w-[18px] h-[18px] invert" />
+                          </button>
+                          <button onClick={handleCopy} className="active:scale-95">
+                            <img src={copied ? "/icons/tick.svg" : "/icons/copy.svg"} alt="Copy" className="w-[18px] h-[18px] invert" />
+                          </button>
+                        </div>
+
+                        {/* Кнопки лайка/дизлайка: полная непрозрачность при активации */}
                         <button 
                           onClick={() => setFeedback(feedback === 'like' ? null : 'like')} 
                           className="active:scale-95"
+                          style={{ opacity: feedback === 'like' ? 1 : 0.4 }}
                         >
                           <img 
                             src="/icons/like.svg" 
-                            alt="Like"
                             className="w-[18px] h-[18px]"
                             style={{ 
-                                filter: feedback === 'like' ? activeGreenFilter : 'invert(1)',
-                                opacity: feedback === 'like' ? 1 : 0.4 
+                                filter: feedback === 'like' ? 'invert(58%) sepia(13%) saturate(1067%) hue-rotate(82deg) brightness(96%) contrast(87%)' : 'invert(1)'
                             }}
                           />
                         </button>
-
-                        {/* Дизлайк */}
                         <button 
                           onClick={() => {
-                            if (feedback === 'dislike') {
-                                setFeedback(null);
-                            } else {
-                                setFeedback('dislike');
-                                window.open('https://t.me/swgohbugbot', '_blank');
-                            }
+                            setFeedback('dislike');
+                            window.open('https://t.me/swgohbugbot', '_blank');
                           }} 
                           className="active:scale-95"
+                          style={{ opacity: feedback === 'dislike' ? 1 : 0.4 }}
                         >
                           <img 
                             src="/icons/dislike.svg" 
-                            alt="Dislike"
                             className="w-[18px] h-[18px]"
                             style={{ 
-                                filter: feedback === 'dislike' ? activeGreenFilter : 'invert(1)',
-                                opacity: feedback === 'dislike' ? 1 : 0.4 
+                                filter: feedback === 'dislike' ? 'invert(58%) sepia(13%) saturate(1067%) hue-rotate(82deg) brightness(96%) contrast(87%)' : 'invert(1)'
                             }}
                           />
                         </button>
