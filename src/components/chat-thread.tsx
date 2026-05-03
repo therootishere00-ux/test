@@ -93,7 +93,6 @@ function MessageItem({ message, onEditSubmit, onRedo }: { message: ChatMessage, 
   const [isTypingComplete, setIsTypingComplete] = useState(false);
   const [copied, setCopied] = useState(false);
   
-  // Состояния редактирования
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(message.content);
 
@@ -149,7 +148,7 @@ function MessageItem({ message, onEditSubmit, onRedo }: { message: ChatMessage, 
                 <p className="text-[16px] leading-relaxed font-serif text-[#F2F1ED] text-right break-words">
                   {message.content}
                 </p>
-                <div className="flex justify-end gap-4 mt-2 pr-2 opacity-40 hover:opacity-100 transition-opacity">
+                <div className="flex justify-end gap-4 mt-2 pr-2 opacity-60 hover:opacity-100 transition-opacity">
                   <button onClick={() => setIsEditing(true)} className="active:scale-95 transition-transform">
                     <img src="/icons/edit.svg" alt="Edit" className="w-[18px] h-[18px] invert" />
                   </button>
@@ -204,7 +203,7 @@ function MessageItem({ message, onEditSubmit, onRedo }: { message: ChatMessage, 
                     className="flex items-center gap-4 pt-1"
                   >
                     <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-4 opacity-40 hover:opacity-100 transition-opacity">
+                      <div className="flex items-center gap-4 opacity-60 hover:opacity-100 transition-opacity">
                         <button onClick={() => onRedo(message.id)} className="active:scale-95 transition-transform">
                           <img src="/icons/redo.svg" alt="Redo" className="w-[18px] h-[18px] invert" />
                         </button>
@@ -216,7 +215,7 @@ function MessageItem({ message, onEditSubmit, onRedo }: { message: ChatMessage, 
                       <button 
                         onClick={() => setFeedback(feedback === 'like' ? null : 'like')} 
                         className="active:scale-95 transition-transform"
-                        style={{ opacity: feedback === 'like' ? 1 : 0.4 }}
+                        style={{ opacity: feedback === 'like' ? 1 : 0.6 }}
                       >
                         <img 
                           src="/icons/like.svg" 
@@ -227,7 +226,7 @@ function MessageItem({ message, onEditSubmit, onRedo }: { message: ChatMessage, 
                       <button 
                         onClick={() => setFeedback(feedback === 'dislike' ? null : 'dislike')} 
                         className="active:scale-95 transition-transform"
-                        style={{ opacity: feedback === 'dislike' ? 1 : 0.4 }}
+                        style={{ opacity: feedback === 'dislike' ? 1 : 0.6 }}
                       >
                         <img 
                           src="/icons/dislike.svg" 
