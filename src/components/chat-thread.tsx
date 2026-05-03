@@ -90,6 +90,7 @@ function MessageItem({ message }: { message: ChatMessage }) {
   const [feedback, setFeedback] = useState<'like' | 'dislike' | null>(null);
   const [isTypingComplete, setIsTypingComplete] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   const [copied, setCopied] = useState(false);
 
   const isLong = isUser && message.content.length > 300;
@@ -100,6 +101,9 @@ function MessageItem({ message }: { message: ChatMessage }) {
     setTimeout(() => setCopied(false), 1700);
   };
 
+  // Цвет активного состояния (лайк/дизлайк)
+  const activeGreenFilter = "invert(58%) sepia(13%) saturate(1067%) hue-rotate(82deg) brightness(96%) contrast(87%)";
+
   return (
     <>
       <MoreModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} content={message.content} />
@@ -109,40 +113,52 @@ function MessageItem({ message }: { message: ChatMessage }) {
         animate={{ opacity: 1, y: 0 }}
         className={`flex w-full ${isUser ? "justify-end" : "justify-start"}`}
       >
-        <div className={`flex flex-col ${isUser ? "items-end max-w-[75%]" : "items-start w-full"}`}>
+        <div className={`flex flex-col ${isUser ? "items-end max-w-[85%]" : "items-start w-full"}`}>
           {isUser ? (
             <div className="flex flex-col w-full items-end">
-              <div className="bg-[#2D2C2A] rounded-[20px] px-4 py-3 w-full shadow-sm">
+              {/* Блок сообщения: плавное расширение */}
+              <motion.div 
+                animate={{ height: isExpanded ? "auto" : "auto" }}
+                className="bg-[#2D2C2A] rounded-[20px] px-4 py-3 w-full shadow-sm overflow-hidden"
+              >
                 <div className="relative w-full">
-                  <p className={`text-[16px] leading-relaxed whitespace-pre-wrap font-serif text-[#F2F1ED] opacity-90 text-left ${isLong ? 'max-h-[105px] overflow-hidden' : ''}`}>
+                  <p 
+                    className={`text-[16px] leading-relaxed whitespace-pre-wrap font-serif text-[#F2F1ED] opacity-90 text-left transition-all duration-300 ${
+                      isLong && !isExpanded ? 'max-h-[105px] overflow-hidden' : isExpanded ? 'max-h-[250px] overflow-y-auto hide-scrollbar' : ''
+                    }`}
+                  >
                     {message.content}
                   </p>
-                  {isLong && (
+                  {isLong && !isExpanded && (
                     <div className="absolute bottom-0 left-0 right-0 h-[40px] bg-gradient-to-t from-[#2D2C2A] to-transparent pointer-events-none" />
                   )}
                 </div>
-              </div>
+              </motion.div>
               
-              {isLong ? (
-                <div className="flex justify-end mt-2 pr-2">
+              <div className="flex justify-end gap-4 mt-2 pr-2">
+                {isLong && (
                   <button 
-                    onClick={() => setIsModalOpen(true)}
-                    className="flex items-center gap-1.5 active:scale-95 opacity-60"
+                    onClick={() => {
+                        setIsExpanded(!isExpanded);
+                        // Если уже расширено, можно по второму клику открыть модалку
+                        if (isExpanded) setIsModalOpen(true);
+                    }}
+                    className="flex items-center gap-1.5 active:scale-95 opacity-40 mr-1"
                   >
-                    <span className="text-[13px] font-sans text-[#F2F1ED]">Больше</span>
-                    <img src="/icons/more.svg" alt="More" className="w-[16px] h-[16px] invert" />
+                    <span className="text-[13px] font-sans text-[#F2F1ED]">{isExpanded ? 'Модалка' : 'Больше'}</span>
+                    <motion.img 
+                        animate={{ rotate: isExpanded ? 180 : 0 }}
+                        src="/icons/more.svg" alt="More" className="w-[16px] h-[16px] invert" 
+                    />
                   </button>
-                </div>
-              ) : (
-                <div className="flex justify-end gap-4 mt-2 pr-2 opacity-30">
-                  <button className="active:scale-95">
-                    <img src="/icons/edit.svg" alt="Edit" className="w-[17px] h-[17px] invert" />
-                  </button>
-                  <button onClick={handleCopy} className="active:scale-95">
-                    <img src={copied ? "/icons/tick.svg" : "/icons/copy.svg"} alt="Copy" className="w-[17px] h-[17px] invert" />
-                  </button>
-                </div>
-              )}
+                )}
+                <button className="active:scale-95 opacity-40">
+                  <img src="/icons/edit.svg" alt="Edit" className="w-[18px] h-[18px] invert" />
+                </button>
+                <button onClick={handleCopy} className="active:scale-95 opacity-40">
+                  <img src={copied ? "/icons/tick.svg" : "/icons/copy.svg"} alt="Copy" className="w-[18px] h-[18px] invert" />
+                </button>
+              </div>
             </div>
           ) : (
             <div className="flex flex-col w-full space-y-4 min-h-[100px]">
@@ -187,39 +203,39 @@ function MessageItem({ message }: { message: ChatMessage }) {
                       animate={{ opacity: 1 }}
                       className="flex items-center gap-4 pt-1"
                     >
-                      <div className="flex items-center gap-4 opacity-40">
-                        <button className="active:scale-95">
+                      <div className="flex items-center gap-4">
+                        <button className="active:scale-95 opacity-40">
                           <img src="/icons/redo.svg" alt="Redo" className="w-[18px] h-[18px] invert" />
                         </button>
-                        <button onClick={handleCopy} className="active:scale-95">
+                        <button onClick={handleCopy} className="active:scale-95 opacity-40">
                           <img src={copied ? "/icons/tick.svg" : "/icons/copy.svg"} alt="Copy" className="w-[18px] h-[18px] invert" />
                         </button>
                         <button 
                           onClick={() => setFeedback(feedback === 'like' ? null : 'like')} 
                           className="active:scale-95"
+                          style={{ opacity: feedback === 'like' ? 1 : 0.4 }}
                         >
                           <img 
                             src="/icons/like.svg" 
                             className="w-[18px] h-[18px]"
                             style={{ 
-                                filter: feedback === 'like' ? 'invert(58%) sepia(13%) saturate(1067%) hue-rotate(82deg) brightness(96%) contrast(87%)' : 'invert(1)',
-                                opacity: feedback === 'like' ? 1 : 1 
+                                filter: feedback === 'like' ? activeGreenFilter : 'invert(1)'
                             }}
                           />
                         </button>
                         <button 
                           onClick={() => {
-                            setFeedback('dislike');
-                            window.open('https://t.me/swgohbugbot', '_blank');
+                            setFeedback(feedback === 'dislike' ? null : 'dislike');
+                            if (feedback !== 'dislike') window.open('https://t.me/swgohbugbot', '_blank');
                           }} 
                           className="active:scale-95"
+                          style={{ opacity: feedback === 'dislike' ? 1 : 0.4 }}
                         >
                           <img 
                             src="/icons/dislike.svg" 
                             className="w-[18px] h-[18px]"
                             style={{ 
-                                filter: feedback === 'dislike' ? 'invert(58%) sepia(13%) saturate(1067%) hue-rotate(82deg) brightness(96%) contrast(87%)' : 'invert(1)',
-                                opacity: feedback === 'dislike' ? 1 : 1 
+                                filter: feedback === 'dislike' ? activeGreenFilter : 'invert(1)'
                             }}
                           />
                         </button>
