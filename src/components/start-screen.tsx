@@ -14,7 +14,7 @@ const PromptRow = ({ items, direction, speed, onPick }: any) => {
           <button 
             key={idx} 
             onClick={() => onPick(item)}
-            className="whitespace-nowrap rounded-lg border border-white/5 bg-transparent px-3 py-1.5 text-[13px] text-[#9A9894] transition-all duration-200 hover:bg-white/5 hover:text-[#C5C4C0] active:scale-95"
+            className="whitespace-nowrap rounded-lg border border-white/5 bg-transparent px-3 py-1.5 text-[13px] text-[#9A9894] transition-all duration-200 active:scale-95"
           >
             {item}
           </button>
@@ -32,8 +32,6 @@ export function StartScreen() {
   const [allPrompts, setAllPrompts] = useState<string[]>([]);
   
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  
-  // Состояния для расширения поля ввода
   const [showExpand, setShowExpand] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -55,7 +53,6 @@ export function StartScreen() {
     ];
   }, [allPrompts]);
 
-  // Умный расчет высоты и кнопки расширения
   useEffect(() => {
     const ta = textareaRef.current;
     if (!ta) return;
@@ -63,7 +60,6 @@ export function StartScreen() {
     ta.style.height = '24px';
     const sh = ta.scrollHeight;
     
-    // Если больше 2 строк (40px + padding), показываем кнопку more.svg
     if (sh > 44) {
       setShowExpand(true);
     } else {
@@ -71,7 +67,6 @@ export function StartScreen() {
       setIsExpanded(false);
     }
 
-    // Если раскрыто - до 6 строк (~120px), иначе макс 2 строки (~44px)
     ta.style.height = isExpanded ? `${Math.min(sh, 120)}px` : `${Math.min(sh, 44)}px`;
   }, [message, isExpanded]);
 
@@ -108,11 +103,10 @@ export function StartScreen() {
     <div className={`w-full max-w-[600px] mx-auto px-8 ${chatStarted ? 'pb-4 pt-2' : ''}`}>
       <div className="relative flex w-full flex-col bg-[#2D2C2A] rounded-[20px] border border-white/[0.04] transition-all focus-within:border-white/10 shadow-sm">
         
-        {/* Кнопка расширения текстового поля */}
         {showExpand && (
           <button
             onClick={() => setIsExpanded(!isExpanded)}
-            className="absolute right-4 top-3 z-10 active:scale-90 transition-transform opacity-40 hover:opacity-100"
+            className="absolute right-4 top-3 z-10 active:scale-90 transition-transform opacity-40"
           >
             <img 
               src={isExpanded ? "/icons/mini.svg" : "/icons/more.svg"} 
@@ -128,15 +122,14 @@ export function StartScreen() {
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             placeholder="Спросить что-нибудь..."
-            // Если кнопка расширения видна, делаем отступ справа, чтобы текст не залазил под нее
             className={`hide-scrollbar w-full flex-1 bg-transparent px-2 text-[15px] text-[#E8E6E3] outline-none placeholder:text-[#6A6965] resize-none overflow-y-auto ${showExpand ? 'pr-8' : ''}`}
-            style={{ lineHeight: '20px', minHeight: '24px', height: '24px', transition: 'height 0.2s ease-out' }}
+            style={{ lineHeight: '20px', minHeight: '24px', height: '24px', transition: 'height 0.15s cubic-bezier(0.25, 1, 0.5, 1)' }}
           />
           <div className="flex items-center justify-end mt-2">
             <button
               onClick={() => onSend()}
               disabled={message.trim().length < 2}
-              className="flex h-[36px] w-[36px] items-center justify-center rounded-[10px] bg-[#5FA86D] transition-all hover:bg-[#6FBD7E] disabled:opacity-20 active:scale-95"
+              className="flex h-[36px] w-[36px] items-center justify-center rounded-[10px] bg-[#5FA86D] transition-all disabled:opacity-20 active:scale-95"
             >
               <img 
                 src="/icons/send.svg" 
@@ -169,9 +162,9 @@ export function StartScreen() {
         <div className="absolute top-8 left-8 z-[100]">
           <button 
             onClick={() => setIsMenuOpen(true)}
-            className="p-1 active:scale-90 transition-transform"
+            className="p-1 active:scale-90 transition-transform opacity-40"
           >
-            <img src="/icons/menu.svg" alt="Menu" className="w-6 h-6 opacity-40 hover:opacity-80 invert" />
+            <img src="/icons/menu.svg" alt="Menu" className="w-6 h-6 invert" />
           </button>
         </div>
       )}
@@ -188,7 +181,6 @@ export function StartScreen() {
             transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
             className="absolute inset-0 flex flex-col items-center justify-center bg-[#252422] z-40"
           >
-            {/* Обертка теперь без items-center, чтобы стартовое сообщение стояло строго слева в рамках 600px */}
             <div className="w-full max-w-[600px] mx-auto flex flex-col relative -mt-[4vh]">
               <div className="w-full px-8 mb-8 flex flex-col items-start">
                 <img src="/icons/logo.PNG" alt="Logo" className="w-10 h-10 mb-6 opacity-90" />
