@@ -7,157 +7,117 @@ export type ChatMessage = {
   id: string;
   role: "user" | "assistant";
   content: string;
+  isGenerating?: boolean;
 };
 
-type ChatThreadProps = {
-  messages: ChatMessage[];
-  onNewChat: () => void;
-  onOpenMenu: () => void;
-};
-
-// Компонент для пословной анимации текста ИИ
-function AnimatedAIResponse({ text }: { text: string }) {
+// Анимация: появление группами слов на месте (fade-in)
+function AnimatedWords({ text, onComplete }: { text: string; onComplete: () => void }) {
   const words = text.split(" ");
-  
-  const container = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      // 0.16s задержка = ~6 слов в секунду
-      transition: { staggerChildren: 0.16 }
-    }
-  };
+  const [visibleCount, setVisibleCount] = useState(0);
+  const step = 5; // По 5 слов за раз
 
-  const wordAnim = {
-    hidden: { opacity: 0, filter: "blur(4px)", y: 2 },
-    visible: { 
-      opacity: 1, 
-      filter: "blur(0px)",
-      y: 0,
-      transition: { duration: 0.2, ease: "easeOut" }
-    }
-  };
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setVisibleCount(prev => {
+        if (prev + step >= words.length) {
+          clearInterval(interval);
+          onComplete();
+          return words.length;
+        }
+        return prev + step;
+      });
+    }, 150); // Скорость появления групп
+    return () => clearInterval(interval);
+  }, [words.length]);
 
   return (
-    <motion.div 
-      variants={container} 
-      initial="hidden" 
-      animate="visible"
-      className="text-[#E8E6E3] text-[16px] leading-[1.65] font-serif"
-    >
-      {words.map((word, index) => (
-        <motion.span key={index} variants={wordAnim} className="inline-block mr-1.5">
+    <div className="text-[#E8E6E3] text-[17px] leading-[1.6] font-serif">
+      {words.map((word, i) => (
+        <motion.span
+          key={i}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: i < visibleCount ? 1 : 0 }}
+          transition={{ duration: 0.3 }}
+          className="inline-block mr-1.5"
+        >
           {word}
         </motion.span>
       ))}
-    </motion.div>
+    </div>
   );
 }
 
-export function ChatThread({ messages, onNewChat, onOpenMenu }: ChatThreadProps) {
+export function ChatThread({ messages, onNewChat, onOpenMenu }: any) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // При каждом новом сообщении (даже пустом) заранее опускаем скролл
   useEffect(() => {
     if (scrollRef.current) {
-      scrollRef.current.scrollTo({
-        top: scrollRef.current.scrollHeight,
-        behavior: "smooth",
-      });
+      scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
     }
   }, [messages]);
 
   return (
-    <div className="flex flex-col h-full w-full max-w-[600px] mx-auto relative pt-4">
-      {/* Жесткая невысокая шапка без блюра */}
-      <div className="w-full flex items-center justify-between py-2 z-10 bg-[#252422]">
-        <button 
-          onClick={onOpenMenu}
-          className="p-1 active:scale-90 transition-transform"
-        >
-          <img src="/icons/menu.svg" alt="Menu" className="w-[22px] h-[22px] opacity-40 hover:opacity-80 invert" />
-        </button>
-        
-        <span className="text-[14px] text-[#F2F1ED] font-sans">Новый чат</span>
-        
-        <button 
-          onClick={onNewChat}
-          className="p-1 active:scale-90 transition-transform"
-        >
-          <img src="/icons/newchat.svg" alt="New Chat" className="w-[22px] h-[22px] opacity-40 hover:opacity-80 invert" />
-        </button>
+    <div className="flex flex-col h-full w-full max-w-[600px] mx-auto px-6 relative">
+      <div className="w-full flex items-center justify-between py-4 bg-[#252422] z-10">
+        <button onClick={onOpenMenu} className="p-1"><img src="/icons/menu.svg" className="w-6 h-6 invert opacity-40" alt="" /></button>
+        <span className="text-[14px] font-sans text-[#F2F1ED] opacity-80">Новый чат</span>
+        <button onClick={onNewChat} className="p-1"><img src="/icons/newchat.svg" className="w-6 h-6 invert opacity-40" alt="" /></button>
       </div>
 
-      {/* Messages */}
-      <div 
-        ref={scrollRef}
-        className="flex-1 overflow-y-auto hide-scrollbar space-y-10 pb-6 pt-6"
-      >
-        <AnimatePresence initial={false}>
-          {messages.map((msg) => (
-            <MessageItem key={msg.id} message={msg} />
-          ))}
-        </AnimatePresence>
+      <div ref={scrollRef} className="flex-1 overflow-y-auto hide-scrollbar space-y-12 pb-10 pt-4">
+        {messages.map((msg: ChatMessage, idx: number) => (
+          <MessageBlock key={msg.id} message={msg} />
+        ))}
       </div>
     </div>
   );
 }
 
-function MessageItem({ message }: { message: ChatMessage }) {
+function MessageBlock({ message }: { message: ChatMessage }) {
   const isUser = message.role === "user";
-  const [feedback, setFeedback] = useState<'like' | 'dislike' | null>(null);
+  const [isDone, setIsDone] = useState(!message.isGenerating);
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-      className={`flex w-full ${isUser ? "justify-end" : "justify-start"}`}
-    >
-      <div className={`flex flex-col ${isUser ? "items-end max-w-[85%]" : "items-start w-full"}`}>
+    <div className={`flex w-full ${isUser ? "justify-end" : "justify-start"}`}>
+      <div className={`flex flex-col ${isUser ? "max-w-[90%]" : "w-full"}`}>
         {isUser ? (
-          <div className="px-2 py-1">
-            <p className="text-[16px] leading-relaxed whitespace-pre-wrap font-serif text-[#F2F1ED] opacity-90">{message.content}</p>
-          </div>
+          <p className="text-[17px] font-serif text-[#F2F1ED] opacity-90 text-right">{message.content}</p>
         ) : (
-          <div className="flex flex-col w-full space-y-3">
-            <img src="/icons/logo.GIF" alt="AI" className="w-7 h-7 mb-1 opacity-90" />
-            
-            {/* Пословная анимация ответа ИИ */}
-            <AnimatedAIResponse text={message.content} />
-            
-            <div className="flex items-center gap-4 ml-1 pt-2">
-              <button className="active:scale-90 transition-all opacity-40 hover:opacity-80">
-                <img src="/icons/redo.svg" alt="Redo" className="w-[18px] h-[18px] invert" />
-              </button>
-              
-              <div className="flex items-center gap-3">
-                <button 
-                  onClick={() => setFeedback(feedback === 'like' ? null : 'like')}
-                  className="active:scale-90 transition-all"
-                >
-                  <img 
-                    src="/icons/like.svg" 
-                    alt="Like" 
-                    className={`w-[18px] h-[18px] transition-all ${feedback === 'like' ? 'brightness-100 opacity-100' : 'opacity-40 hover:opacity-80 invert'}`}
-                    style={feedback === 'like' ? { filter: 'invert(58%) sepia(13%) saturate(1067%) hue-rotate(82deg) brightness(96%) contrast(87%)' } : {}}
+          <div className="flex flex-col space-y-4">
+            {/* Смена логотипа: GIF пока печатает, потом плавно PNG */}
+            <div className="h-8 w-8 relative">
+              <AnimatePresence mode="wait">
+                {!isDone ? (
+                  <motion.img 
+                    key="gif" 
+                    src="/icons/logo.GIF" 
+                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                    className="absolute inset-0 w-8 h-8"
                   />
-                </button>
-                <button 
-                  onClick={() => setFeedback(feedback === 'dislike' ? null : 'dislike')}
-                  className="active:scale-90 transition-all"
-                >
-                  <img 
-                    src="/icons/dislike.svg" 
-                    alt="Dislike" 
-                    className={`w-[18px] h-[18px] transition-all ${feedback === 'dislike' ? 'brightness-100 opacity-100' : 'opacity-40 hover:opacity-80 invert'}`}
-                    style={feedback === 'dislike' ? { filter: 'invert(58%) sepia(13%) saturate(1067%) hue-rotate(82deg) brightness(96%) contrast(87%)' } : {}}
+                ) : (
+                  <motion.img 
+                    key="png" 
+                    src="/icons/logo.PNG" 
+                    initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                    className="absolute inset-0 w-8 h-8"
                   />
-                </button>
-              </div>
+                )}
+              </AnimatePresence>
             </div>
+
+            <AnimatedWords text={message.content} onComplete={() => setIsDone(true)} />
+
+            {isDone && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-4 pt-2">
+                <img src="/icons/redo.svg" className="w-4 h-4 invert opacity-30" alt="" />
+                <img src="/icons/like.svg" className="w-4 h-4 invert opacity-30" alt="" />
+                <img src="/icons/dislike.svg" className="w-4 h-4 invert opacity-30" alt="" />
+              </motion.div>
+            )}
           </div>
         )}
       </div>
-    </motion.div>
+    </div>
   );
 }
