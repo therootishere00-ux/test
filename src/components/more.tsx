@@ -21,7 +21,7 @@ export function MoreModal({ isOpen, onClose, content }: MoreModalProps) {
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center">
+        <div className="fixed inset-0 z-[200] flex flex-col">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -36,11 +36,11 @@ export function MoreModal({ isOpen, onClose, content }: MoreModalProps) {
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
             transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-            className="relative flex flex-col bg-[#252422] w-full h-[100dvh] overflow-hidden"
+            className="relative flex flex-col bg-[#252422] w-full h-full overflow-hidden"
           >
-            <div className="flex items-center justify-between px-6 h-[72px] border-b border-white/[0.04] shrink-0">
+            <div className="flex items-center justify-between px-6 h-[64px] border-b border-white/[0.04] shrink-0">
               <div className="w-9" /> 
-              <span className="text-[14px] text-[#F2F1ED] font-sans font-medium uppercase tracking-wider">
+              <span className="text-[14px] text-[#F2F1ED] font-sans">
                 Читать больше
               </span>
               <button 
@@ -55,7 +55,7 @@ export function MoreModal({ isOpen, onClose, content }: MoreModalProps) {
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-8 py-10 hide-scrollbar">
+            <div className="flex-1 overflow-y-auto px-8 py-8 hide-scrollbar">
               <div className="max-w-[600px] mx-auto w-full">
                 <p className="text-[16px] leading-relaxed font-serif text-[#F2F1ED] opacity-90 whitespace-pre-wrap">
                   {content}
@@ -63,8 +63,8 @@ export function MoreModal({ isOpen, onClose, content }: MoreModalProps) {
               </div>
             </div>
 
-            <div className="w-full bg-[#2D2C2A] shrink-0 border-t border-white/[0.02]">
-              <div className="max-w-[600px] mx-auto flex items-center justify-end gap-6 px-8 py-6 pb-12">
+            <div className="w-full bg-[#252422] shrink-0 border-t border-white/[0.04]">
+              <div className="max-w-[600px] mx-auto flex items-center justify-end gap-6 px-8 py-4">
                 <button className="p-2 active:scale-90 transition-transform opacity-40">
                   <img src="/icons/edit.svg" alt="Edit" className="w-5 h-5 invert" />
                 </button>
