@@ -41,8 +41,10 @@ export function StartScreen() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
-      const user = window.Telegram.WebApp.initDataUnsafe?.user;
+    // Проверяем наличие объекта Telegram и приводим user к any, 
+    // чтобы TS не ругался на отсутствие полей username/photo_url
+    if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp) {
+      const user = (window as any).Telegram.WebApp.initDataUnsafe?.user as any;
       if (user) {
         setTmaUser({
           first_name: user.first_name || "юзер",
