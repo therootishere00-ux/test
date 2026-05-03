@@ -97,7 +97,6 @@ function MessageItem({ message }: { message: ChatMessage }) {
   const handleCopy = () => {
     navigator.clipboard.writeText(message.content);
     setCopied(true);
-    // Тайминг 1.7 секунды как просил
     setTimeout(() => setCopied(false), 1700);
   };
 
@@ -113,7 +112,6 @@ function MessageItem({ message }: { message: ChatMessage }) {
         <div className={`flex flex-col ${isUser ? "items-end max-w-[75%]" : "items-start w-full"}`}>
           {isUser ? (
             <div className="flex flex-col w-full items-end">
-              {/* Блок сообщения юзера: темнее фона, закругления 20px, текст внутри слева */}
               <div className="bg-[#2D2C2A] rounded-[20px] px-4 py-3 w-full shadow-sm">
                 <div className="relative w-full">
                   <p className={`text-[16px] leading-relaxed whitespace-pre-wrap font-serif text-[#F2F1ED] opacity-90 text-left ${isLong ? 'max-h-[105px] overflow-hidden' : ''}`}>
@@ -125,7 +123,6 @@ function MessageItem({ message }: { message: ChatMessage }) {
                 </div>
               </div>
               
-              {/* Кнопки под блоком: без ховеров, уменьшенная прозрачность */}
               {isLong ? (
                 <div className="flex justify-end mt-2 pr-2">
                   <button 
@@ -177,7 +174,6 @@ function MessageItem({ message }: { message: ChatMessage }) {
                 </div>
               ) : (
                 <>
-                  {/* Блок ответа ИИ (прозрачный фон, просто текст) */}
                   <div className="w-full">
                     <AnimatedAIResponse 
                       text={message.content} 
@@ -200,13 +196,15 @@ function MessageItem({ message }: { message: ChatMessage }) {
                         </button>
                         <button 
                           onClick={() => setFeedback(feedback === 'like' ? null : 'like')} 
-                          className="active:scale-95 transition-all"
-                          style={{ opacity: feedback === 'like' ? 1 : 1 }}
+                          className="active:scale-95"
                         >
                           <img 
                             src="/icons/like.svg" 
                             className="w-[18px] h-[18px]"
-                            style={feedback === 'like' ? { filter: 'invert(58%) sepia(13%) saturate(1067%) hue-rotate(82deg) brightness(96%) contrast(87%)', opacity: 1 } : { invert: 1 }}
+                            style={{ 
+                                filter: feedback === 'like' ? 'invert(58%) sepia(13%) saturate(1067%) hue-rotate(82deg) brightness(96%) contrast(87%)' : 'invert(1)',
+                                opacity: feedback === 'like' ? 1 : 1 
+                            }}
                           />
                         </button>
                         <button 
@@ -214,12 +212,15 @@ function MessageItem({ message }: { message: ChatMessage }) {
                             setFeedback('dislike');
                             window.open('https://t.me/swgohbugbot', '_blank');
                           }} 
-                          className="active:scale-95 transition-all"
+                          className="active:scale-95"
                         >
                           <img 
                             src="/icons/dislike.svg" 
                             className="w-[18px] h-[18px]"
-                            style={feedback === 'dislike' ? { filter: 'invert(58%) sepia(13%) saturate(1067%) hue-rotate(82deg) brightness(96%) contrast(87%)', opacity: 1 } : { invert: 1 }}
+                            style={{ 
+                                filter: feedback === 'dislike' ? 'invert(58%) sepia(13%) saturate(1067%) hue-rotate(82deg) brightness(96%) contrast(87%)' : 'invert(1)',
+                                opacity: feedback === 'dislike' ? 1 : 1 
+                            }}
                           />
                         </button>
                       </div>
