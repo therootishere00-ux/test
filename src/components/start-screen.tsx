@@ -50,38 +50,48 @@ export function StartScreen() {
     ];
   }, [allPrompts]);
 
-  useEffect(() => {
-    const textarea = textareaRef.current;
-    if (textarea) {
-      textarea.style.height = 'auto'; // Исправлено: сначала auto, чтобы корректно считать scrollHeight
-      const scrollHeight = textarea.scrollHeight;
-      textarea.style.height = scrollHeight > 120 ? '120px' : `${scrollHeight}px`;
-    }
-  }, [message]);
+  // Плавное изменение высоты textarea без "закрытия" строки
+  const handleInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setMessage(e.target.value);
+    const textarea = e.target;
+    // Делаем вычисления синхронно, чтобы избежать визуальных скачков
+    textarea.style.height = '24px';
+    const scrollHeight = textarea.scrollHeight;
+    textarea.style.height = `${Math.min(scrollHeight, 120)}px`;
+  };
 
   const onSend = (text?: string) => {
     const content = text || message;
     if (content.trim().length < 2) return;
     
-    // Теперь сохраняем и первое сообщение тоже
-    const userMsg: ChatMessage = { id: Date.now().toString(), role: "user", content: content.trim() };
-    setMessages(prev => [...prev, userMsg]);
+    const userMsgId = Date.now().toString();
+    const assistantMsgId = (Date.now() + 1).toString();
+
+    setMessages(prev => [
+      ...prev, 
+      { id: userMsgId, role: "user", content: content.trim() },
+      { id: assistantMsgId, role: "assistant", content: "", isPlaceholder: true }
+    ]);
     
     setChatStarted(true);
     setMessage("");
 
-    // Имитация ответа
+    // Сбрасываем высоту инпута после отправки
+    if (textareaRef.current) {
+      textareaRef.current.style.height = '24px';
+    }
+
     setTimeout(() => {
-      setMessages(prev => [...prev, { 
-        id: (Date.now() + 1).toString(), 
-        role: "assistant", 
-        content: "Это демонстрационный ответ. Он появляется блоками по несколько слов, чтобы имитировать естественное чтение и работу искусственного интеллекта в реальном времени." 
-      }]);
-    }, 800);
+      setMessages(prev => prev.map(msg => 
+        msg.id === assistantMsgId 
+          ? { ...msg, content: "Это демонстрационный ответ. В будущем здесь будет логика вашего ИИ. Мы подготовили этот блок заранее, чтобы скролл был плавным.", isPlaceholder: false }
+          : msg
+      ));
+    }, 1000);
   };
 
   const InputArea = () => (
-    <div className={`w-full max-w-[600px] mx-auto px-8 ${chatStarted ? 'pb-8 pt-2' : ''}`}>
+    <div className={`w-full max-w-[600px] mx-auto px-8 ${chatStarted ? 'pb-4 pt-2' : ''}`}>
       <div className="relative flex w-full flex-col bg-[#2D2C2A] rounded-[20px] border border-white/[0.04] transition-all focus-within:border-white/10 shadow-sm">
         {chatStarted && (
           <button className="absolute top-3 right-3 opacity-30 hover:opacity-80 transition-opacity">
@@ -93,16 +103,10 @@ export function StartScreen() {
           <textarea
             ref={textareaRef}
             value={message}
-            onChange={(e) => setMessage(e.target.value)}
+            onChange={handleInput}
             placeholder="Спросить что-нибудь..."
             className={`hide-scrollbar w-full flex-1 bg-transparent px-2 text-[15px] text-[#E8E6E3] outline-none placeholder:text-[#6A6965] resize-none overflow-y-auto ${chatStarted ? 'pr-6' : ''}`}
-            style={{ lineHeight: '24px', minHeight: '24px' }}
-            onKeyDown={(e) => { 
-              // Enter больше не отправляет сообщение (только Shift+Enter для переноса)
-              if (e.key === 'Enter' && !e.shiftKey) { 
-                // e.preventDefault(); // Закомментируйте, если хотите просто перенос строки
-              } 
-            }}
+            style={{ lineHeight: '20px', minHeight: '24px', height: '24px' }}
           />
           <div className="flex items-center justify-end mt-2">
             <button
@@ -137,6 +141,17 @@ export function StartScreen() {
         .hide-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
       `}</style>
 
+      {!chatStarted && (
+        <div className="absolute top-8 left-8 z-[100]">
+          <button 
+            onClick={() => setIsMenuOpen(true)}
+            className="p-1 active:scale-90 transition-transform"
+          >
+            <img src="/icons/menu.svg" alt="Menu" className="w-6 h-6 opacity-40 hover:opacity-80 invert" />
+          </button>
+        </div>
+      )}
+
       <MenuDrawer open={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
 
       <AnimatePresence mode="wait">
@@ -145,44 +160,40 @@ export function StartScreen() {
             key="start-screen"
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
-            exit={{ y: "-20%", opacity: 0, filter: "blur(10px)" }}
-            transition={{ duration: 0.5, ease: [0.19, 1, 0.22, 1] }}
-            className="absolute inset-0 flex flex-col items-center justify-center pb-[10vh] bg-[#252422] z-40"
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+            className="absolute inset-0 flex flex-col items-center justify-center bg-[#252422] z-40"
           >
-            {/* Кнопка меню */}
-            <div className="absolute top-8 left-8">
-              <button onClick={() => setIsMenuOpen(true)} className="p-1 active:scale-90 transition-transform">
-                <img src="/icons/menu.svg" alt="Menu" className="w-6 h-6 opacity-40 hover:opacity-80 invert" />
-              </button>
-            </div>
-
-            <div className="w-full max-w-[600px] px-8 mb-8 flex flex-col items-start">
-              <img src="/icons/logo.PNG" alt="Logo" className="w-10 h-10 mb-6 opacity-90" />
-              <div className="space-y-0.5">
-                <h2 className="text-[28px] leading-tight font-serif text-[#F2F1ED] tracking-tight">
-                  Привет, <span className="text-[#5FA86D]">юзер</span>
-                </h2>
-                <h1 className="text-[28px] leading-tight font-serif text-[#6A6965] tracking-tight">
-                  Как помочь тебе сегодня?
-                </h1>
+            {/* Обертка для жесткого центрирования всего блока целиком */}
+            <div className="w-full max-w-[600px] flex flex-col items-center relative -mt-[4vh]">
+              <div className="w-full px-8 mb-8 flex flex-col items-start">
+                <img src="/icons/logo.PNG" alt="Logo" className="w-10 h-10 mb-6 opacity-90" />
+                <div className="space-y-0.5">
+                  <h2 className="text-[28px] leading-tight font-serif text-[#F2F1ED] tracking-tight">
+                    Привет, <span className="text-[#5FA86D]">юзер</span>
+                  </h2>
+                  <h1 className="text-[28px] leading-tight font-serif text-[#6A6965] tracking-tight">
+                    Как помочь тебе сегодня?
+                  </h1>
+                </div>
               </div>
-            </div>
 
-            <div className="w-full space-y-1 mb-8 opacity-60">
-              {rows.map((row, i) => (
-                <PromptRow key={i} items={row.items} direction={row.dir} speed={row.speed} onPick={(t:string) => setMessage(t)} />
-              ))}
-            </div>
+              <div className="w-full space-y-1 mb-8 opacity-60">
+                {rows.map((row, i) => (
+                  <PromptRow key={i} items={row.items} direction={row.dir} speed={row.speed} onPick={(t:string) => setMessage(t)} />
+                ))}
+              </div>
 
-            <InputArea />
+              <InputArea />
+            </div>
           </motion.div>
         ) : (
           <motion.div 
             key="chat-screen"
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.5, ease: [0.19, 1, 0.22, 1] }}
+            exit={{ opacity: 0, scale: 0.98 }}
+            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
             className="absolute inset-0 flex flex-col z-50 bg-[#252422]"
           >
             <div className="flex-1 overflow-hidden flex flex-col px-8 relative">
