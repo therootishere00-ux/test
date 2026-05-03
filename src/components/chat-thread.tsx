@@ -17,45 +17,33 @@ type ChatThreadProps = {
 };
 
 function AnimatedAIResponse({ text, onComplete }: { text: string; onComplete: () => void }) {
-  const chunks = useMemo(() => {
-    const words = text.split(" ");
-    const result = [];
-    for (let i = 0; i < words.length; i += 4) {
-      result.push(words.slice(i, i + 4).join(" "));
-    }
-    return result;
-  }, [text]);
+  const words = useMemo(() => text.split(" "), [text]);
   
-  const container = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: { 
-        staggerChildren: 0.12,
-        onComplete: onComplete 
-      }
-    }
-  };
-
-  const chunkAnim = {
+  const wordAnim = {
     hidden: { opacity: 0, filter: "blur(4px)" },
-    visible: { 
+    visible: (i: number) => ({
       opacity: 1, 
       filter: "blur(0px)",
-      transition: { duration: 0.3, ease: "easeOut" }
-    }
+      // Слова появляются группами по 4, но остаются отдельными элементами для корректного переноса
+      transition: { delay: Math.floor(i / 4) * 0.12, duration: 0.3, ease: "easeOut" }
+    })
   };
 
   return (
     <motion.div 
-      variants={container} 
       initial="hidden" 
       animate="visible"
+      onAnimationComplete={onComplete}
       className="text-[#E8E6E3] text-[16px] leading-[1.65] font-serif"
     >
-      {chunks.map((chunk, index) => (
-        <motion.span key={index} variants={chunkAnim} className="inline-block mr-1.5">
-          {chunk}
+      {words.map((word, index) => (
+        <motion.span 
+          key={index} 
+          custom={index}
+          variants={wordAnim} 
+          className="inline-block mr-[0.25em]" // Отступ равен обычному пробелу
+        >
+          {word}
         </motion.span>
       ))}
     </motion.div>
@@ -86,7 +74,6 @@ export function ChatThread({ messages, onNewChat, onOpenMenu }: ChatThreadProps)
         </button>
       </div>
 
-      {/* Добавлен overflow-x-hidden для устранения горизонтального дребезжания */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto overflow-x-hidden hide-scrollbar space-y-10 pb-10 pt-6">
         <AnimatePresence initial={false}>
           {messages.map((msg) => (
@@ -109,7 +96,8 @@ function MessageItem({ message }: { message: ChatMessage }) {
       animate={{ opacity: 1, y: 0 }}
       className={`flex w-full ${isUser ? "justify-end" : "justify-start"}`}
     >
-      <div className={`flex flex-col ${isUser ? "items-end max-w-[85%]" : "items-start w-full"}`}>
+      {/* Теперь оба типа сообщений имеют макс. ширину 85% для соблюдения единых границ */}
+      <div className={`flex flex-col w-full max-w-[85%] ${isUser ? "items-end" : "items-start"}`}>
         {isUser ? (
           <div className="px-2 py-1">
             <p className="text-[16px] leading-relaxed whitespace-pre-wrap font-serif text-[#F2F1ED] opacity-90">
@@ -168,8 +156,6 @@ function MessageItem({ message }: { message: ChatMessage }) {
                           style={feedback === 'like' ? { filter: 'invert(58%) sepia(13%) saturate(1067%) hue-rotate(82deg) brightness(96%) contrast(87%)' } : {}}
                         />
                       </button>
-                      
-                      {/* Обновленная логика дизлайка с редиректом */}
                       <button 
                         onClick={() => {
                           setFeedback('dislike');
