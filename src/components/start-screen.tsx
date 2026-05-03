@@ -50,11 +50,9 @@ export function StartScreen() {
     ];
   }, [allPrompts]);
 
-  // Плавное изменение высоты textarea без "закрытия" строки
   const handleInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setMessage(e.target.value);
     const textarea = e.target;
-    // Делаем вычисления синхронно, чтобы избежать визуальных скачков
     textarea.style.height = '24px';
     const scrollHeight = textarea.scrollHeight;
     textarea.style.height = `${Math.min(scrollHeight, 120)}px`;
@@ -76,7 +74,6 @@ export function StartScreen() {
     setChatStarted(true);
     setMessage("");
 
-    // Сбрасываем высоту инпута после отправки
     if (textareaRef.current) {
       textareaRef.current.style.height = '24px';
     }
@@ -90,7 +87,8 @@ export function StartScreen() {
     }, 1000);
   };
 
-  const InputArea = () => (
+  // Вынесли верстку в переменную, чтобы избежать перерендера компонента при вводе букв
+  const inputAreaContent = (
     <div className={`w-full max-w-[600px] mx-auto px-8 ${chatStarted ? 'pb-4 pt-2' : ''}`}>
       <div className="relative flex w-full flex-col bg-[#2D2C2A] rounded-[20px] border border-white/[0.04] transition-all focus-within:border-white/10 shadow-sm">
         {chatStarted && (
@@ -164,7 +162,6 @@ export function StartScreen() {
             transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
             className="absolute inset-0 flex flex-col items-center justify-center bg-[#252422] z-40"
           >
-            {/* Обертка для жесткого центрирования всего блока целиком */}
             <div className="w-full max-w-[600px] flex flex-col items-center relative -mt-[4vh]">
               <div className="w-full px-8 mb-8 flex flex-col items-start">
                 <img src="/icons/logo.PNG" alt="Logo" className="w-10 h-10 mb-6 opacity-90" />
@@ -184,7 +181,7 @@ export function StartScreen() {
                 ))}
               </div>
 
-              <InputArea />
+              {inputAreaContent}
             </div>
           </motion.div>
         ) : (
@@ -205,7 +202,7 @@ export function StartScreen() {
             </div>
             
             <div className="w-full bg-[#252422]">
-              <InputArea />
+              {inputAreaContent}
             </div>
           </motion.div>
         )}
