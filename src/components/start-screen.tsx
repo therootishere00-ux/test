@@ -87,7 +87,6 @@ export function StartScreen() {
     }, 1000);
   };
 
-  // Вынесли верстку в переменную, чтобы избежать перерендера компонента при вводе букв
   const inputAreaContent = (
     <div className={`w-full max-w-[600px] mx-auto px-8 ${chatStarted ? 'pb-4 pt-2' : ''}`}>
       <div className="relative flex w-full flex-col bg-[#2D2C2A] rounded-[20px] border border-white/[0.04] transition-all focus-within:border-white/10 shadow-sm">
