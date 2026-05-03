@@ -90,12 +90,14 @@ function MessageItem({ message }: { message: ChatMessage }) {
   const [feedback, setFeedback] = useState<'like' | 'dislike' | null>(null);
   const [isTypingComplete, setIsTypingComplete] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
 
-  // Лимит символов для отображения кнопки "Больше"
   const isLong = isUser && message.content.length > 300;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(message.content);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 3000);
   };
 
   return (
@@ -107,21 +109,19 @@ function MessageItem({ message }: { message: ChatMessage }) {
         animate={{ opacity: 1, y: 0 }}
         className={`flex w-full ${isUser ? "justify-end" : "justify-start"}`}
       >
-        {/* Юзер: max-w-[75%], ИИ: w-full (100%) */}
         <div className={`flex flex-col ${isUser ? "items-end max-w-[75%]" : "items-start w-full"}`}>
           {isUser ? (
-            <div className="flex flex-col w-full px-2 py-1">
-              <div className="relative w-full">
-                <p className={`text-[16px] leading-relaxed whitespace-pre-wrap font-serif text-[#F2F1ED] opacity-90 ${isLong ? 'max-h-[105px] overflow-hidden' : ''}`}>
+            <div className="flex flex-col w-full px-2 py-1 items-end">
+              <div className="relative w-full text-right">
+                {/* Добавлено свойство text-right для выравнивания текста юзера справа */}
+                <p className={`text-[16px] leading-relaxed whitespace-pre-wrap font-serif text-[#F2F1ED] opacity-90 inline-block text-right ${isLong ? 'max-h-[105px] overflow-hidden' : ''}`}>
                   {message.content}
                 </p>
-                {/* Эффект затухания, если текст обрезан */}
                 {isLong && (
                   <div className="absolute bottom-0 left-0 right-0 h-[48px] bg-gradient-to-t from-[#252422] to-transparent pointer-events-none" />
                 )}
               </div>
               
-              {/* Панель кнопок юзера */}
               {isLong ? (
                 <div className="flex justify-end mt-2">
                   <button 
@@ -138,7 +138,8 @@ function MessageItem({ message }: { message: ChatMessage }) {
                     <img src="/icons/edit.svg" alt="Edit" className="w-[16px] h-[16px] invert" />
                   </button>
                   <button onClick={handleCopy} className="active:scale-90 transition-transform">
-                    <img src="/icons/copy.svg" alt="Copy" className="w-[16px] h-[16px] invert" />
+                    {/* Без transition-all, чтобы смена картинки была мгновенной */}
+                    <img src={copied ? "/icons/tick.svg" : "/icons/copy.svg"} alt="Copy" className="w-[16px] h-[16px] invert" />
                   </button>
                 </div>
               )}
@@ -189,7 +190,7 @@ function MessageItem({ message }: { message: ChatMessage }) {
                           <img src="/icons/redo.svg" alt="Redo" className="w-[18px] h-[18px] invert" />
                         </button>
                         <button onClick={handleCopy} className="active:scale-90 transition-all opacity-40 hover:opacity-80">
-                          <img src="/icons/copy.svg" alt="Copy" className="w-[18px] h-[18px] invert" />
+                          <img src={copied ? "/icons/tick.svg" : "/icons/copy.svg"} alt="Copy" className="w-[18px] h-[18px] invert" />
                         </button>
                         <button onClick={() => setFeedback(feedback === 'like' ? null : 'like')} className="active:scale-90 transition-all">
                           <img 
