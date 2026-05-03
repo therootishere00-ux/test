@@ -39,7 +39,7 @@ export function MenuDrawer({ open, onClose, user }: MenuDrawerProps) {
                 </span>
               </div>
               <button onClick={onClose} className="p-2 -mr-2 active:scale-90 transition-transform">
-                <img src="/icons/cross.svg" alt="Close" className="w-5 h-5 opacity-40 hover:opacity-80 invert transition-opacity" />
+                <img src="/icons/cross.svg" alt="Close" className="w-5 h-5 opacity-60 hover:opacity-100 invert transition-opacity" />
               </button>
             </div>
 
@@ -67,7 +67,7 @@ export function MenuDrawer({ open, onClose, user }: MenuDrawerProps) {
                 </div>
               </div>
               <button className="p-2 -mr-2 active:scale-90 transition-transform">
-                <img src="/icons/dots.svg" alt="Options" className="w-5 h-5 opacity-40 hover:opacity-80 invert transition-opacity" />
+                <img src="/icons/dots.svg" alt="Options" className="w-5 h-5 opacity-60 hover:opacity-100 invert transition-opacity" />
               </button>
             </div>
           </motion.aside>
