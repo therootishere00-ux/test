@@ -32,8 +32,6 @@ export function StartScreen() {
   const [allPrompts, setAllPrompts] = useState<string[]>([]);
   
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const [showExpand, setShowExpand] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(false);
 
   useEffect(() => {
     fetch('/slovar.txt')
@@ -56,23 +54,10 @@ export function StartScreen() {
   useEffect(() => {
     const ta = textareaRef.current;
     if (!ta) return;
-    
     ta.style.height = '24px';
     const sh = ta.scrollHeight;
-    
-    if (sh > 44) {
-      setShowExpand(true);
-    } else {
-      setShowExpand(false);
-      setIsExpanded(false);
-    }
-
-    if (isExpanded) {
-      ta.style.height = '120px';
-    } else {
-      ta.style.height = `${Math.min(sh, 44)}px`;
-    }
-  }, [message, isExpanded]);
+    ta.style.height = `${Math.min(sh, 44)}px`;
+  }, [message]);
 
   const onSend = (text?: string) => {
     const content = text || message;
@@ -89,7 +74,6 @@ export function StartScreen() {
     
     setChatStarted(true);
     setMessage("");
-    setIsExpanded(false);
 
     if (textareaRef.current) {
       textareaRef.current.style.height = '24px';
@@ -107,34 +91,16 @@ export function StartScreen() {
   const inputAreaContent = (
     <div className={`w-full max-w-[600px] mx-auto px-8 ${chatStarted ? 'pb-4 pt-2' : ''}`}>
       <div className="relative flex w-full flex-col bg-[#2D2C2A] rounded-[20px] border border-white/[0.04] transition-all focus-within:border-white/10 shadow-sm">
-        
-        {showExpand && (
-          <button
-            onClick={(e) => {
-              e.preventDefault();
-              setIsExpanded(!isExpanded);
-            }}
-            className="absolute right-4 top-3 z-10 active:scale-90 transition-transform opacity-40"
-          >
-            <img 
-              src={isExpanded ? "/icons/mini.svg" : "/icons/more.svg"} 
-              alt="Expand" 
-              className="w-[18px] h-[18px] invert" 
-            />
-          </button>
-        )}
-        
         <div className="flex flex-col p-3"> 
           <textarea
             ref={textareaRef}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             placeholder="Спросить что-нибудь..."
-            className={`hide-scrollbar w-full flex-1 bg-transparent px-2 text-[15px] text-[#E8E6E3] outline-none placeholder:text-[#6A6965] resize-none overflow-y-auto ${showExpand ? 'pr-8' : ''}`}
+            className="hide-scrollbar w-full flex-1 bg-transparent px-2 text-[15px] text-[#E8E6E3] outline-none placeholder:text-[#6A6965] resize-none overflow-y-auto"
             style={{ 
               lineHeight: '20px', 
-              minHeight: '24px', 
-              transition: 'height 0.3s cubic-bezier(0.4, 0, 0.2, 1)' 
+              minHeight: '24px'
             }}
           />
           <div className="flex items-center justify-end mt-2">
