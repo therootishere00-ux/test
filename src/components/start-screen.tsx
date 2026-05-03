@@ -5,6 +5,7 @@ import { ChatThread, type ChatMessage } from "@/components/chat-thread";
 import { MenuDrawer } from "@/components/menu-drawer";
 import { motion, AnimatePresence } from "framer-motion";
 
+// ... (PromptRow остается без изменений)
 const PromptRow = ({ items, direction, speed, onPick }: any) => {
   const scrollClass = direction === 'left' ? 'animate-marquee-left' : 'animate-marquee-right';
   return (
@@ -53,9 +54,9 @@ export function StartScreen() {
   useEffect(() => {
     const textarea = textareaRef.current;
     if (textarea) {
-      textarea.style.height = '24px'; 
+      textarea.style.height = '20px'; // Сделали менее высокой
       const scrollHeight = textarea.scrollHeight;
-      textarea.style.height = scrollHeight > 50 ? '50px' : `${scrollHeight}px`;
+      textarea.style.height = scrollHeight > 40 ? '40px' : `${scrollHeight}px`;
     }
   }, [message]);
 
@@ -63,8 +64,7 @@ export function StartScreen() {
     const content = text || message;
     if (content.trim().length < 2) return;
     
-    // Не сохраняем начальный запрос в истории, если чат только начинается, 
-    // либо сохраняем, но очищаем инпут. По ТЗ: "запрос в начальном сообщении не сохраняем"
+    // Запрос в начальном сообщении не сохраняем
     if (chatStarted) {
       setMessages(prev => [...prev, { id: Date.now().toString(), role: "user", content: content.trim() }]);
     }
@@ -82,15 +82,23 @@ export function StartScreen() {
   };
 
   const InputArea = () => (
-    <div className={`w-full max-w-[600px] mx-auto px-8 ${chatStarted ? 'pb-6 pt-4' : ''}`}>
-      <div className={`relative flex w-full flex-col rounded-[22px] border border-white/[0.04] transition-all focus-within:border-white/10 shadow-sm ${chatStarted ? 'bg-transparent backdrop-blur-xl' : 'bg-[#2D2C2A]'}`}>
+    <div className={`w-full max-w-[600px] mx-auto px-8 ${chatStarted ? 'pb-4 pt-2' : ''}`}>
+      <div className="relative flex w-full flex-col bg-[#2D2C2A] rounded-[20px] border border-white/[0.04] transition-all focus-within:border-white/10 shadow-sm">
+        {/* Иконка расширения в правом верхнем углу инпута */}
+        {chatStarted && (
+          <button className="absolute top-3 right-3 opacity-30 hover:opacity-80 transition-opacity">
+            <img src="/icons/arrows.svg" alt="Expand" className="w-4 h-4 invert" />
+          </button>
+        )}
+        
         <div className="flex flex-col p-3"> 
           <textarea
             ref={textareaRef}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             placeholder="Спросить что-нибудь..."
-            className="hide-scrollbar w-full flex-1 bg-transparent px-2 text-[15px] leading-[24px] text-[#E8E6E3] outline-none placeholder:text-[#6A6965] resize-none overflow-y-auto"
+            className={`hide-scrollbar w-full flex-1 bg-transparent px-2 text-[15px] text-[#E8E6E3] outline-none placeholder:text-[#6A6965] resize-none overflow-y-auto ${chatStarted ? 'pr-6' : ''}`}
+            style={{ lineHeight: '20px' }}
             onKeyDown={(e) => { 
               if (e.key === 'Enter' && !e.shiftKey) { 
                 e.preventDefault(); 
@@ -102,11 +110,11 @@ export function StartScreen() {
             <button
               onClick={() => onSend()}
               disabled={message.trim().length < 2}
-              className="flex h-[38px] w-[38px] items-center justify-center rounded-[12px] bg-[#5FA86D] transition-all hover:bg-[#6FBD7E] disabled:opacity-20 active:scale-95"
+              className="flex h-[36px] w-[36px] items-center justify-center rounded-[10px] bg-[#5FA86D] transition-all hover:bg-[#6FBD7E] disabled:opacity-20 active:scale-95"
             >
               <img 
                 src="/icons/send.svg" 
-                className="w-[18px] h-[18px]" 
+                className="w-[16px] h-[16px]" 
                 style={{ filter: 'brightness(0) saturate(100%) invert(11%) sepia(4%) saturate(842%) hue-rotate(3deg) brightness(96%) contrast(89%)' }} 
                 alt="Send" 
               />
@@ -114,11 +122,9 @@ export function StartScreen() {
           </div>
         </div>
       </div>
-      {!chatStarted && (
-        <p className="mt-4 text-center text-[11px] leading-normal text-[#6A6965] px-4">
-          Хотя мы стараемся сделать ваш опыт общения лучше, это ИИ и он может ошибаться
-        </p>
-      )}
+      <p className="mt-3 text-center text-[11px] leading-normal text-[#6A6965] px-4">
+        Хотя мы стараемся сделать ваш опыт общения лучше, это ИИ и он может ошибаться
+      </p>
     </div>
   );
 
@@ -133,15 +139,17 @@ export function StartScreen() {
         .hide-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
       `}</style>
 
-      {/* Кнопка меню поверх всего */}
-      <div className="absolute top-8 left-8 z-[100]">
-        <button 
-          onClick={() => setIsMenuOpen(true)}
-          className="p-1 active:scale-90 transition-transform"
-        >
-          <img src="/icons/menu.svg" alt="Menu" className="w-6 h-6 opacity-40 hover:opacity-80 invert" />
-        </button>
-      </div>
+      {/* Кнопка меню поверх всего на старте */}
+      {!chatStarted && (
+        <div className="absolute top-8 left-8 z-[100]">
+          <button 
+            onClick={() => setIsMenuOpen(true)}
+            className="p-1 active:scale-90 transition-transform"
+          >
+            <img src="/icons/menu.svg" alt="Menu" className="w-6 h-6 opacity-40 hover:opacity-80 invert" />
+          </button>
+        </div>
+      )}
 
       <MenuDrawer open={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
 
@@ -150,7 +158,7 @@ export function StartScreen() {
           <motion.div 
             key="start-screen"
             exit={{ y: "-100%", opacity: 0 }}
-            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
             className="absolute inset-0 flex flex-col items-center justify-center pb-[10vh] bg-[#252422] z-40"
           >
             <div className="w-full max-w-[600px] px-8 mb-8 flex flex-col items-start">
@@ -176,17 +184,21 @@ export function StartScreen() {
         ) : (
           <motion.div 
             key="chat-screen"
-            initial={{ opacity: 0, scale: 0.98 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
-            className="absolute inset-0 flex flex-col z-0"
+            initial={{ y: "100%", opacity: 1 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: "100%", opacity: 0 }}
+            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+            className="absolute inset-0 flex flex-col z-50 bg-[#252422]"
           >
             <div className="flex-1 overflow-hidden flex flex-col px-8 relative">
-              <ChatThread messages={messages} onNewChat={() => { setChatStarted(false); setMessages([]); }} />
+              <ChatThread 
+                messages={messages} 
+                onNewChat={() => { setChatStarted(false); setMessages([]); }} 
+                onOpenMenu={() => setIsMenuOpen(true)}
+              />
             </div>
             
-            {/* Футер с блюром */}
-            <div className="absolute bottom-0 w-full z-20">
+            <div className="w-full bg-[#252422]">
               <InputArea />
             </div>
           </motion.div>
