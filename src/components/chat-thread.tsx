@@ -25,7 +25,7 @@ function AnimatedAIResponse({ text, onComplete }: { text: string; onComplete: ()
     visible: (i: number) => ({
       opacity: 1, 
       filter: "blur(0px)",
-      transition: { delay: Math.floor(i / 4) * 0.12, duration: 0.3, ease: "easeOut" }
+      transition: { delay: Math.floor(i / 4) * 0.08, duration: 0.3, ease: "easeOut" }
     })
   };
 
@@ -66,7 +66,7 @@ export function ChatThread({ messages, onNewChat, onOpenMenu }: ChatThreadProps)
 
   return (
     <div className="flex flex-col h-full w-full max-w-[600px] mx-auto relative pt-4">
-      <div className="w-full flex items-center justify-between py-2 z-10 bg-[#252422]">
+      <div className="w-full flex items-center justify-between px-8 py-2 z-10 bg-[#252422]">
         <button onClick={onOpenMenu} className="p-1 active:scale-95 transition-transform opacity-40">
           <img src="/icons/menu.svg" alt="Menu" className="w-[22px] h-[22px] invert" />
         </button>
@@ -85,7 +85,7 @@ export function ChatThread({ messages, onNewChat, onOpenMenu }: ChatThreadProps)
           ) : (
             <span 
               onClick={() => setIsEditingTitle(true)}
-              className="text-[14px] text-[#F2F1ED] font-sans truncate"
+              className="text-[14px] text-[#F2F1ED] font-sans truncate cursor-pointer"
             >
               {chatTitle}
             </span>
@@ -97,7 +97,7 @@ export function ChatThread({ messages, onNewChat, onOpenMenu }: ChatThreadProps)
         </button>
       </div>
 
-      <div ref={scrollRef} className="flex-1 overflow-y-auto overflow-x-hidden hide-scrollbar space-y-10 pb-10 pt-6">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto overflow-x-hidden hide-scrollbar space-y-10 pb-10 pt-6 px-8">
         <AnimatePresence initial={false}>
           {messages.map((msg) => (
             <MessageItem key={msg.id} message={msg} />
@@ -132,7 +132,7 @@ function MessageItem({ message }: { message: ChatMessage }) {
         animate={{ opacity: 1, y: 0 }}
         className={`flex w-full ${isUser ? "justify-end" : "justify-start"}`}
       >
-        <div className={`flex flex-col ${isUser ? "items-end max-w-[75%]" : "items-start w-full"}`}>
+        <div className={`flex flex-col ${isUser ? "items-end max-w-[85%]" : "items-start w-full"}`}>
           {isUser ? (
             <div className="flex flex-col w-full items-end">
               <div className="bg-[#2D2C2A] rounded-[20px] px-4 py-3 w-full shadow-sm">
@@ -150,7 +150,7 @@ function MessageItem({ message }: { message: ChatMessage }) {
                 <div className="flex justify-end mt-2 pr-2">
                   <button 
                     onClick={() => setIsModalOpen(true)}
-                    className="flex items-center gap-1.5 active:scale-95 opacity-40"
+                    className="flex items-center gap-1.5 active:scale-95 opacity-40 transition-transform"
                   >
                     <span className="text-[13px] font-sans text-[#F2F1ED]">Больше</span>
                     <img src="/icons/more.svg" alt="More" className="w-[16px] h-[16px] invert" />
@@ -158,10 +158,10 @@ function MessageItem({ message }: { message: ChatMessage }) {
                 </div>
               ) : (
                 <div className="flex justify-end gap-4 mt-2 pr-2 opacity-40">
-                  <button className="active:scale-95">
+                  <button className="active:scale-95 transition-transform">
                     <img src="/icons/edit.svg" alt="Edit" className="w-[18px] h-[18px] invert" />
                   </button>
-                  <button onClick={handleCopy} className="active:scale-95">
+                  <button onClick={handleCopy} className="active:scale-95 transition-transform">
                     <img src={copied ? "/icons/tick.svg" : "/icons/copy.svg"} alt="Copy" className="w-[18px] h-[18px] invert" />
                   </button>
                 </div>
@@ -212,17 +212,17 @@ function MessageItem({ message }: { message: ChatMessage }) {
                     >
                       <div className="flex items-center gap-4">
                         <div className="flex items-center gap-4 opacity-40">
-                          <button className="active:scale-95">
+                          <button className="active:scale-95 transition-transform">
                             <img src="/icons/redo.svg" alt="Redo" className="w-[18px] h-[18px] invert" />
                           </button>
-                          <button onClick={handleCopy} className="active:scale-95">
+                          <button onClick={handleCopy} className="active:scale-95 transition-transform">
                             <img src={copied ? "/icons/tick.svg" : "/icons/copy.svg"} alt="Copy" className="w-[18px] h-[18px] invert" />
                           </button>
                         </div>
 
                         <button 
                           onClick={() => setFeedback(feedback === 'like' ? null : 'like')} 
-                          className="active:scale-95"
+                          className="active:scale-95 transition-transform"
                           style={{ opacity: feedback === 'like' ? 1 : 0.4 }}
                         >
                           <img 
@@ -238,7 +238,7 @@ function MessageItem({ message }: { message: ChatMessage }) {
                             setFeedback('dislike');
                             window.open('https://t.me/swgohbugbot', '_blank');
                           }} 
-                          className="active:scale-95"
+                          className="active:scale-95 transition-transform"
                           style={{ opacity: feedback === 'dislike' ? 1 : 0.4 }}
                         >
                           <img 
