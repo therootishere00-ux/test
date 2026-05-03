@@ -5,7 +5,6 @@ import { ChatThread, type ChatMessage } from "@/components/chat-thread";
 import { MenuDrawer } from "@/components/menu-drawer";
 import { motion, AnimatePresence } from "framer-motion";
 
-// ... (PromptRow остается без изменений)
 const PromptRow = ({ items, direction, speed, onPick }: any) => {
   const scrollClass = direction === 'left' ? 'animate-marquee-left' : 'animate-marquee-right';
   return (
@@ -40,7 +39,7 @@ export function StartScreen() {
         const lines = data.split(/\r?\n/).filter(line => line.trim().length > 0);
         setAllPrompts(lines.sort(() => Math.random() - 0.5));
       })
-      .catch(() => setAllPrompts(["Гайд на Гранд-мастера Йоду", "Лучшие модули для Вейдера", "Как пройти 7 уровень"]));
+      .catch(() => setAllPrompts(["Гайд на Гранд-мастера Йоду", "Модули для Вейдера"]));
   }, []);
 
   const rows = useMemo(() => {
@@ -51,12 +50,13 @@ export function StartScreen() {
     ];
   }, [allPrompts]);
 
+  // Стабильная высота инпута без "прыжков"
   useEffect(() => {
     const textarea = textareaRef.current;
     if (textarea) {
-      textarea.style.height = '20px'; // Сделали менее высокой
+      textarea.style.height = '40px'; 
       const scrollHeight = textarea.scrollHeight;
-      textarea.style.height = scrollHeight > 40 ? '40px' : `${scrollHeight}px`;
+      textarea.style.height = scrollHeight > 100 ? '100px' : `${scrollHeight}px`;
     }
   }, [message]);
 
@@ -64,67 +64,54 @@ export function StartScreen() {
     const content = text || message;
     if (content.trim().length < 2) return;
     
-    // Запрос в начальном сообщении не сохраняем
-    if (chatStarted) {
-      setMessages(prev => [...prev, { id: Date.now().toString(), role: "user", content: content.trim() }]);
-    }
-    
+    // Показываем стартовое сообщение: добавляем его в массив сразу
+    const userMsg: ChatMessage = { id: Date.now().toString(), role: "user", content: content.trim() };
+    setMessages([userMsg]);
     setChatStarted(true);
     setMessage("");
 
+    // Симулируем начало ответа ИИ (готовим блок)
     setTimeout(() => {
       setMessages(prev => [...prev, { 
         id: (Date.now() + 1).toString(), 
         role: "assistant", 
-        content: "Это демонстрационный ответ. В будущем здесь будет логика вашего ИИ." 
+        content: "Это демонстрационный ответ. Он будет появляться группами слов, плавно и быстро, заполняя пространство блока. Иконка сверху изменится после завершения.",
+        isGenerating: true 
       }]);
-    }, 600);
+    }, 400);
   };
 
   const InputArea = () => (
-    <div className={`w-full max-w-[600px] mx-auto px-8 ${chatStarted ? 'pb-4 pt-2' : ''}`}>
-      <div className="relative flex w-full flex-col bg-[#2D2C2A] rounded-[20px] border border-white/[0.04] transition-all focus-within:border-white/10 shadow-sm">
-        {/* Иконка расширения в правом верхнем углу инпута */}
+    <div className={`w-full max-w-[600px] mx-auto px-6 ${chatStarted ? 'pb-8' : ''}`}>
+      <div className="relative flex w-full flex-col bg-[#2D2C2A] rounded-[20px] border border-white/[0.04] shadow-sm">
         {chatStarted && (
-          <button className="absolute top-3 right-3 opacity-30 hover:opacity-80 transition-opacity">
+          <button className="absolute top-4 right-4 opacity-30 hover:opacity-80 transition-opacity z-10">
             <img src="/icons/arrows.svg" alt="Expand" className="w-4 h-4 invert" />
           </button>
         )}
-        
-        <div className="flex flex-col p-3"> 
+        <div className="flex flex-col p-4"> 
           <textarea
             ref={textareaRef}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             placeholder="Спросить что-нибудь..."
-            className={`hide-scrollbar w-full flex-1 bg-transparent px-2 text-[15px] text-[#E8E6E3] outline-none placeholder:text-[#6A6965] resize-none overflow-y-auto ${chatStarted ? 'pr-6' : ''}`}
-            style={{ lineHeight: '20px' }}
+            className="hide-scrollbar w-full flex-1 bg-transparent px-1 text-[16px] text-[#E8E6E3] outline-none placeholder:text-[#6A6965] resize-none"
+            style={{ minHeight: '40px', lineHeight: '1.4' }}
             onKeyDown={(e) => { 
-              if (e.key === 'Enter' && !e.shiftKey) { 
-                e.preventDefault(); 
-                onSend(); 
-              } 
+              if (e.key === 'Enter') { e.preventDefault(); } // Enter не отправляет
             }}
           />
           <div className="flex items-center justify-end mt-2">
             <button
               onClick={() => onSend()}
               disabled={message.trim().length < 2}
-              className="flex h-[36px] w-[36px] items-center justify-center rounded-[10px] bg-[#5FA86D] transition-all hover:bg-[#6FBD7E] disabled:opacity-20 active:scale-95"
+              className="flex h-[40px] w-[40px] items-center justify-center rounded-[12px] bg-[#5FA86D] transition-all hover:bg-[#6FBD7E] disabled:opacity-10 active:scale-95"
             >
-              <img 
-                src="/icons/send.svg" 
-                className="w-[16px] h-[16px]" 
-                style={{ filter: 'brightness(0) saturate(100%) invert(11%) sepia(4%) saturate(842%) hue-rotate(3deg) brightness(96%) contrast(89%)' }} 
-                alt="Send" 
-              />
+              <img src="/icons/send.svg" className="w-5 h-5 invert brightness-0" alt="Send" />
             </button>
           </div>
         </div>
       </div>
-      <p className="mt-3 text-center text-[11px] leading-normal text-[#6A6965] px-4">
-        Хотя мы стараемся сделать ваш опыт общения лучше, это ИИ и он может ошибаться
-      </p>
     </div>
   );
 
@@ -136,41 +123,30 @@ export function StartScreen() {
         .animate-marquee-left { animation: marquee-left linear infinite; }
         .animate-marquee-right { animation: marquee-right linear infinite; }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
-        .hide-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
       `}</style>
-
-      {/* Кнопка меню поверх всего на старте */}
-      {!chatStarted && (
-        <div className="absolute top-8 left-8 z-[100]">
-          <button 
-            onClick={() => setIsMenuOpen(true)}
-            className="p-1 active:scale-90 transition-transform"
-          >
-            <img src="/icons/menu.svg" alt="Menu" className="w-6 h-6 opacity-40 hover:opacity-80 invert" />
-          </button>
-        </div>
-      )}
 
       <MenuDrawer open={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
 
-      <AnimatePresence mode="wait">
+      <AnimatePresence mode="popLayout">
         {!chatStarted ? (
           <motion.div 
             key="start-screen"
+            initial={{ y: "-100%", opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
             exit={{ y: "-100%", opacity: 0 }}
-            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
             className="absolute inset-0 flex flex-col items-center justify-center pb-[10vh] bg-[#252422] z-40"
           >
-            <div className="w-full max-w-[600px] px-8 mb-8 flex flex-col items-start">
-              <img src="/icons/logo.PNG" alt="Logo" className="w-10 h-10 mb-6 opacity-90" />
-              <div className="space-y-0.5">
-                <h2 className="text-[28px] leading-tight font-serif text-[#F2F1ED] tracking-tight">
-                  Привет, <span className="text-[#5FA86D]">юзер</span>
-                </h2>
-                <h1 className="text-[28px] leading-tight font-serif text-[#6A6965] tracking-tight">
-                  Как помочь тебе сегодня?
-                </h1>
-              </div>
+            <div className="absolute top-8 left-8">
+              <button onClick={() => setIsMenuOpen(true)} className="p-1 active:scale-90 transition-transform">
+                <img src="/icons/menu.svg" className="w-6 h-6 opacity-40 invert" alt="Menu" />
+              </button>
+            </div>
+            
+            <div className="w-full max-w-[600px] px-8 mb-8">
+              <img src="/icons/logo.PNG" alt="Logo" className="w-12 h-12 mb-6" />
+              <h2 className="text-[32px] font-serif text-[#F2F1ED] leading-tight">Привет, <span className="text-[#5FA86D]">юзер</span></h2>
+              <h1 className="text-[32px] font-serif text-[#6A6965] leading-tight">Как помочь тебе сегодня?</h1>
             </div>
 
             <div className="w-full space-y-1 mb-8 opacity-60">
@@ -178,29 +154,23 @@ export function StartScreen() {
                 <PromptRow key={i} items={row.items} direction={row.dir} speed={row.speed} onPick={(t:string) => setMessage(t)} />
               ))}
             </div>
-
             <InputArea />
           </motion.div>
         ) : (
           <motion.div 
             key="chat-screen"
-            initial={{ y: "100%", opacity: 1 }}
+            initial={{ y: "100%", opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: "100%", opacity: 0 }}
-            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
             className="absolute inset-0 flex flex-col z-50 bg-[#252422]"
           >
-            <div className="flex-1 overflow-hidden flex flex-col px-8 relative">
-              <ChatThread 
-                messages={messages} 
-                onNewChat={() => { setChatStarted(false); setMessages([]); }} 
-                onOpenMenu={() => setIsMenuOpen(true)}
-              />
-            </div>
-            
-            <div className="w-full bg-[#252422]">
-              <InputArea />
-            </div>
+            <ChatThread 
+              messages={messages} 
+              onNewChat={() => { setChatStarted(false); setMessages([]); }} 
+              onOpenMenu={() => setIsMenuOpen(true)}
+            />
+            <InputArea />
           </motion.div>
         )}
       </AnimatePresence>
