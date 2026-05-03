@@ -40,13 +40,12 @@ export function StartScreen() {
   
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Инициализация TMA пользователя
   useEffect(() => {
     if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
       const user = window.Telegram.WebApp.initDataUnsafe?.user;
       if (user) {
         setTmaUser({
-          first_name: user.first_name,
+          first_name: user.first_name || "юзер",
           username: user.username,
           photo_url: user.photo_url
         });
@@ -131,7 +130,6 @@ export function StartScreen() {
     const msgIndex = messages.findIndex(m => m.id === msgId);
     if (msgIndex === -1) return;
 
-    // Обрезаем массив до редактируемого сообщения включительно
     const newHistory = messages.slice(0, msgIndex);
     const updatedUserMsg: ChatMessage = { id: msgId, role: "user", content: newContent };
     const assistantMsgId = Date.now().toString();
@@ -150,7 +148,6 @@ export function StartScreen() {
     const aiIndex = messages.findIndex(m => m.id === aiMsgId);
     if (aiIndex <= 0) return;
 
-    // Обрезаем массив истории до сообщения пользователя, предшествующего этому ответу ИИ
     const newHistory = messages.slice(0, aiIndex);
     const newAssistantMsgId = Date.now().toString();
 
@@ -230,7 +227,7 @@ export function StartScreen() {
           >
              <div className="absolute top-8 left-8 z-[100]">
               <button onClick={() => setIsMenuOpen(true)} className="p-1 active:scale-90 transition-transform">
-                <img src="/icons/menu.svg" alt="Menu" className="w-6 h-6 opacity-40 hover:opacity-80 invert" />
+                <img src="/icons/menu.svg" alt="Menu" className="w-6 h-6 opacity-60 hover:opacity-100 invert" />
               </button>
             </div>
 
