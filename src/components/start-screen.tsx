@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useMemo } from "react";
 import { ChatThread, type ChatMessage } from "@/components/chat-thread";
-import { MenuDrawer } from "@/components/menu-drawer";
+import { MenuDrawer, type ChatSession } from "@/components/menu-drawer";
 import { motion, AnimatePresence } from "framer-motion";
 
 const PromptRow = ({ items, direction, speed, onPick }: any) => {
@@ -28,26 +28,54 @@ export function StartScreen() {
   const [message, setMessage] = useState("");
   const [chatStarted, setChatStarted] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  
+  // Логика истории чатов
+  const [chats, setChats] = useState<ChatSession[]>([]);
+  const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  
   const [allPrompts, setAllPrompts] = useState<string[]>([]);
   const [firstName, setFirstName] = useState("юзер");
+  const [isGenerating, setIsGenerating] = useState(false);
   
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const abortCtrl = useRef<AbortController | null>(null);
 
-  // Подключение TMA
   useEffect(() => {
     if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp) {
       const webApp = (window as any).Telegram.WebApp;
       webApp.ready();
       webApp.setHeaderColor('#252422');
       webApp.setBackgroundColor('#252422');
-      
       const user = webApp.initDataUnsafe?.user;
-      if (user?.first_name) {
-        setFirstName(user.first_name);
-      }
+      if (user?.first_name) setFirstName(user.first_name);
+    }
+
+    const savedChats = localStorage.getItem('swgoh-chats');
+    if (savedChats) {
+      try { setChats(JSON.parse(savedChats)); } catch (e) {}
     }
   }, []);
+
+  const saveChatsToStorage = (updatedChats: ChatSession[]) => {
+    setChats(updatedChats);
+    localStorage.setItem('swgoh-chats', JSON.stringify(updatedChats));
+  };
+
+  const updateCurrentChat = (chatId: string, newMessages: ChatMessage[], isNew: boolean, firstMessageContent?: string) => {
+    let updatedChats = [...chats];
+    if (isNew) {
+      const newChat: ChatSession = {
+        id: chatId,
+        title: firstMessageContent ? firstMessageContent.slice(0, 20) + '...' : 'Новый чат',
+        messages: newMessages
+      };
+      updatedChats = [newChat, ...updatedChats];
+    } else {
+      updatedChats = updatedChats.map(c => c.id === chatId ? { ...c, messages: newMessages } : c);
+    }
+    saveChatsToStorage(updatedChats);
+  };
 
   useEffect(() => {
     fetch('/slovar.txt')
@@ -75,7 +103,10 @@ export function StartScreen() {
     ta.style.height = `${Math.min(sh, 44)}px`;
   }, [message]);
 
-  const fetchAI = async (currentMessages: ChatMessage[], assistantMsgId: string) => {
+  const fetchAI = async (currentMessages: ChatMessage[], assistantMsgId: string, targetChatId: string, isNewChat: boolean, firstMessage?: string) => {
+    abortCtrl.current = new AbortController();
+    setIsGenerating(true);
+
     try {
       const apiMessages = currentMessages
         .filter(m => !m.isPlaceholder)
@@ -84,33 +115,62 @@ export function StartScreen() {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: apiMessages })
+        body: JSON.stringify({ messages: apiMessages }),
+        signal: abortCtrl.current.signal
       });
 
       if (!res.ok) {
-        throw new Error(`Прости, но сейчас сервера загружены (${res.status})`);
+        const err = await res.json().catch(() => ({}));
+        throw new Error(`Ошибка: ${err.error || res.status}`);
       }
 
       const data = await res.json();
       
-      setMessages(prev => prev.map(msg => 
-        msg.id === assistantMsgId 
-          ? { ...msg, content: data.content || "Пустой ответ", isPlaceholder: false }
-          : msg
-      ));
+      setMessages(prev => {
+        const updated = prev.map(msg => 
+          msg.id === assistantMsgId 
+            ? { ...msg, content: data.content || "Пустой ответ", isPlaceholder: false }
+            : msg
+        );
+        updateCurrentChat(targetChatId, updated, isNewChat, firstMessage);
+        return updated;
+      });
     } catch (error: any) {
-      setMessages(prev => prev.map(msg => 
-        msg.id === assistantMsgId 
-          ? { ...msg, content: error.message || "Прости, но сейчас сервера загружены (500)", isPlaceholder: false }
-          : msg
-      ));
+      if (error.name === 'AbortError') {
+        setMessages(prev => {
+          const updated = prev.map(msg => msg.id === assistantMsgId ? { ...msg, content: "Генерация остановлена.", isPlaceholder: false } : msg);
+          updateCurrentChat(targetChatId, updated, isNewChat, firstMessage);
+          return updated;
+        });
+      } else {
+        setMessages(prev => {
+          const updated = prev.map(msg => msg.id === assistantMsgId ? { ...msg, content: `Прости, но сейчас сервера загружены (${error.message})`, isPlaceholder: false } : msg);
+          updateCurrentChat(targetChatId, updated, isNewChat, firstMessage);
+          return updated;
+        });
+      }
+    } finally {
+      setIsGenerating(false);
+      abortCtrl.current = null;
+    }
+  };
+
+  const stopGeneration = () => {
+    if (abortCtrl.current) {
+      abortCtrl.current.abort();
     }
   };
 
   const onSend = (text?: string) => {
+    if (isGenerating) return;
     const content = text || message;
     if (content.trim().length < 2) return;
     
+    const isNewChat = !currentChatId;
+    const activeChatId = currentChatId || Date.now().toString();
+    
+    if (isNewChat) setCurrentChatId(activeChatId);
+
     const userMsgId = Date.now().toString();
     const assistantMsgId = (Date.now() + 1).toString();
 
@@ -124,20 +184,19 @@ export function StartScreen() {
     setChatStarted(true);
     setMessage("");
 
-    if (textareaRef.current) {
-      textareaRef.current.style.height = '24px';
-    }
+    if (textareaRef.current) textareaRef.current.style.height = '24px';
 
-    fetchAI(newHistory.filter(m => m.id !== assistantMsgId), assistantMsgId);
+    updateCurrentChat(activeChatId, newHistory, isNewChat, content.trim());
+    fetchAI(newHistory.filter(m => m.id !== assistantMsgId), assistantMsgId, activeChatId, isNewChat, content.trim());
   };
 
   const handleEditMessage = (id: string, newContent: string) => {
-    if (newContent.trim().length < 2) return;
-    
+    if (newContent.trim().length < 2 || !currentChatId) return;
     const index = messages.findIndex(m => m.id === id);
     if (index === -1) return;
 
-    // Отрезаем все что было ПОСЛЕ этого сообщения и обновляем его
+    if (isGenerating) stopGeneration();
+
     const assistantMsgId = Date.now().toString();
     const newHistory: ChatMessage[] = [
       ...messages.slice(0, index),
@@ -146,14 +205,17 @@ export function StartScreen() {
     ];
 
     setMessages(newHistory);
-    fetchAI(newHistory.filter(m => m.id !== assistantMsgId), assistantMsgId);
+    updateCurrentChat(currentChatId, newHistory, false);
+    fetchAI(newHistory.filter(m => m.id !== assistantMsgId), assistantMsgId, currentChatId, false);
   };
 
   const handleRedoMessage = (id: string) => {
+    if (!currentChatId) return;
     const index = messages.findIndex(m => m.id === id);
     if (index === -1) return;
 
-    // Отрезаем текущий ответ ИИ, оставляем историю ДО него (включая вопрос юзера)
+    if (isGenerating) stopGeneration();
+
     const assistantMsgId = Date.now().toString();
     const newHistory: ChatMessage[] = [
       ...messages.slice(0, index),
@@ -161,7 +223,34 @@ export function StartScreen() {
     ];
 
     setMessages(newHistory);
-    fetchAI(newHistory.filter(m => m.id !== assistantMsgId), assistantMsgId);
+    updateCurrentChat(currentChatId, newHistory, false);
+    fetchAI(newHistory.filter(m => m.id !== assistantMsgId), assistantMsgId, currentChatId, false);
+  };
+
+  const handleNewChatClick = () => {
+    if (isGenerating) stopGeneration();
+    setChatStarted(false);
+    setMessages([]);
+    setCurrentChatId(null);
+  };
+
+  const selectChat = (id: string) => {
+    if (isGenerating) stopGeneration();
+    const target = chats.find(c => c.id === id);
+    if (target) {
+      setCurrentChatId(id);
+      setMessages(target.messages);
+      setChatStarted(true);
+      setIsMenuOpen(false);
+    }
+  };
+
+  const deleteChat = (id: string) => {
+    const updated = chats.filter(c => c.id !== id);
+    saveChatsToStorage(updated);
+    if (currentChatId === id) {
+      handleNewChatClick();
+    }
   };
 
   const inputAreaContent = (
@@ -174,22 +263,19 @@ export function StartScreen() {
             onChange={(e) => setMessage(e.target.value)}
             placeholder="Спросить что-нибудь..."
             className="hide-scrollbar w-full flex-1 bg-transparent px-2 text-[15px] text-[#E8E6E3] outline-none placeholder:text-[#6A6965] resize-none overflow-y-auto"
-            style={{ 
-              lineHeight: '20px', 
-              minHeight: '24px'
-            }}
+            style={{ lineHeight: '20px', minHeight: '24px' }}
           />
           <div className="flex items-center justify-end mt-2">
             <button
-              onClick={() => onSend()}
-              disabled={message.trim().length < 2}
+              onClick={() => isGenerating ? stopGeneration() : onSend()}
+              disabled={!isGenerating && message.trim().length < 2}
               className="flex h-[36px] w-[36px] items-center justify-center rounded-[10px] bg-[#5FA86D] disabled:opacity-20 active:scale-95 transition-transform"
             >
               <img 
-                src="/icons/send.svg" 
+                src={isGenerating ? "/icons/stop.svg" : "/icons/send.svg"} 
                 className="w-[16px] h-[16px]" 
                 style={{ filter: 'brightness(0) saturate(100%) invert(11%) sepia(4%) saturate(842%) hue-rotate(3deg) brightness(96%) contrast(89%)' }} 
-                alt="Send" 
+                alt={isGenerating ? "Stop" : "Send"} 
               />
             </button>
           </div>
@@ -212,18 +298,26 @@ export function StartScreen() {
         .hide-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
       `}</style>
 
+      {/* Позиция иконки меню на старте 1-в-1 как в чате */}
       {!chatStarted && (
-        <div className="absolute top-8 left-8 z-[100]">
+        <div className="absolute top-0 left-0 right-0 pt-4 px-8 py-2 flex items-center z-[100] max-w-[600px] mx-auto w-full">
           <button 
             onClick={() => setIsMenuOpen(true)}
-            className="p-1 active:scale-90 transition-transform opacity-40"
+            className="p-1 active:scale-95 transition-transform opacity-40"
           >
-            <img src="/icons/menu.svg" alt="Menu" className="w-6 h-6 invert" />
+            <img src="/icons/menu.svg" alt="Menu" className="w-[22px] h-[22px] invert" />
           </button>
         </div>
       )}
 
-      <MenuDrawer open={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
+      <MenuDrawer 
+        open={isMenuOpen} 
+        onClose={() => setIsMenuOpen(false)} 
+        chats={chats}
+        currentChatId={currentChatId}
+        onSelectChat={selectChat}
+        onDeleteChat={deleteChat}
+      />
 
       <AnimatePresence mode="wait">
         {!chatStarted ? (
@@ -269,7 +363,7 @@ export function StartScreen() {
             <div className="flex-1 overflow-hidden flex flex-col relative">
               <ChatThread 
                 messages={messages} 
-                onNewChat={() => { setChatStarted(false); setMessages([]); }} 
+                onNewChat={handleNewChatClick} 
                 onOpenMenu={() => setIsMenuOpen(true)}
                 onEditSubmit={handleEditMessage}
                 onRedo={handleRedoMessage}
