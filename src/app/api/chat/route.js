@@ -11,9 +11,9 @@ export async function POST(req: Request) {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: "llama-3.1-70b-versatile", // Быстрая и с огромным окном
+        model: "llama-3.3-70b-versatile",
         messages: [
-          { role: "system", content: "Ты — полезный AI-ассистент swgoh.ai." },
+          { role: "system", content: "Ты — полезный AI-ассистент swgoh.ai. Отвечай кратко и по делу." },
           ...messages
         ],
         temperature: 0.7,
@@ -22,13 +22,16 @@ export async function POST(req: Request) {
     });
 
     if (!response.ok) {
-      return NextResponse.json({ error: "Groq error" }, { status: response.status });
+      const errorData = await response.json();
+      console.error("Groq Error:", errorData);
+      return NextResponse.json({ error: errorData.error?.message || "Groq error" }, { status: response.status });
     }
 
     const data = await response.json();
     return NextResponse.json({ content: data.choices[0].message.content });
 
-  } catch (error) {
+  } catch (error: any) {
+    console.error("Fetch Error:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
