@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MoreModal } from "@/components/more";
+import { AdminConsole } from "@/components/admin-console";
 
 export type ChatMessage = {
   id: string;
@@ -17,7 +18,8 @@ type ChatThreadProps = {
   onOpenMenu: () => void;
   onEditSubmit: (id: string, newContent: string) => void;
   onRedo: (id: string) => void;
-  activeChatTitle?: string; // Добавил для синхронизации
+  activeChatTitle?: string;
+  currentUserHandle?: string; // Передаем @ya_admin7 сюда
 };
 
 function AnimatedAIResponse({ text, onComplete }: { text: string; onComplete: () => void }) {
@@ -53,12 +55,22 @@ function AnimatedAIResponse({ text, onComplete }: { text: string; onComplete: ()
   );
 }
 
-export function ChatThread({ messages, onNewChat, onOpenMenu, onEditSubmit, onRedo, activeChatTitle }: ChatThreadProps) {
+export function ChatThread({ 
+  messages, 
+  onNewChat, 
+  onOpenMenu, 
+  onEditSubmit, 
+  onRedo, 
+  activeChatTitle,
+  currentUserHandle = "@ya_admin7" // По умолчанию для теста
+}: ChatThreadProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [chatTitle, setChatTitle] = useState("Новый чат");
   const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [isConsoleOpen, setIsConsoleOpen] = useState(false);
 
-  // Синхронизируем заголовок при смене чата
+  const isAdmin = currentUserHandle === "@ya_admin7";
+
   useEffect(() => {
     if (activeChatTitle) setChatTitle(activeChatTitle);
   }, [activeChatTitle]);
@@ -74,6 +86,18 @@ export function ChatThread({ messages, onNewChat, onOpenMenu, onEditSubmit, onRe
 
   return (
     <div className="flex flex-col h-full w-full max-w-[600px] mx-auto relative pt-4">
+      {/* Кнопка консоли только для админа */}
+      {isAdmin && (
+        <button 
+          onClick={() => setIsConsoleOpen(true)}
+          className="fixed bottom-24 right-6 z-50 w-10 h-10 bg-white/5 backdrop-blur-md border border-white/10 rounded-xl flex items-center justify-center active:scale-90 transition-transform shadow-lg"
+        >
+          <img src="/icons/console.svg" className="w-5 h-5 opacity-60 invert" alt="Console" />
+        </button>
+      )}
+
+      <AdminConsole isOpen={isConsoleOpen} onClose={() => setIsConsoleOpen(false)} />
+
       <div className="w-full flex items-center justify-between px-8 py-2 z-10 bg-[#252422]">
         <button onClick={onOpenMenu} className="p-1 active:scale-95 transition-transform opacity-40">
           <img src="/icons/menu.svg" alt="Menu" className="w-[22px] h-[22px] invert" />
@@ -192,26 +216,26 @@ function MessageItem({ message, onEditSubmit, onRedo }: { message: ChatMessage, 
                     </div>
                   </div>
                   
-                  {isLong ? (
-                    <div className="flex justify-end mt-2 pr-2">
+                  <div className="flex justify-end gap-4 mt-2 pr-2 opacity-40">
+                    {isLong ? (
                       <button 
                         onClick={() => setIsModalOpen(true)}
-                        className="flex items-center gap-1.5 active:scale-95 opacity-40 transition-transform"
+                        className="flex items-center gap-1.5 active:scale-95 transition-transform"
                       >
                         <span className="text-[13px] font-sans text-[#F2F1ED]">Больше</span>
                         <img src="/icons/more.svg" alt="More" className="w-[16px] h-[16px] invert" />
                       </button>
-                    </div>
-                  ) : (
-                    <div className="flex justify-end gap-4 mt-2 pr-2 opacity-40">
-                      <button onClick={() => setIsEditingMode(true)} className="active:scale-95 transition-transform">
-                        <img src="/icons/edit.svg" alt="Edit" className="w-[18px] h-[18px] invert" />
-                      </button>
-                      <button onClick={handleCopy} className="active:scale-95 transition-transform">
-                        <img src={copied ? "/icons/tick.svg" : "/icons/copy.svg"} alt="Copy" className="w-[18px] h-[18px] invert" />
-                      </button>
-                    </div>
-                  )}
+                    ) : (
+                      <>
+                        <button onClick={() => setIsEditingMode(true)} className="active:scale-95 transition-transform">
+                          <img src="/icons/edit.svg" alt="Edit" className="w-[18px] h-[18px] invert" />
+                        </button>
+                        <button onClick={handleCopy} className="active:scale-95 transition-transform">
+                          <img src={copied ? "/icons/tick.svg" : "/icons/copy.svg"} alt="Copy" className="w-[18px] h-[18px] invert" />
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </>
               )}
             </div>
