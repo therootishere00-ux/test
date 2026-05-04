@@ -17,6 +17,7 @@ type ChatThreadProps = {
   onOpenMenu: () => void;
   onEditSubmit: (id: string, newContent: string) => void;
   onRedo: (id: string) => void;
+  activeChatTitle?: string; // Добавил для синхронизации
 };
 
 function AnimatedAIResponse({ text, onComplete }: { text: string; onComplete: () => void }) {
@@ -52,10 +53,15 @@ function AnimatedAIResponse({ text, onComplete }: { text: string; onComplete: ()
   );
 }
 
-export function ChatThread({ messages, onNewChat, onOpenMenu, onEditSubmit, onRedo }: ChatThreadProps) {
+export function ChatThread({ messages, onNewChat, onOpenMenu, onEditSubmit, onRedo, activeChatTitle }: ChatThreadProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [chatTitle, setChatTitle] = useState("Новый чат");
   const [isEditingTitle, setIsEditingTitle] = useState(false);
+
+  // Синхронизируем заголовок при смене чата
+  useEffect(() => {
+    if (activeChatTitle) setChatTitle(activeChatTitle);
+  }, [activeChatTitle]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -122,7 +128,6 @@ function MessageItem({ message, onEditSubmit, onRedo }: { message: ChatMessage, 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   
-  // States for editing
   const [isEditingMode, setIsEditingMode] = useState(false);
   const [editValue, setEditValue] = useState(message.content);
 
