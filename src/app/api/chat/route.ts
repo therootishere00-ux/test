@@ -7,7 +7,7 @@ export async function POST(req: Request) {
 
     if (!apiKey) {
       return NextResponse.json({ 
-        error: "API Key не найден. Проверь настройки Vercel и сделай Redeploy." 
+        error: "Прости, но возникла серверная ошибка! Если она в скором времени не уйдет, обратись в техподжержку." 
       }, { status: 500 });
     }
 
