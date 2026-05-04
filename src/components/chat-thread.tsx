@@ -19,7 +19,6 @@ type ChatThreadProps = {
   onRedo: (id: string) => void;
 };
 
-// ВОЗВРАЩЕНА ОРИГИНАЛЬНАЯ АНИМАЦИЯ С BLUR
 function AnimatedAIResponse({ text, onComplete }: { text: string; onComplete: () => void }) {
   const words = useMemo(() => text.split(" "), [text]);
   
@@ -58,13 +57,9 @@ export function ChatThread({ messages, onNewChat, onOpenMenu, onEditSubmit, onRe
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const [activeContent, setActiveContent] = useState("");
   const [completedMessages, setCompletedMessages] = useState<Record<string, boolean>>({});
-  
-  // Состояния для редактирования
+  const [feedback, setFeedback] = useState<Record<string, 'like' | 'dislike'>>({});
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
-  
-  // Состояние для лайков/дизлайков
-  const [feedbacks, setFeedbacks] = useState<Record<string, 'like' | 'dislike' | null>>({});
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -79,16 +74,9 @@ export function ChatThread({ messages, onNewChat, onOpenMenu, onEditSubmit, onRe
     setCompletedMessages(prev => ({ ...prev, [id]: true }));
   };
 
-  const handleFeedback = (id: string, type: 'like' | 'dislike') => {
-    setFeedbacks(prev => ({ ...prev, [id]: type }));
-    if (type === 'dislike') {
-      window.open('https://t.me/swgohbugbot', '_blank');
-    }
-  };
-
   return (
     <div className="flex flex-col h-full bg-[#252422]">
-      {/* Шапка чата */}
+      {/* Header */}
       <header className="flex items-center justify-between px-6 h-[60px] shrink-0 z-10">
         <button onClick={onOpenMenu} className="p-2 -ml-2 active:scale-90 transition-transform">
           <img src="/icons/menu.svg" alt="Menu" className="w-6 h-6 invert opacity-60" />
@@ -101,29 +89,27 @@ export function ChatThread({ messages, onNewChat, onOpenMenu, onEditSubmit, onRe
         </button>
       </header>
 
-      {/* Список сообщений */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-6 py-4 space-y-8 hide-scrollbar">
+      {/* Messages */}
+      <div ref={scrollRef} className="flex-1 overflow-y-auto px-6 py-4 space-y-10 hide-scrollbar">
         {messages.map((msg) => (
-          <div key={msg.id} className="flex flex-col w-full max-w-[600px] mx-auto">
+          <div key={msg.id} className="flex flex-col w-full max-w-[640px] mx-auto">
             
-            {/* СООБЩЕНИЕ ПОЛЬЗОВАТЕЛЯ */}
+            {/* USER MESSAGE */}
             {msg.role === "user" && (
-              // ВЕРНУЛ ОРИГИНАЛЬНЫЕ ОТСТУПЫ И ШИРИНУ
-              <div className="group relative ml-auto max-w-[85%] lg:max-w-[75%]">
+              <div className="group relative ml-auto max-w-[85%]">
                 {editingId === msg.id ? (
                   <div className="flex flex-col gap-2 w-full min-w-[280px]">
                     <textarea
                       autoFocus
                       value={editValue}
                       onChange={(e) => setEditValue(e.target.value)}
-                      // ОРИГИНАЛЬНЫЕ СТИЛИ (rounded-24px, ring-1)
-                      className="w-full bg-[#2D2C2A] text-[#F2F1ED] rounded-[24px] px-5 py-3.5 ring-1 ring-[#5FA86D]/30 outline-none resize-none text-[16px] leading-[1.4] tracking-[-0.01em]"
+                      className="w-full bg-[#2D2C2A] text-[#F2F1ED] rounded-[24px] p-5 border border-[#5FA86D]/40 outline-none resize-none font-serif text-[16px] shadow-lg"
                       rows={3}
                     />
-                    <div className="flex gap-2 h-10 mt-1">
+                    <div className="flex gap-2 h-11">
                       <button 
                         onClick={() => setEditingId(null)}
-                        className="flex-1 bg-[#2D2C2A] text-[#6A6965] rounded-xl text-sm font-medium active:scale-95 transition-transform ring-1 ring-white/5"
+                        className="flex-1 bg-[#2D2C2A] text-[#6A6965] rounded-[16px] text-sm font-medium active:scale-95 transition-transform border border-white/5"
                       >
                         Отмена
                       </button>
@@ -132,7 +118,7 @@ export function ChatThread({ messages, onNewChat, onOpenMenu, onEditSubmit, onRe
                           onEditSubmit(msg.id, editValue);
                           setEditingId(null);
                         }}
-                        className="flex-1 bg-[#5FA86D] text-[#1A1A18] rounded-xl text-sm font-bold active:scale-95 transition-transform"
+                        className="flex-1 bg-[#5FA86D] text-[#1A1A18] rounded-[16px] text-sm font-bold active:scale-95 transition-transform"
                       >
                         Отправить
                       </button>
@@ -140,12 +126,10 @@ export function ChatThread({ messages, onNewChat, onOpenMenu, onEditSubmit, onRe
                   </div>
                 ) : (
                   <>
-                    {/* ОРИГИНАЛЬНЫЙ ДИЗАЙН БАББЛА */}
-                    <div className="bg-[#2D2C2A] rounded-[24px] px-5 py-3.5 text-[#F2F1ED] text-[16px] leading-[1.4] tracking-[-0.01em] shadow-sm ring-1 ring-white/[0.04]">
+                    <div className="bg-[#2D2C2A] rounded-[24px] px-5 py-3.5 text-[#F2F1ED] text-[16px] font-serif leading-relaxed shadow-sm border border-white/[0.03]">
                       {msg.content}
                     </div>
-                    {/* Кнопка Edit вынесена вниз/сбоку, чтобы не ломать баббл */}
-                    <div className="absolute -bottom-8 right-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex justify-end mt-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button 
                         onClick={() => {
                           setEditingId(msg.id);
@@ -153,7 +137,7 @@ export function ChatThread({ messages, onNewChat, onOpenMenu, onEditSubmit, onRe
                         }}
                         className="p-2 active:scale-90 transition-transform opacity-40 hover:opacity-100"
                       >
-                        <img src="/icons/edit.svg" alt="Edit" className="w-4 h-4 invert" />
+                        <img src="/icons/edit.svg" alt="Edit" className="w-[14px] h-[14px] invert" />
                       </button>
                     </div>
                   </>
@@ -161,98 +145,66 @@ export function ChatThread({ messages, onNewChat, onOpenMenu, onEditSubmit, onRe
               </div>
             )}
 
-            {/* СООБЩЕНИЕ АССИСТЕНТА */}
+            {/* ASSISTANT MESSAGE */}
             {msg.role === "assistant" && (
               <div className="flex items-start gap-4 mr-auto w-full group">
-                {/* Динамическое лого */}
-                <div className="w-8 h-8 rounded-lg shrink-0 overflow-hidden mt-1 bg-[#2D2C2A] border border-white/5 flex items-center justify-center">
+                <div className="w-9 h-9 rounded-xl shrink-0 overflow-hidden mt-1.5 bg-[#2D2C2A] border border-white/5 flex items-center justify-center shadow-inner">
                   <AnimatePresence mode="wait">
                     {!completedMessages[msg.id] && !msg.content ? (
-                      <motion.img 
-                        key="gif"
-                        src="/icons/logo.gif" 
-                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                        className="w-5 h-5 opacity-80"
-                      />
+                      <motion.img key="gif" src="/icons/logo.gif" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="w-6 h-6 opacity-80" />
                     ) : (
-                      <motion.img 
-                        key="png"
-                        src="/icons/logo.PNG" 
-                        initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                        className="w-6 h-6"
-                      />
+                      <motion.img key="png" src="/icons/logo.PNG" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="w-6 h-6" />
                     )}
                   </AnimatePresence>
                 </div>
 
-                <div className="flex-1 space-y-3 pt-1">
+                <div className="flex-1 space-y-4 pt-1.5">
                   {msg.isPlaceholder ? (
-                    <div className="flex gap-1.5 py-3">
-                      <span className="w-1.5 h-1.5 bg-[#5FA86D] rounded-full animate-bounce [animation-delay:-0.3s]" />
-                      <span className="w-1.5 h-1.5 bg-[#5FA86D] rounded-full animate-bounce [animation-delay:-0.15s]" />
-                      <span className="w-1.5 h-1.5 bg-[#5FA86D] rounded-full animate-bounce" />
+                    <div className="flex gap-2 py-4">
+                      <span className="w-2 h-2 bg-[#5FA86D]/60 rounded-full animate-bounce [animation-delay:-0.3s]" />
+                      <span className="w-2 h-2 bg-[#5FA86D]/60 rounded-full animate-bounce [animation-delay:-0.15s]" />
+                      <span className="w-2 h-2 bg-[#5FA86D]/60 rounded-full animate-bounce" />
                     </div>
                   ) : (
                     <>
-                      <AnimatedAIResponse 
-                        text={msg.content} 
-                        onComplete={() => handleMarkComplete(msg.id)} 
-                      />
+                      <AnimatedAIResponse text={msg.content} onComplete={() => handleMarkComplete(msg.id)} />
                       
-                      {/* ВОЗВРАЩЕН ОРИГИНАЛЬНЫЙ БЛОК С ЛАЙКАМИ И КНОПКАМИ */}
-                      {completedMessages[msg.id] && (
-                        <motion.div 
-                          initial={{ opacity: 0 }} 
-                          animate={{ opacity: 1 }} 
-                          className="flex items-center gap-6 pt-2"
-                        >
+                      <div className="flex items-center justify-between pt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex items-center gap-5">
                           <button 
-                            onClick={() => {
-                              setActiveContent(msg.content);
-                              setIsMoreOpen(true);
-                            }}
+                            onClick={() => { setActiveContent(msg.content); setIsMoreOpen(true); }}
                             className="flex items-center gap-1.5 text-[12px] text-[#6A6965] hover:text-[#9A9894] transition-colors"
                           >
                             <img src="/icons/more.svg" className="w-4 h-4 invert opacity-40" />
                             <span>Подробнее</span>
                           </button>
                           
-                          <div className="flex items-center gap-2">
-                            {/* Новая кнопка Redo */}
-                            <button 
-                              onClick={() => onRedo(msg.id)}
-                              className="active:scale-95 transition-transform p-1 opacity-40 hover:opacity-100"
-                              title="Перегенерировать ответ"
-                            >
-                              <img src="/icons/redo.svg" alt="Redo" className="w-[17px] h-[17px] invert" />
-                            </button>
-                            
-                            {/* Старые кнопки Like/Dislike с фильтрами */}
-                            <button 
-                              onClick={() => handleFeedback(msg.id, 'like')} 
-                              className="active:scale-95 transition-transform p-1"
-                              style={{ opacity: feedbacks[msg.id] === 'like' ? 1 : 0.4 }}
-                            >
-                              <img 
-                                src="/icons/like.svg" 
-                                className="w-[18px] h-[18px]"
-                                style={{ filter: feedbacks[msg.id] === 'like' ? 'invert(58%) sepia(13%) saturate(1067%) hue-rotate(82deg) brightness(96%) contrast(87%)' : 'invert(1)' }}
-                              />
-                            </button>
-                            <button 
-                              onClick={() => handleFeedback(msg.id, 'dislike')} 
-                              className="active:scale-95 transition-transform p-1"
-                              style={{ opacity: feedbacks[msg.id] === 'dislike' ? 1 : 0.4 }}
-                            >
-                              <img 
-                                src="/icons/dislike.svg" 
-                                className="w-[18px] h-[18px]"
-                                style={{ filter: feedbacks[msg.id] === 'dislike' ? 'invert(58%) sepia(13%) saturate(1067%) hue-rotate(82deg) brightness(96%) contrast(87%)' : 'invert(1)' }}
-                              />
-                            </button>
-                          </div>
-                        </motion.div>
-                      )}
+                          <button onClick={() => onRedo(msg.id)} className="p-1 active:scale-90 transition-transform opacity-40 hover:opacity-100">
+                            <img src="/icons/redo.svg" className="w-[15px] h-[15px] invert" />
+                          </button>
+                        </div>
+
+                        {/* Feedback Buttons с оригинальными фильтрами */}
+                        <div className="flex items-center gap-3">
+                          <button 
+                            onClick={() => setFeedback(p => ({...p, [msg.id]: 'like'}))}
+                            className="active:scale-90 transition-transform"
+                            style={{ opacity: feedback[msg.id] === 'like' ? 1 : 0.3 }}
+                          >
+                            <img src="/icons/like.svg" className="w-[18px] h-[18px]" style={{ filter: feedback[msg.id] === 'like' ? 'invert(58%) sepia(13%) saturate(1067%) hue-rotate(82deg) brightness(96%) contrast(87%)' : 'invert(1)' }} />
+                          </button>
+                          <button 
+                            onClick={() => {
+                              setFeedback(p => ({...p, [msg.id]: 'dislike'}));
+                              window.open('https://t.me/swgohbugbot', '_blank');
+                            }}
+                            className="active:scale-90 transition-transform"
+                            style={{ opacity: feedback[msg.id] === 'dislike' ? 1 : 0.3 }}
+                          >
+                            <img src="/icons/dislike.svg" className="w-[18px] h-[18px]" style={{ filter: feedback[msg.id] === 'dislike' ? 'invert(58%) sepia(13%) saturate(1067%) hue-rotate(82deg) brightness(96%) contrast(87%)' : 'invert(1)' }} />
+                          </button>
+                        </div>
+                      </div>
                     </>
                   )}
                 </div>
@@ -260,15 +212,10 @@ export function ChatThread({ messages, onNewChat, onOpenMenu, onEditSubmit, onRe
             )}
           </div>
         ))}
-        {/* Распорка для скролла */}
-        <div className="h-10 w-full shrink-0" />
+        <div className="h-12 w-full shrink-0" />
       </div>
 
-      <MoreModal 
-        isOpen={isMoreOpen} 
-        onClose={() => setIsMoreOpen(false)} 
-        content={activeContent} 
-      />
+      <MoreModal isOpen={isMoreOpen} onClose={() => setIsMoreOpen(false)} content={activeContent} />
     </div>
   );
 }
