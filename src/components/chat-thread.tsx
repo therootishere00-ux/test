@@ -19,10 +19,19 @@ type ChatThreadProps = {
   onRedo: (id: string) => void;
 };
 
-// Компонент для "напыления" текста буквами/словами
+// ВОЗВРАЩЕНА ОРИГИНАЛЬНАЯ АНИМАЦИЯ С BLUR
 function AnimatedAIResponse({ text, onComplete }: { text: string; onComplete: () => void }) {
   const words = useMemo(() => text.split(" "), [text]);
   
+  const wordAnim = {
+    hidden: { opacity: 0, filter: "blur(4px)" },
+    visible: (i: number) => ({
+      opacity: 1, 
+      filter: "blur(0px)",
+      transition: { delay: Math.floor(i / 4) * 0.08, duration: 0.3, ease: "easeOut" }
+    })
+  };
+
   return (
     <motion.div 
       initial="hidden" 
@@ -33,11 +42,8 @@ function AnimatedAIResponse({ text, onComplete }: { text: string; onComplete: ()
       {words.map((word, index) => (
         <motion.span 
           key={index} 
-          variants={{
-            hidden: { opacity: 0 },
-            visible: { opacity: 1 }
-          }}
-          transition={{ delay: index * 0.03, duration: 0.2 }}
+          custom={index}
+          variants={wordAnim} 
           className="inline-block mr-[0.3em]"
         >
           {word}
@@ -56,6 +62,9 @@ export function ChatThread({ messages, onNewChat, onOpenMenu, onEditSubmit, onRe
   // Состояния для редактирования
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
+  
+  // Состояние для лайков/дизлайков
+  const [feedbacks, setFeedbacks] = useState<Record<string, 'like' | 'dislike' | null>>({});
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -68,6 +77,13 @@ export function ChatThread({ messages, onNewChat, onOpenMenu, onEditSubmit, onRe
 
   const handleMarkComplete = (id: string) => {
     setCompletedMessages(prev => ({ ...prev, [id]: true }));
+  };
+
+  const handleFeedback = (id: string, type: 'like' | 'dislike') => {
+    setFeedbacks(prev => ({ ...prev, [id]: type }));
+    if (type === 'dislike') {
+      window.open('https://t.me/swgohbugbot', '_blank');
+    }
   };
 
   return (
@@ -92,20 +108,22 @@ export function ChatThread({ messages, onNewChat, onOpenMenu, onEditSubmit, onRe
             
             {/* СООБЩЕНИЕ ПОЛЬЗОВАТЕЛЯ */}
             {msg.role === "user" && (
-              <div className="group relative ml-auto max-w-[90%] lg:max-w-[80%]">
+              // ВЕРНУЛ ОРИГИНАЛЬНЫЕ ОТСТУПЫ И ШИРИНУ
+              <div className="group relative ml-auto max-w-[85%] lg:max-w-[75%]">
                 {editingId === msg.id ? (
                   <div className="flex flex-col gap-2 w-full min-w-[280px]">
                     <textarea
                       autoFocus
                       value={editValue}
                       onChange={(e) => setEditValue(e.target.value)}
-                      className="w-full bg-[#2D2C2A] text-[#F2F1ED] rounded-[16px] p-4 border border-[#5FA86D]/30 outline-none resize-none font-serif text-[16px]"
+                      // ОРИГИНАЛЬНЫЕ СТИЛИ (rounded-24px, ring-1)
+                      className="w-full bg-[#2D2C2A] text-[#F2F1ED] rounded-[24px] px-5 py-3.5 ring-1 ring-[#5FA86D]/30 outline-none resize-none text-[16px] leading-[1.4] tracking-[-0.01em]"
                       rows={3}
                     />
-                    <div className="flex gap-2 h-10">
+                    <div className="flex gap-2 h-10 mt-1">
                       <button 
                         onClick={() => setEditingId(null)}
-                        className="flex-1 bg-[#2D2C2A] text-[#6A6965] rounded-xl text-sm font-medium active:scale-95 transition-transform border border-white/5"
+                        className="flex-1 bg-[#2D2C2A] text-[#6A6965] rounded-xl text-sm font-medium active:scale-95 transition-transform ring-1 ring-white/5"
                       >
                         Отмена
                       </button>
@@ -122,10 +140,12 @@ export function ChatThread({ messages, onNewChat, onOpenMenu, onEditSubmit, onRe
                   </div>
                 ) : (
                   <>
-                    <div className="bg-[#2D2C2A] rounded-[20px] px-4 py-3 text-[#F2F1ED] text-[16px] font-serif leading-relaxed shadow-sm">
+                    {/* ОРИГИНАЛЬНЫЙ ДИЗАЙН БАББЛА */}
+                    <div className="bg-[#2D2C2A] rounded-[24px] px-5 py-3.5 text-[#F2F1ED] text-[16px] leading-[1.4] tracking-[-0.01em] shadow-sm ring-1 ring-white/[0.04]">
                       {msg.content}
                     </div>
-                    <div className="flex justify-end mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {/* Кнопка Edit вынесена вниз/сбоку, чтобы не ломать баббл */}
+                    <div className="absolute -bottom-8 right-0 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button 
                         onClick={() => {
                           setEditingId(msg.id);
@@ -179,26 +199,60 @@ export function ChatThread({ messages, onNewChat, onOpenMenu, onEditSubmit, onRe
                         onComplete={() => handleMarkComplete(msg.id)} 
                       />
                       
-                      {/* Инструменты ответа */}
-                      <div className="flex items-center gap-4 pt-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button 
-                          onClick={() => {
-                            setActiveContent(msg.content);
-                            setIsMoreOpen(true);
-                          }}
-                          className="flex items-center gap-1.5 text-[12px] text-[#6A6965] hover:text-[#9A9894] transition-colors"
+                      {/* ВОЗВРАЩЕН ОРИГИНАЛЬНЫЙ БЛОК С ЛАЙКАМИ И КНОПКАМИ */}
+                      {completedMessages[msg.id] && (
+                        <motion.div 
+                          initial={{ opacity: 0 }} 
+                          animate={{ opacity: 1 }} 
+                          className="flex items-center gap-6 pt-2"
                         >
-                          <img src="/icons/more.svg" className="w-4 h-4 invert opacity-40" />
-                          <span>Подробнее</span>
-                        </button>
-                        
-                        <button 
-                          onClick={() => onRedo(msg.id)}
-                          className="p-1 active:scale-90 transition-transform opacity-40 hover:opacity-100"
-                        >
-                          <img src="/icons/redo.svg" alt="Redo" className="w-4 h-4 invert" />
-                        </button>
-                      </div>
+                          <button 
+                            onClick={() => {
+                              setActiveContent(msg.content);
+                              setIsMoreOpen(true);
+                            }}
+                            className="flex items-center gap-1.5 text-[12px] text-[#6A6965] hover:text-[#9A9894] transition-colors"
+                          >
+                            <img src="/icons/more.svg" className="w-4 h-4 invert opacity-40" />
+                            <span>Подробнее</span>
+                          </button>
+                          
+                          <div className="flex items-center gap-2">
+                            {/* Новая кнопка Redo */}
+                            <button 
+                              onClick={() => onRedo(msg.id)}
+                              className="active:scale-95 transition-transform p-1 opacity-40 hover:opacity-100"
+                              title="Перегенерировать ответ"
+                            >
+                              <img src="/icons/redo.svg" alt="Redo" className="w-[17px] h-[17px] invert" />
+                            </button>
+                            
+                            {/* Старые кнопки Like/Dislike с фильтрами */}
+                            <button 
+                              onClick={() => handleFeedback(msg.id, 'like')} 
+                              className="active:scale-95 transition-transform p-1"
+                              style={{ opacity: feedbacks[msg.id] === 'like' ? 1 : 0.4 }}
+                            >
+                              <img 
+                                src="/icons/like.svg" 
+                                className="w-[18px] h-[18px]"
+                                style={{ filter: feedbacks[msg.id] === 'like' ? 'invert(58%) sepia(13%) saturate(1067%) hue-rotate(82deg) brightness(96%) contrast(87%)' : 'invert(1)' }}
+                              />
+                            </button>
+                            <button 
+                              onClick={() => handleFeedback(msg.id, 'dislike')} 
+                              className="active:scale-95 transition-transform p-1"
+                              style={{ opacity: feedbacks[msg.id] === 'dislike' ? 1 : 0.4 }}
+                            >
+                              <img 
+                                src="/icons/dislike.svg" 
+                                className="w-[18px] h-[18px]"
+                                style={{ filter: feedbacks[msg.id] === 'dislike' ? 'invert(58%) sepia(13%) saturate(1067%) hue-rotate(82deg) brightness(96%) contrast(87%)' : 'invert(1)' }}
+                              />
+                            </button>
+                          </div>
+                        </motion.div>
+                      )}
                     </>
                   )}
                 </div>
