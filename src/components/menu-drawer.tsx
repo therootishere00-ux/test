@@ -3,6 +3,7 @@
 import { motion, AnimatePresence, useAnimation } from "framer-motion";
 import { useEffect, useState } from "react";
 import type { ChatMessage } from "./chat-thread";
+import PlanerIcon from "../../public/icons/planer"; // Импортируем твой .tsx компонент иконки
 
 export type ChatSession = {
   id: string;
@@ -17,6 +18,7 @@ type MenuDrawerProps = {
   currentChatId: string | null;
   onSelectChat: (id: string) => void;
   onDeleteChat: (id: string) => void;
+  onOpenPlanner: () => void; // Добавляем проп для открытия планировщика
 };
 
 function ChatItem({ chat, isActive, onSelect, onDelete }: { chat: ChatSession, isActive: boolean, onSelect: () => void, onDelete: () => void }) {
@@ -61,7 +63,7 @@ function ChatItem({ chat, isActive, onSelect, onDelete }: { chat: ChatSession, i
   );
 }
 
-export function MenuDrawer({ open, onClose, chats, currentChatId, onSelectChat, onDeleteChat }: MenuDrawerProps) {
+export function MenuDrawer({ open, onClose, chats, currentChatId, onSelectChat, onDeleteChat, onOpenPlanner }: MenuDrawerProps) {
   const [tgUser, setTgUser] = useState<any>(null);
 
   useEffect(() => {
@@ -98,6 +100,24 @@ export function MenuDrawer({ open, onClose, chats, currentChatId, onSelectChat, 
               </div>
               <button onClick={onClose} className="p-2 -mr-2 active:scale-90 transition-transform">
                 <img src="/icons/cross.svg" alt="Close" className="w-5 h-5 opacity-40 hover:opacity-80 invert" />
+              </button>
+            </div>
+
+            {/* НОВЫЙ БЛОК: ПЛАНИРОВЩИК */}
+            <div className="px-4 mb-2 shrink-0">
+              <button 
+                onClick={onOpenPlanner}
+                className="w-full bg-[#2D2C2A] rounded-xl px-4 py-3 flex items-center justify-between border border-white/5 active:scale-[0.98] transition-transform"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-6 h-6 opacity-80">
+                    <PlanerIcon />
+                  </div>
+                  <span className="text-[15px] text-[#F2F1ED] font-sans font-medium">Начать планировать</span>
+                </div>
+                <div className="px-2 py-0.5 rounded-md bg-[#5FA86D]/10 border border-[#5FA86D]/20">
+                  <span className="text-[10px] text-[#5FA86D] font-bold uppercase tracking-wider">Новое</span>
+                </div>
               </button>
             </div>
 
