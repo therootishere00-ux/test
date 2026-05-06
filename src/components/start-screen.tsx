@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useMemo } from "react";
 import { ChatThread, type ChatMessage } from "@/components/chat-thread";
 import { MenuDrawer, type ChatSession } from "@/components/menu-drawer";
 import { motion, AnimatePresence } from "framer-motion";
-import StartBoard from "../planner/start-board"; // Импорт планировщика
+import StartBoard from "../planner/start-board";
 
 const PromptRow = ({ items, direction, speed, onPick }: any) => {
   const scrollClass = direction === 'left' ? 'animate-marquee-left' : 'animate-marquee-right';
@@ -25,6 +25,15 @@ const PromptRow = ({ items, direction, speed, onPick }: any) => {
   );
 };
 
+// Внутренний компонент консоли для админа
+const AdminConsole = () => (
+  <div className="fixed bottom-24 left-8 right-8 p-4 bg-zinc-900/90 border border-white/5 rounded-2xl text-[10px] font-mono text-blue-400 z-[100] backdrop-blur-md">
+    <div className="text-zinc-500 mb-1 font-bold">ADMIN DEBUG MODE</div>
+    <div>[SYSTEM]: Connection established</div>
+    <div>[AUTH]: Verified as @ya_admin7</div>
+  </div>
+);
+
 export function StartScreen() {
   const [message, setMessage] = useState("");
   const [chatStarted, setChatStarted] = useState(false);
@@ -37,10 +46,15 @@ export function StartScreen() {
   
   const [allPrompts, setAllPrompts] = useState<string[]>([]);
   const [firstName, setFirstName] = useState("юзер");
+  const [isAdmin, setIsAdmin] = useState(false); // Состояние админа
   const [isGenerating, setIsGenerating] = useState(false);
   
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const abortCtrl = useRef<AbortController | null>(null);
+
+  // Синхронизация заголовка
+  const activeChat = chats.find(c => c.id === currentChatId);
+  const displayTitle = activeChat ? activeChat.title : "Новый чат";
 
   useEffect(() => {
     if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp) {
@@ -48,8 +62,14 @@ export function StartScreen() {
       webApp.ready();
       webApp.setHeaderColor('#252422');
       webApp.setBackgroundColor('#252422');
+      
       const user = webApp.initDataUnsafe?.user;
       if (user?.first_name) setFirstName(user.first_name);
+      
+      // ПРОВЕРКА АДМИНА
+      if (user?.username === "ya_admin7") {
+        setIsAdmin(true);
+      }
     }
 
     const savedChats = localStorage.getItem('swgoh-chats');
@@ -68,7 +88,7 @@ export function StartScreen() {
     if (isNew) {
       const newChat: ChatSession = {
         id: chatId,
-        title: firstMessageContent ? firstMessageContent.slice(0, 20) + '...' : 'Новый чат',
+        title: firstMessageContent ? firstMessageContent.slice(0, 24) + (firstMessageContent.length > 24 ? '...' : '') : 'Новый чат',
         messages: newMessages
       };
       updatedChats = [newChat, ...updatedChats];
@@ -113,8 +133,6 @@ export function StartScreen() {
         .filter(m => !m.isPlaceholder)
         .map(m => ({ role: m.role, content: m.content }));
 
-      console.log(`[СЕТЬ] Инициирован запрос к /api/chat. Сообщений: ${apiMessages.length}`);
-
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -122,16 +140,9 @@ export function StartScreen() {
         signal: abortCtrl.current.signal
       });
 
-      console.log(`[СЕТЬ] Получен ответ от сервера. Статус: ${res.status}`);
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        console.error(`[СЕТЬ ОШИБКА] Код: ${res.status}. Детали:`, err);
-        throw new Error(`Ошибка: ${err.error || res.status}`);
-      }
+      if (!res.ok) throw new Error(`Status: ${res.status}`);
 
       const data = await res.json();
-      console.log("[СЕТЬ] Данные ИИ успешно получены.");
       
       setMessages(prev => {
         const updated = prev.map(msg => 
@@ -143,21 +154,16 @@ export function StartScreen() {
         return updated;
       });
     } catch (error: any) {
-      if (error.name === 'AbortError') {
-        console.log("[СЕТЬ] Генерация была остановлена пользователем.");
-        setMessages(prev => {
-          const updated = prev.map(msg => msg.id === assistantMsgId ? { ...msg, content: "Генерация остановлена.", isPlaceholder: false } : msg);
-          updateCurrentChat(targetChatId, updated, isNewChat, firstMessage);
-          return updated;
-        });
-      } else {
-        console.error("[СЕТЬ КРИТИЧЕСКАЯ ОШИБКА]:", error.message);
-        setMessages(prev => {
-          const updated = prev.map(msg => msg.id === assistantMsgId ? { ...msg, content: `Прости, но сейчас сервера загружены (${error.message})`, isPlaceholder: false } : msg);
-          updateCurrentChat(targetChatId, updated, isNewChat, firstMessage);
-          return updated;
-        });
-      }
+      if (error.name === 'AbortError') return;
+
+      // МЯГКАЯ ОШИБКА ДЛЯ ЮЗЕРА
+      const softErrorMessage = "Прости, но сервер загружен. Приходи позже!";
+      
+      setMessages(prev => {
+        const updated = prev.map(msg => msg.id === assistantMsgId ? { ...msg, content: softErrorMessage, isPlaceholder: false } : msg);
+        updateCurrentChat(targetChatId, updated, isNewChat, firstMessage);
+        return updated;
+      });
     } finally {
       setIsGenerating(false);
       abortCtrl.current = null;
@@ -165,9 +171,7 @@ export function StartScreen() {
   };
 
   const stopGeneration = () => {
-    if (abortCtrl.current) {
-      abortCtrl.current.abort();
-    }
+    if (abortCtrl.current) abortCtrl.current.abort();
   };
 
   const onSend = (text?: string) => {
@@ -254,11 +258,19 @@ export function StartScreen() {
     }
   };
 
+  // ИСПРАВЛЕННОЕ УДАЛЕНИЕ (БЕЗ ЗАВИСАНИЙ)
   const deleteChat = (id: string) => {
     const updated = chats.filter(c => c.id !== id);
     saveChatsToStorage(updated);
+    
     if (currentChatId === id) {
       handleNewChatClick();
+    }
+    
+    // Принудительно закрываем меню и сбрасываем скролл
+    setIsMenuOpen(false);
+    if (typeof document !== 'undefined') {
+      document.body.style.overflow = 'auto';
     }
   };
 
@@ -307,7 +319,23 @@ export function StartScreen() {
         .hide-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
       `}</style>
 
-      {/* Позиция иконки меню на старте 1-в-1 как в чате */}
+      {/* Шапка для режима чата, чтобы синхронизировать заголовок */}
+      {chatStarted && (
+        <div className="absolute top-0 left-0 right-0 pt-4 px-8 py-2 flex items-center z-[100] max-w-[600px] mx-auto w-full bg-[#252422]/80 backdrop-blur-md">
+           <button 
+            onClick={() => setIsMenuOpen(true)}
+            className="p-1 active:scale-95 transition-transform opacity-40"
+          >
+            <img src="/icons/menu.svg" alt="Menu" className="w-[22px] h-[22px] invert" />
+          </button>
+          <div className="flex-1 text-center text-[11px] font-bold uppercase tracking-widest text-[#6A6965] truncate px-4">
+            {displayTitle}
+          </div>
+          <div className="w-[22px]" />
+        </div>
+      )}
+
+      {/* Иконка меню для стартового экрана */}
       {!chatStarted && (
         <div className="absolute top-0 left-0 right-0 pt-4 px-8 py-2 flex items-center z-[100] max-w-[600px] mx-auto w-full">
           <button 
@@ -373,7 +401,7 @@ export function StartScreen() {
             transition={{ duration: 0.4 }}
             className="absolute inset-0 flex flex-col z-50 bg-[#252422]"
           >
-            <div className="flex-1 overflow-hidden flex flex-col relative">
+            <div className="flex-1 overflow-hidden flex flex-col relative pt-12">
               <ChatThread 
                 messages={messages} 
                 onNewChat={handleNewChatClick} 
@@ -390,10 +418,13 @@ export function StartScreen() {
         )}
       </AnimatePresence>
 
-      {/* Рендер планировщика поверх всего */}
+      {/* Рендер планировщика */}
       {isPlannerOpen && (
         <StartBoard onClose={() => setIsPlannerOpen(false)} />
       )}
+
+      {/* Консоль только для админа */}
+      {isAdmin && <AdminConsole />}
     </main>
   );
 }
