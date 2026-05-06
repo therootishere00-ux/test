@@ -2,10 +2,10 @@
 
 import { useEffect, useRef, useState, useMemo } from "react";
 import { ChatThread, type ChatMessage } from "@/components/chat-thread";
-import { MenuDrawer, type ChatSession } from "@/components/menu-drawer";
 import { motion, AnimatePresence } from "framer-motion";
 import StartBoard from "../planner/start-board"; // Импорт планировщика
 
+// Компонент бегущих строк с подсказками
 const PromptRow = ({ items, direction, speed, onPick }: any) => {
   const scrollClass = direction === 'left' ? 'animate-marquee-left' : 'animate-marquee-right';
   return (
@@ -15,7 +15,7 @@ const PromptRow = ({ items, direction, speed, onPick }: any) => {
           <button 
             key={idx} 
             onClick={() => onPick(item)}
-            className="whitespace-nowrap rounded-lg border border-white/5 bg-transparent px-3 py-1.5 text-[13px] text-[#9A9894] transition-transform duration-200 active:scale-95"
+            className="whitespace-nowrap rounded-lg border border-white/5 bg-transparent px-3 py-1.5 text-[13px] text-[#9A9894] transition-transform duration-200 active:scale-95 hover:bg-white/[0.02]"
           >
             {item}
           </button>
@@ -26,329 +26,188 @@ const PromptRow = ({ items, direction, speed, onPick }: any) => {
 };
 
 export function StartScreen() {
+  // --- Состояния ---
   const [message, setMessage] = useState("");
   const [chatStarted, setChatStarted] = useState(false);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isPlannerOpen, setIsPlannerOpen] = useState(false); // Состояние планировщика
-  
-  // Логика истории чатов
-  const [chats, setChats] = useState<ChatSession[]>([]);
-  const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isPlannerOpen, setIsPlannerOpen] = useState(false);
   
-  const [allPrompts, setAllPrompts] = useState<string[]>([]);
-  const [firstName, setFirstName] = useState("юзер");
-  const [isGenerating, setIsGenerating] = useState(false);
-  
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  // Данные пользователя из Telegram
+  const [tgUser, setTgUser] = useState<{ first_name?: string; username?: string; photo_url?: string } | null>(null);
+
   const abortCtrl = useRef<AbortController | null>(null);
 
+  // --- Инициализация TMA ---
   useEffect(() => {
-    if (typeof window !== 'undefined' && (window as any).Telegram?.WebApp) {
-      const webApp = (window as any).Telegram.WebApp;
-      webApp.ready();
-      webApp.setHeaderColor('#252422');
-      webApp.setBackgroundColor('#252422');
-      const user = webApp.initDataUnsafe?.user;
-      if (user?.first_name) setFirstName(user.first_name);
-    }
+    if (typeof window !== "undefined" && window.Telegram?.WebApp) {
+      const webapp = window.Telegram.WebApp;
+      webapp.ready();
+      webapp.expand();
+      
+      // Устанавливаем цвет заголовка в тон фона
+      webapp.setHeaderColor('#252422');
 
-    const savedChats = localStorage.getItem('swgoh-chats');
-    if (savedChats) {
-      try { setChats(JSON.parse(savedChats)); } catch (e) {}
+      if (webapp.initDataUnsafe?.user) {
+        setTgUser(webapp.initDataUnsafe.user);
+        console.log("TMA: Данные пользователя получены", webapp.initDataUnsafe.user);
+      }
     }
   }, []);
 
-  const saveChatsToStorage = (updatedChats: ChatSession[]) => {
-    setChats(updatedChats);
-    localStorage.setItem('swgoh-chats', JSON.stringify(updatedChats));
-  };
-
-  const updateCurrentChat = (chatId: string, newMessages: ChatMessage[], isNew: boolean, firstMessageContent?: string) => {
-    let updatedChats = [...chats];
-    if (isNew) {
-      const newChat: ChatSession = {
-        id: chatId,
-        title: firstMessageContent ? firstMessageContent.slice(0, 20) + '...' : 'Новый чат',
-        messages: newMessages
-      };
-      updatedChats = [newChat, ...updatedChats];
-    } else {
-      updatedChats = updatedChats.map(c => c.id === chatId ? { ...c, messages: newMessages } : c);
-    }
-    saveChatsToStorage(updatedChats);
-  };
-
-  useEffect(() => {
-    fetch('/slovar.txt')
-      .then(res => res.text())
-      .then(data => {
-        const lines = data.split(/\r?\n/).filter(line => line.trim().length > 0);
-        setAllPrompts(lines.sort(() => Math.random() - 0.5));
-      })
-      .catch(() => setAllPrompts(["Гайд на Гранд-мастера Йоду", "Лучшие модули для Вейдера", "Как пройти 7 уровень"]));
-  }, []);
-
-  const rows = useMemo(() => {
-    if (allPrompts.length === 0) return [];
-    return [
-      { items: allPrompts.slice(0, 10), dir: 'left', speed: '100s' },
-      { items: allPrompts.slice(10, 20), dir: 'right', speed: '90s' },
-    ];
-  }, [allPrompts]);
-
-  useEffect(() => {
-    const ta = textareaRef.current;
-    if (!ta) return;
-    ta.style.height = '24px';
-    const sh = ta.scrollHeight;
-    ta.style.height = `${Math.min(sh, 44)}px`;
-  }, [message]);
-
-  const fetchAI = async (currentMessages: ChatMessage[], assistantMsgId: string, targetChatId: string, isNewChat: boolean, firstMessage?: string) => {
+  // --- Логика AI запроса ---
+  const fetchAI = async (currentMessages: ChatMessage[]) => {
+    console.log("System: Подготовка запроса к AI...");
+    
     abortCtrl.current = new AbortController();
-    setIsGenerating(true);
-
+    
     try {
-      const apiMessages = currentMessages
-        .filter(m => !m.isPlaceholder)
-        .map(m => ({ role: m.role, content: m.content }));
-
+      console.log("System: Отправка POST на /api/chat");
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: apiMessages }),
+        body: JSON.stringify({ 
+          messages: currentMessages.map(m => ({ role: m.role, content: m.content })) 
+        }),
         signal: abortCtrl.current.signal
       });
 
+      console.log(`System: Ответ сервера получен, статус: ${res.status}`);
+
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(`Ошибка: ${err.error || res.status}`);
+        const errorData = await res.json();
+        throw new Error(errorData.error || `Ошибка ${res.status}`);
       }
 
       const data = await res.json();
+      console.log("System: Ответ успешно обработан");
+
+      setMessages(prev => {
+        const last = prev[prev.length - 1];
+        if (last && last.role === 'assistant' && last.isPlaceholder) {
+          return [...prev.slice(0, -1), { 
+            id: Date.now().toString(), 
+            role: 'assistant', 
+            content: data.content 
+          }];
+        }
+        return prev;
+      });
+
+    } catch (err: any) {
+      if (err.name === 'AbortError') {
+        console.log("System: Запрос отменен пользователем");
+        return;
+      }
+      console.error("System Error:", err.message);
       
       setMessages(prev => {
-        const updated = prev.map(msg => 
-          msg.id === assistantMsgId 
-            ? { ...msg, content: data.content || "Пустой ответ", isPlaceholder: false }
-            : msg
-        );
-        updateCurrentChat(targetChatId, updated, isNewChat, firstMessage);
-        return updated;
+        const filtered = prev.filter(m => !m.isPlaceholder);
+        return [...filtered, { 
+          id: 'err-' + Date.now(), 
+          role: 'assistant', 
+          content: `Прости, но сейчас сервера загружены (${err.message})` 
+        }];
       });
-    } catch (error: any) {
-      if (error.name === 'AbortError') {
-        setMessages(prev => {
-          const updated = prev.map(msg => msg.id === assistantMsgId ? { ...msg, content: "Генерация остановлена.", isPlaceholder: false } : msg);
-          updateCurrentChat(targetChatId, updated, isNewChat, firstMessage);
-          return updated;
-        });
-      } else {
-        setMessages(prev => {
-          const updated = prev.map(msg => msg.id === assistantMsgId ? { ...msg, content: `Прости, но сейчас сервера загружены (${error.message})`, isPlaceholder: false } : msg);
-          updateCurrentChat(targetChatId, updated, isNewChat, firstMessage);
-          return updated;
-        });
-      }
-    } finally {
-      setIsGenerating(false);
-      abortCtrl.current = null;
     }
   };
 
-  const stopGeneration = () => {
-    if (abortCtrl.current) {
-      abortCtrl.current.abort();
-    }
-  };
+  // --- Обработчики ---
+  const handleSend = async () => {
+    const text = message.trim();
+    if (!text) return;
 
-  const onSend = (text?: string) => {
-    if (isGenerating) return;
-    const content = text || message;
-    if (content.trim().length < 2) return;
+    console.log("User: Отправка сообщения:", text);
     
-    const isNewChat = !currentChatId;
-    const activeChatId = currentChatId || Date.now().toString();
+    const userMsg: ChatMessage = { id: Date.now().toString(), role: 'user', content: text };
+    const placeholderMsg: ChatMessage = { id: 'loading', role: 'assistant', content: '', isPlaceholder: true };
     
-    if (isNewChat) setCurrentChatId(activeChatId);
-
-    const userMsgId = Date.now().toString();
-    const assistantMsgId = (Date.now() + 1).toString();
-
-    const newHistory: ChatMessage[] = [
-      ...messages, 
-      { id: userMsgId, role: "user", content: content.trim() },
-      { id: assistantMsgId, role: "assistant", content: "", isPlaceholder: true }
-    ];
-
-    setMessages(newHistory);
-    setChatStarted(true);
+    const newMessages = [...messages, userMsg];
+    setMessages([...newMessages, placeholderMsg]);
     setMessage("");
+    setChatStarted(true);
 
-    if (textareaRef.current) textareaRef.current.style.height = '24px';
-
-    updateCurrentChat(activeChatId, newHistory, isNewChat, content.trim());
-    fetchAI(newHistory.filter(m => m.id !== assistantMsgId), assistantMsgId, activeChatId, isNewChat, content.trim());
-  };
-
-  const handleEditMessage = (id: string, newContent: string) => {
-    if (newContent.trim().length < 2 || !currentChatId) return;
-    const index = messages.findIndex(m => m.id === id);
-    if (index === -1) return;
-
-    if (isGenerating) stopGeneration();
-
-    const assistantMsgId = Date.now().toString();
-    const newHistory: ChatMessage[] = [
-      ...messages.slice(0, index),
-      { ...messages[index], content: newContent },
-      { id: assistantMsgId, role: "assistant", content: "", isPlaceholder: true }
-    ];
-
-    setMessages(newHistory);
-    updateCurrentChat(currentChatId, newHistory, false);
-    fetchAI(newHistory.filter(m => m.id !== assistantMsgId), assistantMsgId, currentChatId, false);
-  };
-
-  const handleRedoMessage = (id: string) => {
-    if (!currentChatId) return;
-    const index = messages.findIndex(m => m.id === id);
-    if (index === -1) return;
-
-    if (isGenerating) stopGeneration();
-
-    const assistantMsgId = Date.now().toString();
-    const newHistory: ChatMessage[] = [
-      ...messages.slice(0, index),
-      { id: assistantMsgId, role: "assistant", content: "", isPlaceholder: true }
-    ];
-
-    setMessages(newHistory);
-    updateCurrentChat(currentChatId, newHistory, false);
-    fetchAI(newHistory.filter(m => m.id !== assistantMsgId), assistantMsgId, currentChatId, false);
+    await fetchAI(newMessages);
   };
 
   const handleNewChatClick = () => {
-    if (isGenerating) stopGeneration();
-    setChatStarted(false);
+    console.log("System: Сброс чата");
     setMessages([]);
-    setCurrentChatId(null);
+    setChatStarted(false);
+    setMessage("");
   };
 
-  const selectChat = (id: string) => {
-    if (isGenerating) stopGeneration();
-    const target = chats.find(c => c.id === id);
-    if (target) {
-      setCurrentChatId(id);
-      setMessages(target.messages);
-      setChatStarted(true);
-      setIsMenuOpen(false);
-    }
-  };
+  // Подсказки для главного экрана
+  const rows = [
+    { items: ["Какой флот сейчас в мете?", "Как пройти 7 категорию события?", "Лучшие модули для Вейдера"], dir: 'left', speed: '40s' },
+    { items: ["Гайд на Гранд-инквизитора", "Сколько нужно реликтов для Леи?", "Сборка отряда Феникс"], dir: 'right', speed: '50s' }
+  ];
 
-  const deleteChat = (id: string) => {
-    const updated = chats.filter(c => c.id !== id);
-    saveChatsToStorage(updated);
-    if (currentChatId === id) {
-      handleNewChatClick();
-    }
-  };
-
+  // --- UI Компоненты ---
   const inputAreaContent = (
-    <div className={`w-full max-w-[600px] mx-auto px-8 ${chatStarted ? 'pb-4 pt-2' : ''}`}>
-      <div className="relative flex w-full flex-col bg-[#2D2C2A] rounded-[20px] border border-white/[0.04] transition-all focus-within:border-white/10 shadow-sm">
-        <div className="flex flex-col p-3"> 
-          <textarea
-            ref={textareaRef}
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            placeholder="Спросить что-нибудь..."
-            className="hide-scrollbar w-full flex-1 bg-transparent px-2 text-[15px] text-[#E8E6E3] outline-none placeholder:text-[#6A6965] resize-none overflow-y-auto"
-            style={{ lineHeight: '20px', minHeight: '24px' }}
-          />
-          <div className="flex items-center justify-end mt-2">
-            <button
-              onClick={() => isGenerating ? stopGeneration() : onSend()}
-              disabled={!isGenerating && message.trim().length < 2}
-              className="flex h-[36px] w-[36px] items-center justify-center rounded-[10px] bg-[#5FA86D] disabled:opacity-20 active:scale-95 transition-transform"
-            >
-              <img 
-                src={isGenerating ? "/icons/stop.svg" : "/icons/send.svg"} 
-                className="w-[16px] h-[16px]" 
-                style={{ filter: 'brightness(0) saturate(100%) invert(11%) sepia(4%) saturate(842%) hue-rotate(3deg) brightness(96%) contrast(89%)' }} 
-                alt={isGenerating ? "Stop" : "Send"} 
-              />
-            </button>
-          </div>
-        </div>
+    <div className="px-6 pb-8 pt-4">
+      <div className="relative max-w-[600px] mx-auto">
+        <textarea
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              handleSend();
+            }
+          }}
+          placeholder="Спроси о SWGOH..."
+          className="w-full bg-white/[0.03] border border-white/5 rounded-[22px] px-5 py-4 pr-14 text-[16px] text-[#F2F1ED] placeholder:text-white/20 focus:outline-none focus:border-white/10 transition-colors resize-none min-h-[56px] max-h-[200px]"
+          rows={1}
+        />
+        <button 
+          onClick={handleSend}
+          disabled={!message.trim()}
+          className="absolute right-2 bottom-2 p-2 rounded-full bg-white/5 disabled:opacity-20 transition-all active:scale-90"
+        >
+          <img src="/icons/send.svg" className="w-6 h-6 invert" alt="Send" />
+        </button>
       </div>
-      <p className="mt-3 text-center text-[11px] leading-normal text-[#6A6965] px-4">
-        Хотя мы стараемся сделать ваш опыт общения лучше, это ИИ и он может ошибаться
-      </p>
     </div>
   );
 
   return (
-    <main className="relative h-dvh w-full bg-[#252422] font-sans antialiased overflow-hidden text-[#E8E6E3]">
-      <style jsx global>{`
-        @keyframes marquee-left { from { transform: translateX(0); } to { transform: translateX(-50%); } }
-        @keyframes marquee-right { from { transform: translateX(-50%); } to { transform: translateX(0); } }
-        .animate-marquee-left { animation: marquee-left linear infinite; }
-        .animate-marquee-right { animation: marquee-right linear infinite; }
-        .hide-scrollbar::-webkit-scrollbar { display: none; }
-        .hide-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
-      `}</style>
-
-      {/* Позиция иконки меню на старте 1-в-1 как в чате */}
-      {!chatStarted && (
-        <div className="absolute top-0 left-0 right-0 pt-4 px-8 py-2 flex items-center z-[100] max-w-[600px] mx-auto w-full">
-          <button 
-            onClick={() => setIsMenuOpen(true)}
-            className="p-1 active:scale-95 transition-transform opacity-40"
-          >
-            <img src="/icons/menu.svg" alt="Menu" className="w-[22px] h-[22px] invert" />
-          </button>
-        </div>
-      )}
-
-      <MenuDrawer 
-        open={isMenuOpen} 
-        onClose={() => setIsMenuOpen(false)} 
-        chats={chats}
-        currentChatId={currentChatId}
-        onSelectChat={selectChat}
-        onDeleteChat={deleteChat}
-        onOpenPlanner={() => {
-          setIsMenuOpen(false);
-          setIsPlannerOpen(true);
-        }}
-      />
-
+    <main className="fixed inset-0 bg-[#252422] text-[#F2F1ED] flex flex-col overflow-hidden font-sans">
       <AnimatePresence mode="wait">
         {!chatStarted ? (
           <motion.div 
-            key="start-screen"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-            className="absolute inset-0 flex flex-col items-center justify-center bg-[#252422] z-40"
+            key="start"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.98 }}
+            className="flex-1 flex flex-col"
           >
-            <div className="w-full max-w-[600px] mx-auto flex flex-col relative -mt-[4vh]">
-              <div className="w-full px-8 mb-8 flex flex-col items-start">
-                <img src="/icons/logo.PNG" alt="Logo" className="w-10 h-10 mb-6 opacity-90" />
-                <div className="space-y-0.5">
-                  <h2 className="text-[28px] leading-tight font-serif text-[#F2F1ED] tracking-tight">
-                    Привет, <span className="text-[#5FA86D]">{firstName}</span>
-                  </h2>
-                  <h1 className="text-[28px] leading-tight font-serif text-[#6A6965] tracking-tight">
-                    Как помочь тебе сегодня?
-                  </h1>
-                </div>
+            {/* Хедер стартового экрана */}
+            <div className="flex items-center justify-between px-6 py-4">
+              <button onClick={() => setIsMenuOpen(true)} className="p-2 -ml-2 active:scale-90 transition-transform">
+                <img src="/icons/menu.svg" className="w-6 h-6 invert" alt="Menu" />
+              </button>
+              <button onClick={handleNewChatClick} className="p-2 -mr-2 active:scale-90 transition-transform">
+                <img src="/icons/newchat.svg" className="w-6 h-6 invert" alt="New Chat" />
+              </button>
+            </div>
+
+            <div className="flex-1 flex flex-col items-center justify-center">
+              <div className="mb-8 flex flex-col items-center">
+                <motion.img 
+                  src="/icons/applogo.png" 
+                  className="w-20 h-20 mb-6"
+                  initial={{ rotate: -10, opacity: 0 }}
+                  animate={{ rotate: 0, opacity: 1 }}
+                />
+                <h1 className="text-[24px] font-medium tracking-tight text-center px-10">
+                  Привет, {tgUser?.first_name || 'Герой'}! <br/>
+                  <span className="opacity-40">Как помочь тебе сегодня?</span>
+                </h1>
               </div>
 
-              <div className="w-full space-y-1 mb-8 opacity-60">
+              {/* Бегущие строки */}
+              <div className="w-full space-y-2 mb-12">
                 {rows.map((row, i) => (
                   <PromptRow key={i} items={row.items} direction={row.dir} speed={row.speed} onPick={(t:string) => setMessage(t)} />
                 ))}
@@ -359,34 +218,37 @@ export function StartScreen() {
           </motion.div>
         ) : (
           <motion.div 
-            key="chat-screen"
+            key="chat"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.4 }}
-            className="absolute inset-0 flex flex-col z-50 bg-[#252422]"
+            className="flex-1 flex flex-col"
           >
-            <div className="flex-1 overflow-hidden flex flex-col relative">
+            <div className="flex-1 overflow-hidden relative">
               <ChatThread 
                 messages={messages} 
                 onNewChat={handleNewChatClick} 
                 onOpenMenu={() => setIsMenuOpen(true)}
-                onEditSubmit={handleEditMessage}
-                onRedo={handleRedoMessage}
+                currentUserHandle={tgUser?.username ? `@${tgUser.username}` : undefined}
+                onEditSubmit={(id, content) => {
+                  console.log("System: Редактирование сообщения", id);
+                  // Здесь логика замены сообщения
+                }}
+                onRedo={(id) => {
+                  console.log("System: Перегенерация для", id);
+                  // Здесь логика Redo
+                }}
               />
             </div>
             
-            <div className="w-full bg-[#252422] shrink-0">
+            <div className="bg-[#252422] border-t border-white/[0.02]">
               {inputAreaContent}
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Рендер планировщика поверх всего */}
-      {isPlannerOpen && (
-        <StartBoard onClose={() => setIsPlannerOpen(false)} />
-      )}
+      {/* Модалки */}
+      {isPlannerOpen && <StartBoard onClose={() => setIsPlannerOpen(false)} />}
     </main>
   );
 }
