@@ -3,7 +3,9 @@
 import { motion, AnimatePresence, useAnimation } from "framer-motion";
 import { useEffect, useState } from "react";
 import type { ChatMessage } from "./chat-thread";
-import PlanerIcon from "../../public/icons/planer"; // Импортируем твой .tsx компонент иконки
+
+// УДАЛЕНО: import PlanerIcon from "../../public/icons/planer"; 
+// В Next.js нельзя импортировать файлы из public через JS-import
 
 export type ChatSession = {
   id: string;
@@ -18,7 +20,7 @@ type MenuDrawerProps = {
   currentChatId: string | null;
   onSelectChat: (id: string) => void;
   onDeleteChat: (id: string) => void;
-  onOpenPlanner: () => void; // Добавляем проп для открытия планировщика
+  onOpenPlanner: () => void;
 };
 
 function ChatItem({ chat, isActive, onSelect, onDelete }: { chat: ChatSession, isActive: boolean, onSelect: () => void, onDelete: () => void }) {
@@ -103,15 +105,20 @@ export function MenuDrawer({ open, onClose, chats, currentChatId, onSelectChat, 
               </button>
             </div>
 
-            {/* НОВЫЙ БЛОК: ПЛАНИРОВЩИК */}
+            {/* БЛОК ПЛАНИРОВЩИКА С SVG ИЗ ПАПКИ PUBLIC */}
             <div className="px-4 mb-2 shrink-0">
               <button 
                 onClick={onOpenPlanner}
                 className="w-full bg-[#2D2C2A] rounded-xl px-4 py-3 flex items-center justify-between border border-white/5 active:scale-[0.98] transition-transform"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-6 h-6 opacity-80">
-                    <PlanerIcon />
+                  <div className="w-6 h-6 flex items-center justify-center">
+                    {/* Используем путь /icons/planner.svg напрямую */}
+                    <img 
+                      src="/icons/planner.svg" 
+                      alt="Planner" 
+                      className="w-full h-full opacity-80 invert" 
+                    />
                   </div>
                   <span className="text-[15px] text-[#F2F1ED] font-sans font-medium">Начать планировать</span>
                 </div>
