@@ -10,6 +10,7 @@ export type ChatMessage = {
   role: "user" | "assistant";
   content: string;
   isPlaceholder?: boolean;
+  isStreaming?: boolean; // Флаг для управления анимацией печати
 };
 
 type ChatThreadProps = {
@@ -22,7 +23,7 @@ type ChatThreadProps = {
   currentUserHandle?: string;
 };
 
-function AnimatedAIResponse({ text, onComplete }: { text: string; onComplete: () => void }) {
+function AnimatedAIResponse({ text, onComplete, skip }: { text: string; onComplete: () => void, skip?: boolean }) {
   const words = useMemo(() => text.split(" "), [text]);
   
   const wordAnim = {
@@ -33,6 +34,15 @@ function AnimatedAIResponse({ text, onComplete }: { text: string; onComplete: ()
       transition: { delay: Math.floor(i / 4) * 0.08, duration: 0.3, ease: "easeOut" }
     })
   };
+
+  // Если анимация не нужна (загрузка из истории), рендерим сразу статику
+  if (skip) {
+    return (
+      <div className="text-[#E8E6E3] text-[16px] leading-[1.65] font-serif">
+        {text}
+      </div>
+    );
+  }
 
   return (
     <motion.div 
@@ -62,17 +72,15 @@ export function ChatThread({
   onEditSubmit, 
   onRedo, 
   activeChatTitle,
-  currentUserHandle // Сюда должен приходить @username из Telegram
+  currentUserHandle 
 }: ChatThreadProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [chatTitle, setChatTitle] = useState("swgoh.ai");
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [isConsoleOpen, setIsConsoleOpen] = useState(false);
 
-  // СТРОГАЯ ПРОВЕРКА: консоль видна ТОЛЬКО админу
   const isAdmin = currentUserHandle === "@ya_admin7";
 
-  // Синхронизация заголовка с активным чатом
   useEffect(() => {
     if (activeChatTitle) {
       setChatTitle(activeChatTitle);
@@ -92,7 +100,6 @@ export function ChatThread({
 
   return (
     <div className="flex flex-col h-full w-full max-w-[600px] mx-auto relative pt-4">
-      {/* Кнопка консоли: Рендерим ТОЛЬКО если isAdmin === true */}
       {isAdmin && (
         <button 
           onClick={() => setIsConsoleOpen(true)}
@@ -154,10 +161,13 @@ export function ChatThread({
 function MessageItem({ message, onEditSubmit, onRedo }: { message: ChatMessage, onEditSubmit: (id: string, text: string) => void, onRedo: (id: string) => void }) {
   const isUser = message.role === "user";
   const [feedback, setFeedback] = useState<'like' | 'dislike' | null>(null);
-  const [isTypingComplete, setIsTypingComplete] = useState(false);
+  
+  // Если сообщение пришло с флагом isStreaming (новый ответ или перекрут), включаем анимацию.
+  // Если флага нет (загрузка из localStorage), считаем печать завершенной.
+  const [isTypingComplete, setIsTypingComplete] = useState(!message.isStreaming);
+  
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [copied, setCopied] = useState(false);
-  
   const [isEditingMode, setIsEditingMode] = useState(false);
   const [editValue, setEditValue] = useState(message.content);
 
@@ -179,7 +189,7 @@ function MessageItem({ message, onEditSubmit, onRedo }: { message: ChatMessage, 
       <MoreModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} content={message.content} />
 
       <motion.div
-        initial={{ opacity: 0, y: 10 }}
+        initial={message.isStreaming ? { opacity: 0, y: 10 } : { opacity: 1, y: 0 }}
         animate={{ opacity: 1, y: 0 }}
         className={`flex w-full ${isUser ? "justify-end" : "justify-start"}`}
       >
@@ -249,6 +259,7 @@ function MessageItem({ message, onEditSubmit, onRedo }: { message: ChatMessage, 
             <div className="flex flex-col w-full space-y-4 min-h-[100px]">
               <div className="relative w-7 h-7">
                  <AnimatePresence mode="wait">
+                  {/* ГИФКА играет только если печать еще идет (новое сообщение или реду) */}
                   {!isTypingComplete ? (
                     <motion.img 
                       key="gif"
@@ -278,13 +289,14 @@ function MessageItem({ message, onEditSubmit, onRedo }: { message: ChatMessage, 
                   <div className="w-full">
                     <AnimatedAIResponse 
                       text={message.content} 
-                      onComplete={() => setIsTypingComplete(true)} 
+                      onComplete={() => setIsTypingComplete(true)}
+                      skip={!message.isStreaming} // Пропускаем анимацию, если это старое сообщение
                     />
                   </div>
                   
                   {isTypingComplete && (
                     <motion.div 
-                      initial={{ opacity: 0 }}
+                      initial={message.isStreaming ? { opacity: 0 } : { opacity: 1 }}
                       animate={{ opacity: 1 }}
                       className="flex items-center gap-4 pt-1"
                     >
