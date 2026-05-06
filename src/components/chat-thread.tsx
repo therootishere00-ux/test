@@ -19,7 +19,7 @@ type ChatThreadProps = {
   onEditSubmit: (id: string, newContent: string) => void;
   onRedo: (id: string) => void;
   activeChatTitle?: string;
-  currentUserHandle?: string; // Передаем @ya_admin7 сюда
+  currentUserHandle?: string;
 };
 
 function AnimatedAIResponse({ text, onComplete }: { text: string; onComplete: () => void }) {
@@ -62,17 +62,23 @@ export function ChatThread({
   onEditSubmit, 
   onRedo, 
   activeChatTitle,
-  currentUserHandle = "@ya_admin7" // По умолчанию для теста
+  currentUserHandle // Сюда должен приходить @username из Telegram
 }: ChatThreadProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [chatTitle, setChatTitle] = useState("Новый чат");
+  const [chatTitle, setChatTitle] = useState("swgoh.ai");
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [isConsoleOpen, setIsConsoleOpen] = useState(false);
 
+  // СТРОГАЯ ПРОВЕРКА: консоль видна ТОЛЬКО админу
   const isAdmin = currentUserHandle === "@ya_admin7";
 
+  // Синхронизация заголовка с активным чатом
   useEffect(() => {
-    if (activeChatTitle) setChatTitle(activeChatTitle);
+    if (activeChatTitle) {
+      setChatTitle(activeChatTitle);
+    } else {
+      setChatTitle("swgoh.ai");
+    }
   }, [activeChatTitle]);
 
   useEffect(() => {
@@ -86,7 +92,7 @@ export function ChatThread({
 
   return (
     <div className="flex flex-col h-full w-full max-w-[600px] mx-auto relative pt-4">
-      {/* Кнопка консоли только для админа */}
+      {/* Кнопка консоли: Рендерим ТОЛЬКО если isAdmin === true */}
       {isAdmin && (
         <button 
           onClick={() => setIsConsoleOpen(true)}
@@ -107,17 +113,17 @@ export function ChatThread({
           {isEditingTitle ? (
             <input
               autoFocus
-              maxLength={15}
+              maxLength={20}
               value={chatTitle}
               onChange={(e) => setChatTitle(e.target.value)}
               onBlur={() => setIsEditingTitle(false)}
               onKeyDown={(e) => e.key === "Enter" && setIsEditingTitle(false)}
-              className="bg-black/20 text-[14px] text-[#F2F1ED] font-sans text-center border-none outline-none rounded-md px-2 py-0.5 w-full max-w-[140px]"
+              className="bg-black/20 text-[14px] text-[#F2F1ED] font-sans text-center border-none outline-none rounded-md px-2 py-0.5 w-full max-w-[160px]"
             />
           ) : (
             <span 
               onClick={() => setIsEditingTitle(true)}
-              className="text-[14px] text-[#F2F1ED] font-sans truncate cursor-pointer"
+              className="text-[14px] text-[#F2F1ED] font-sans truncate cursor-pointer font-medium"
             >
               {chatTitle}
             </span>
@@ -185,13 +191,13 @@ function MessageItem({ message, onEditSubmit, onRedo }: { message: ChatMessage, 
                   <textarea
                     value={editValue}
                     onChange={(e) => setEditValue(e.target.value)}
-                    className="bg-[#2D2C2A] rounded-[20px] px-4 py-3 w-full shadow-sm text-[16px] leading-relaxed whitespace-pre-wrap font-serif text-[#F2F1ED] outline-none resize-none min-h-[120px] focus:border-white/10 border border-transparent"
+                    className="bg-[#2D2C2A] rounded-[20px] px-4 py-3 w-full shadow-sm text-[16px] leading-relaxed whitespace-pre-wrap font-serif text-[#F2F1ED] outline-none resize-none min-h-[120px] border border-white/5"
                     autoFocus
                   />
                   <div className="flex gap-2 w-full mt-2">
                     <button 
                       onClick={() => { setIsEditingMode(false); setEditValue(message.content); }} 
-                      className="flex-1 bg-[#2D2C2A] text-[#F2F1ED] opacity-80 py-2 rounded-[14px] text-[14px] font-sans active:scale-95 transition-transform"
+                      className="flex-1 bg-[#2D2C2A] text-[#F2F1ED] opacity-60 py-2 rounded-[14px] text-[14px] font-sans active:scale-95 transition-transform"
                     >
                       Отмена
                     </button>
@@ -199,7 +205,7 @@ function MessageItem({ message, onEditSubmit, onRedo }: { message: ChatMessage, 
                       onClick={handleEditConfirm} 
                       className="flex-1 bg-[#5FA86D] text-[#252422] font-medium py-2 rounded-[14px] text-[14px] font-sans active:scale-95 transition-transform"
                     >
-                      Отправить
+                      Готово
                     </button>
                   </div>
                 </div>
