@@ -1,25 +1,32 @@
+// Заставляем Vercel ВСЕГДА проверять переменные при каждом запросе
 export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs'; // Явно указываем стандартную среду выполнения
 
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
+  console.log("--- NEW REQUEST ---");
+  
   try {
-    const { messages } = await req.json();
-    
-    // Проверяем, видит ли сервер переменную после билда
-    const rawKey = process.env.GROQ_API;
+    const body = await req.json();
+    const messages = body.messages || [];
 
-    if (!rawKey) {
-      console.error("❌ СЕРВЕР: GROQ_API всё еще undefined. Требуется Redeploy!");
+    // Попытка достать ключ
+    const apiKey = process.env.GROQ_API;
+
+    // ЛОГ ДЛЯ ТВОЕЙ КОНСОЛИ (мы увидим это в AdminConsole)
+    if (!apiKey) {
+      console.error("DEBUG: process.env.GROQ_API is EMPTY");
       return NextResponse.json({ 
-        error: "Ключ GROQ_API не найден. Убедись, что сделал Redeploy после добавления переменной." 
+        error: `Ключ не найден. Текущие ключи: ${Object.keys(process.env).filter(k => k.includes('API')).join(', ')}` 
       }, { status: 500 });
     }
 
-    const cleanKey = rawKey.replace(/['"]+/g, '').trim();
-    console.log("✅ СЕРВЕР: Ключ найден, отправляем запрос в Groq");
+    const cleanKey = apiKey.replace(/['"]+/g, '').trim();
+    
+    console.log("DEBUG: Sending to Groq...");
 
-    const response = await fetch("https://api.api.groq.com/openai/v1/chat/completions", {
+    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${cleanKey}`,
@@ -28,27 +35,24 @@ export async function POST(req: Request) {
       body: JSON.stringify({
         model: "llama-3.3-70b-versatile",
         messages: [
-          { role: "system", content: "Ты — swgoh.ai. Отвечай кратко, как эксперт." },
+          { role: "system", content: "Ты — swgoh.ai. Отвечай кратко." },
           ...messages
         ],
-        temperature: 0.7,
-        max_tokens: 2048
+        temperature: 0.7
       })
     });
 
     const data = await response.json();
 
     if (!response.ok) {
-      console.error("❌ GROQ API Error:", data);
-      return NextResponse.json({ 
-        error: data.error?.message || `Groq Error: ${response.status}` 
-      }, { status: response.status });
+      console.error("DEBUG: Groq Error Status:", response.status);
+      return NextResponse.json({ error: data.error?.message || "Groq API Error" }, { status: response.status });
     }
 
     return NextResponse.json({ content: data.choices[0].message.content });
 
   } catch (error: any) {
-    console.error("❌ CRITICAL ERROR:", error);
-    return NextResponse.json({ error: "Внутренняя ошибка сервера." }, { status: 500 });
+    console.error("DEBUG: Catch Block:", error.message);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
