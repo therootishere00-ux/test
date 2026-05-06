@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useMemo } from "react";
 import { ChatThread, type ChatMessage } from "@/components/chat-thread";
 import { MenuDrawer, type ChatSession } from "@/components/menu-drawer";
 import { motion, AnimatePresence } from "framer-motion";
+import StartBoard from "../planner/start-board"; // Импорт планировщика
 
 const PromptRow = ({ items, direction, speed, onPick }: any) => {
   const scrollClass = direction === 'left' ? 'animate-marquee-left' : 'animate-marquee-right';
@@ -28,6 +29,7 @@ export function StartScreen() {
   const [message, setMessage] = useState("");
   const [chatStarted, setChatStarted] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isPlannerOpen, setIsPlannerOpen] = useState(false); // Состояние планировщика
   
   // Логика истории чатов
   const [chats, setChats] = useState<ChatSession[]>([]);
@@ -317,6 +319,10 @@ export function StartScreen() {
         currentChatId={currentChatId}
         onSelectChat={selectChat}
         onDeleteChat={deleteChat}
+        onOpenPlanner={() => {
+          setIsMenuOpen(false);
+          setIsPlannerOpen(true);
+        }}
       />
 
       <AnimatePresence mode="wait">
@@ -376,6 +382,11 @@ export function StartScreen() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Рендер планировщика поверх всего */}
+      {isPlannerOpen && (
+        <StartBoard onClose={() => setIsPlannerOpen(false)} />
+      )}
     </main>
   );
 }
