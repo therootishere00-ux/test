@@ -35,22 +35,22 @@ export function StartScreen() {
   
   const abortCtrl = useRef<AbortController | null>(null);
 
-  // Инициализация Telegram WebApp
+  // TMA: Инициализация и получение данных пользователя
   useEffect(() => {
     if (typeof window !== "undefined" && window.Telegram?.WebApp) {
       const webapp = window.Telegram.WebApp;
       webapp.ready();
       webapp.expand();
-      webapp.setHeaderColor('#252422');
+      webapp.setHeaderColor('#252422'); // Цвет шапки как фон
       if (webapp.initDataUnsafe?.user) {
         setTgUser(webapp.initDataUnsafe.user);
-        console.log("TMA: Пользователь загружен", webapp.initDataUnsafe.user.first_name);
+        console.log("TMA User loaded:", webapp.initDataUnsafe.user.first_name);
       }
     }
   }, []);
 
   const fetchAI = async (currentMessages: ChatMessage[]) => {
-    console.log("SYSTEM: Подготовка запроса к AI...");
+    console.log("System: Starting AI fetch...");
     abortCtrl.current = new AbortController();
     
     try {
@@ -63,19 +63,16 @@ export function StartScreen() {
         signal: abortCtrl.current.signal
       });
 
-      console.log(`SYSTEM: API ответ получен, статус: ${res.status}`);
-
       if (!res.ok) {
         const errData = await res.json();
-        throw new Error(errData.error || `Status ${res.status}`);
+        throw new Error(errData.error || res.status.toString());
       }
 
       const data = await res.json();
-      console.log("SYSTEM: Ответ успешно расшифрован");
-
+      
       setMessages(prev => {
         const last = prev[prev.length - 1];
-        if (last?.isPlaceholder) {
+        if (last && last.isPlaceholder) {
           return [...prev.slice(0, -1), { id: Date.now().toString(), role: 'assistant', content: data.content }];
         }
         return prev;
@@ -83,8 +80,9 @@ export function StartScreen() {
 
     } catch (error: any) {
       if (error.name === 'AbortError') return;
-      console.error("AI ERROR:", error.message);
+      console.error("Fetch error:", error);
       
+      // Вывод ошибки по твоему шаблону
       setMessages(prev => {
         const filtered = prev.filter(m => !m.isPlaceholder);
         return [...filtered, { 
@@ -96,11 +94,11 @@ export function StartScreen() {
     }
   };
 
-  const handleSend = async () => {
-    if (!message.trim()) return;
+  const handleSend = async (customText?: string) => {
+    const textToSend = customText || message;
+    if (!textToSend.trim()) return;
     
-    console.log("USER: Отправка сообщения:", message);
-    const userMsg: ChatMessage = { id: Date.now().toString(), role: 'user', content: message };
+    const userMsg: ChatMessage = { id: Date.now().toString(), role: 'user', content: textToSend };
     const placeholderMsg: ChatMessage = { id: 'loading', role: 'assistant', content: '...', isPlaceholder: true };
     
     const newMessages = [...messages, userMsg];
@@ -111,8 +109,31 @@ export function StartScreen() {
     await fetchAI(newMessages);
   };
 
+  // Редактирование сообщения
+  const handleEditMessage = async (id: string, newContent: string) => {
+    const index = messages.findIndex(m => m.id === id);
+    if (index === -1) return;
+    
+    const updatedMessages = messages.slice(0, index);
+    setMessages(updatedMessages);
+    await handleSend(newContent);
+  };
+
+  // Переотправка последнего запроса
+  const handleRedoMessage = async (id: string) => {
+    const index = messages.findIndex(m => m.id === id);
+    if (index === -1) return;
+
+    // Находим последнее сообщение пользователя перед этим ответом
+    const lastUserMsg = [...messages.slice(0, index)].reverse().find(m => m.role === 'user');
+    if (lastUserMsg) {
+      const updatedMessages = messages.slice(0, messages.indexOf(lastUserMsg));
+      setMessages(updatedMessages);
+      await handleSend(lastUserMsg.content);
+    }
+  };
+
   const handleNewChatClick = () => {
-    console.log("SYSTEM: Очистка чата");
     setMessages([]);
     setChatStarted(false);
   };
@@ -139,7 +160,7 @@ export function StartScreen() {
           rows={1}
         />
         <button 
-          onClick={handleSend}
+          onClick={() => handleSend()}
           className="bg-[#5FA86D] p-2.5 rounded-xl active:scale-90 transition-transform flex-shrink-0"
         >
           <img src="/icons/send.svg" className="w-5 h-5 invert" alt="Send" />
@@ -168,7 +189,7 @@ export function StartScreen() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="flex-1 flex flex-col items-center justify-center relative"
+            className="flex-1 flex flex-col items-center justify-center"
           >
             <div className="w-full flex flex-col items-center px-6">
               <div className="mb-8 flex flex-col items-center">
@@ -197,7 +218,13 @@ export function StartScreen() {
             className="flex-1 flex flex-col min-h-0 bg-[#252422]"
           >
             <div className="flex-1 overflow-hidden relative">
-              <ChatThread messages={messages} onNewChat={handleNewChatClick} onOpenMenu={() => setIsMenuOpen(true)} onEditSubmit={() => {}} onRedo={() => {}} />
+              <ChatThread 
+                messages={messages} 
+                onNewChat={handleNewChatClick} 
+                onOpenMenu={() => setIsMenuOpen(true)}
+                onEditSubmit={handleEditMessage}
+                onRedo={handleRedoMessage}
+              />
             </div>
             <div className="w-full bg-[#252422]">{inputAreaContent}</div>
           </motion.div>
@@ -212,6 +239,7 @@ export function StartScreen() {
         onSelectChat={() => {}} 
         onDeleteChat={() => {}} 
         onOpenPlanner={() => setIsPlannerOpen(true)}
+        tgUser={tgUser} // Передаем данные пользователя
       />
       
       {isPlannerOpen && <StartBoard onClose={() => setIsPlannerOpen(false)} />}
