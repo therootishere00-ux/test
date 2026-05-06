@@ -4,17 +4,17 @@ export async function POST(req: Request) {
   try {
     const { messages } = await req.json();
     
-    // Берем ключ из новой переменной GROQ_API
-    const rawKey = process.env.GROQ_API;
+    // Проверяем оба возможных названия переменной
+    const rawKey = process.env.GROQ_API || process.env.GROQ_API_KEY;
 
     if (!rawKey) {
-      console.error("Environment variable GROQ_API is missing");
+      console.error("Критическая ошибка: Ключ API не найден в process.env");
       return NextResponse.json({ 
-        error: "Ключ GROQ_API не найден в настройках Vercel. Проверь раздел Environment Variables." 
+        error: "Ключ (GROQ_API или GROQ_API_KEY) не найден в настройках Vercel. Добавь его и сделай Redeploy." 
       }, { status: 500 });
     }
 
-    // Очищаем ключ от пробелов, кавычек и возможных невидимых символов
+    // Очистка ключа от лишних символов
     const cleanKey = rawKey.replace(/['"]+/g, '').trim();
 
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -37,17 +37,16 @@ export async function POST(req: Request) {
     const data = await response.json();
 
     if (!response.ok) {
-      console.error("Groq API Error Response:", data);
-      // Пробрасываем конкретную ошибку от Groq, чтобы понимать причину
+      console.error("Ошибка Groq API:", data);
       return NextResponse.json({ 
-        error: data.error?.message || `Groq Error: ${response.status}` 
+        error: data.error?.message || `Ошибка API: ${response.status}` 
       }, { status: response.status });
     }
 
     return NextResponse.json({ content: data.choices[0].message.content });
 
   } catch (error: any) {
-    console.error("Internal Server Error:", error);
-    return NextResponse.json({ error: "Ошибка на стороне сервера. Попробуй позже." }, { status: 500 });
+    console.error("Ошибка в route.ts:", error);
+    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
   }
 }
