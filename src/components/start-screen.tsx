@@ -37,20 +37,18 @@ export function StartScreen() {
 
   // TMA: Инициализация и получение данных пользователя
   useEffect(() => {
-    if (typeof window !== "undefined" && window.Telegram?.WebApp) {
-      const webapp = window.Telegram.WebApp;
+    if (typeof window !== "undefined" && (window as any).Telegram?.WebApp) {
+      const webapp = (window as any).Telegram.WebApp; // Добавлено (window as any) для фикса ошибки билда
       webapp.ready();
       webapp.expand();
-      webapp.setHeaderColor('#252422'); // Цвет шапки как фон
+      webapp.setHeaderColor('#252422'); 
       if (webapp.initDataUnsafe?.user) {
         setTgUser(webapp.initDataUnsafe.user);
-        console.log("TMA User loaded:", webapp.initDataUnsafe.user.first_name);
       }
     }
   }, []);
 
   const fetchAI = async (currentMessages: ChatMessage[]) => {
-    console.log("System: Starting AI fetch...");
     abortCtrl.current = new AbortController();
     
     try {
@@ -80,9 +78,6 @@ export function StartScreen() {
 
     } catch (error: any) {
       if (error.name === 'AbortError') return;
-      console.error("Fetch error:", error);
-      
-      // Вывод ошибки по твоему шаблону
       setMessages(prev => {
         const filtered = prev.filter(m => !m.isPlaceholder);
         return [...filtered, { 
@@ -109,22 +104,17 @@ export function StartScreen() {
     await fetchAI(newMessages);
   };
 
-  // Редактирование сообщения
   const handleEditMessage = async (id: string, newContent: string) => {
     const index = messages.findIndex(m => m.id === id);
     if (index === -1) return;
-    
     const updatedMessages = messages.slice(0, index);
     setMessages(updatedMessages);
     await handleSend(newContent);
   };
 
-  // Переотправка последнего запроса
   const handleRedoMessage = async (id: string) => {
     const index = messages.findIndex(m => m.id === id);
     if (index === -1) return;
-
-    // Находим последнее сообщение пользователя перед этим ответом
     const lastUserMsg = [...messages.slice(0, index)].reverse().find(m => m.role === 'user');
     if (lastUserMsg) {
       const updatedMessages = messages.slice(0, messages.indexOf(lastUserMsg));
@@ -171,7 +161,6 @@ export function StartScreen() {
 
   return (
     <main className="fixed inset-0 bg-[#252422] flex flex-col overflow-hidden">
-      {/* Header */}
       <div className="flex items-center justify-between px-6 h-[64px] shrink-0 z-[60]">
         <button onClick={() => setIsMenuOpen(true)} className="p-2 -ml-2 active:scale-90 transition-transform">
           <img src="/icons/menu.svg" className="w-6 h-6 invert opacity-60" alt="Menu" />
@@ -239,7 +228,7 @@ export function StartScreen() {
         onSelectChat={() => {}} 
         onDeleteChat={() => {}} 
         onOpenPlanner={() => setIsPlannerOpen(true)}
-        tgUser={tgUser} // Передаем данные пользователя
+        tgUser={tgUser}
       />
       
       {isPlannerOpen && <StartBoard onClose={() => setIsPlannerOpen(false)} />}
