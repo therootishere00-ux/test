@@ -1,22 +1,26 @@
+export const dynamic = 'force-dynamic'; // Отключаем кэширование, заставляем Vercel обрабатывать каждый запрос
+
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
+  console.log("🚀 [POST /api/chat] Входящий запрос получен"); // Теперь это появится в логах Vercel
+
   try {
-    const { messages } = await req.json();
-    
-    // Проверяем оба возможных названия переменной
-    const rawKey = process.env.GROQ_API || process.env.GROQ_API_KEY;
+    const body = await req.json();
+    console.log(`📦 Тело запроса обработано. Сообщений: ${body.messages?.length || 0}`);
+
+    const rawKey = process.env.GROQ_API;
 
     if (!rawKey) {
-      console.error("Критическая ошибка: Ключ API не найден в process.env");
+      console.error("❌ ВНИМАНИЕ: Переменная GROQ_API отсутствует в Vercel!");
       return NextResponse.json({ 
-        error: "Ключ (GROQ_API или GROQ_API_KEY) не найден в настройках Vercel. Добавь его и сделай Redeploy." 
+        error: "Ключ GROQ_API не найден в настройках Vercel. Проверь раздел Environment Variables." 
       }, { status: 500 });
     }
 
-    // Очистка ключа от лишних символов
     const cleanKey = rawKey.replace(/['"]+/g, '').trim();
 
+    console.log("🌐 Отправка запроса к серверам Groq...");
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -27,7 +31,7 @@ export async function POST(req: Request) {
         model: "llama-3.3-70b-versatile",
         messages: [
           { role: "system", content: "Ты — swgoh.ai. Отвечай кратко, как эксперт." },
-          ...messages
+          ...body.messages
         ],
         temperature: 0.7,
         max_tokens: 2048
@@ -37,16 +41,17 @@ export async function POST(req: Request) {
     const data = await response.json();
 
     if (!response.ok) {
-      console.error("Ошибка Groq API:", data);
+      console.error("❌ Ошибка от API Groq:", data);
       return NextResponse.json({ 
-        error: data.error?.message || `Ошибка API: ${response.status}` 
+        error: data.error?.message || `Groq Error: ${response.status}` 
       }, { status: response.status });
     }
 
+    console.log("✅ Успешный ответ от Groq сгенерирован");
     return NextResponse.json({ content: data.choices[0].message.content });
 
   } catch (error: any) {
-    console.error("Ошибка в route.ts:", error);
-    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
+    console.error("❌ Внутренняя ошибка сервера:", error);
+    return NextResponse.json({ error: "Ошибка на стороне сервера. Попробуй позже." }, { status: 500 });
   }
 }
