@@ -10,7 +10,6 @@ export type ChatMessage = {
   role: "user" | "assistant";
   content: string;
   isPlaceholder?: boolean;
-  isStreaming?: boolean; // Ключевой флаг для анимации
 };
 
 type ChatThreadProps = {
@@ -23,7 +22,7 @@ type ChatThreadProps = {
   currentUserHandle?: string;
 };
 
-function AnimatedAIResponse({ text, onComplete, skip }: { text: string; onComplete: () => void, skip?: boolean }) {
+function AnimatedAIResponse({ text, onComplete }: { text: string; onComplete: () => void }) {
   const words = useMemo(() => text.split(" "), [text]);
   
   const wordAnim = {
@@ -34,14 +33,6 @@ function AnimatedAIResponse({ text, onComplete, skip }: { text: string; onComple
       transition: { delay: Math.floor(i / 4) * 0.08, duration: 0.3, ease: "easeOut" }
     })
   };
-
-  if (skip) {
-    return (
-      <div className="text-[#E8E6E3] text-[16px] leading-[1.65] font-serif">
-        {text}
-      </div>
-    );
-  }
 
   return (
     <motion.div 
@@ -71,22 +62,24 @@ export function ChatThread({
   onEditSubmit, 
   onRedo, 
   activeChatTitle,
-  currentUserHandle 
+  currentUserHandle // Сюда должен приходить @username из Telegram
 }: ChatThreadProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [chatTitle, setChatTitle] = useState("swgoh.ai");
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [isConsoleOpen, setIsConsoleOpen] = useState(false);
 
+  // СТРОГАЯ ПРОВЕРКА: консоль видна ТОЛЬКО админу
   const isAdmin = currentUserHandle === "@ya_admin7";
 
+  // Синхронизация заголовка с активным чатом
   useEffect(() => {
     if (activeChatTitle) {
       setChatTitle(activeChatTitle);
-    } else if (messages.length === 0) {
+    } else {
       setChatTitle("swgoh.ai");
     }
-  }, [activeChatTitle, messages.length]);
+  }, [activeChatTitle]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -99,6 +92,7 @@ export function ChatThread({
 
   return (
     <div className="flex flex-col h-full w-full max-w-[600px] mx-auto relative pt-4">
+      {/* Кнопка консоли: Рендерим ТОЛЬКО если isAdmin === true */}
       {isAdmin && (
         <button 
           onClick={() => setIsConsoleOpen(true)}
@@ -160,12 +154,10 @@ export function ChatThread({
 function MessageItem({ message, onEditSubmit, onRedo }: { message: ChatMessage, onEditSubmit: (id: string, text: string) => void, onRedo: (id: string) => void }) {
   const isUser = message.role === "user";
   const [feedback, setFeedback] = useState<'like' | 'dislike' | null>(null);
-  
-  // Если сообщение стримится (новое или перекрут) — ждем анимацию. Если нет — сразу финиш.
-  const [isTypingComplete, setIsTypingComplete] = useState(!message.isStreaming);
-  
+  const [isTypingComplete, setIsTypingComplete] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  
   const [isEditingMode, setIsEditingMode] = useState(false);
   const [editValue, setEditValue] = useState(message.content);
 
@@ -177,12 +169,17 @@ function MessageItem({ message, onEditSubmit, onRedo }: { message: ChatMessage, 
     setTimeout(() => setCopied(false), 1700);
   };
 
+  const handleEditConfirm = () => {
+    setIsEditingMode(false);
+    onEditSubmit(message.id, editValue);
+  };
+
   return (
     <>
       <MoreModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} content={message.content} />
 
       <motion.div
-        initial={message.isStreaming ? { opacity: 0, y: 10 } : { opacity: 1, y: 0 }}
+        initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         className={`flex w-full ${isUser ? "justify-end" : "justify-start"}`}
       >
@@ -205,7 +202,7 @@ function MessageItem({ message, onEditSubmit, onRedo }: { message: ChatMessage, 
                       Отмена
                     </button>
                     <button 
-                      onClick={() => { setIsEditingMode(false); onEditSubmit(message.id, editValue); }} 
+                      onClick={handleEditConfirm} 
                       className="flex-1 bg-[#5FA86D] text-[#252422] font-medium py-2 rounded-[14px] text-[14px] font-sans active:scale-95 transition-transform"
                     >
                       Готово
@@ -219,22 +216,28 @@ function MessageItem({ message, onEditSubmit, onRedo }: { message: ChatMessage, 
                       <p className={`text-[16px] leading-relaxed whitespace-pre-wrap font-serif text-[#F2F1ED] opacity-90 text-left ${isLong ? 'max-h-[105px] overflow-hidden' : ''}`}>
                         {message.content}
                       </p>
-                      {isLong && <div className="absolute bottom-0 left-0 right-0 h-[40px] bg-gradient-to-t from-[#2D2C2A] to-transparent" />}
+                      {isLong && (
+                        <div className="absolute bottom-0 left-0 right-0 h-[40px] bg-gradient-to-t from-[#2D2C2A] to-transparent pointer-events-none" />
+                      )}
                     </div>
                   </div>
+                  
                   <div className="flex justify-end gap-4 mt-2 pr-2 opacity-40">
                     {isLong ? (
-                      <button onClick={() => setIsModalOpen(true)} className="flex items-center gap-1.5 active:scale-95 transition-transform">
+                      <button 
+                        onClick={() => setIsModalOpen(true)}
+                        className="flex items-center gap-1.5 active:scale-95 transition-transform"
+                      >
                         <span className="text-[13px] font-sans text-[#F2F1ED]">Больше</span>
-                        <img src="/icons/more.svg" alt="" className="w-[16px] h-[16px] invert" />
+                        <img src="/icons/more.svg" alt="More" className="w-[16px] h-[16px] invert" />
                       </button>
                     ) : (
                       <>
                         <button onClick={() => setIsEditingMode(true)} className="active:scale-95 transition-transform">
-                          <img src="/icons/edit.svg" alt="" className="w-[18px] h-[18px] invert" />
+                          <img src="/icons/edit.svg" alt="Edit" className="w-[18px] h-[18px] invert" />
                         </button>
                         <button onClick={handleCopy} className="active:scale-95 transition-transform">
-                          <img src={copied ? "/icons/tick.svg" : "/icons/copy.svg"} alt="" className="w-[18px] h-[18px] invert" />
+                          <img src={copied ? "/icons/tick.svg" : "/icons/copy.svg"} alt="Copy" className="w-[18px] h-[18px] invert" />
                         </button>
                       </>
                     )}
@@ -275,35 +278,54 @@ function MessageItem({ message, onEditSubmit, onRedo }: { message: ChatMessage, 
                   <div className="w-full">
                     <AnimatedAIResponse 
                       text={message.content} 
-                      onComplete={() => setIsTypingComplete(true)}
-                      skip={!message.isStreaming}
+                      onComplete={() => setIsTypingComplete(true)} 
                     />
                   </div>
                   
                   {isTypingComplete && (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-4 pt-1">
+                    <motion.div 
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="flex items-center gap-4 pt-1"
+                    >
                       <div className="flex items-center gap-4">
                         <div className="flex items-center gap-4 opacity-40">
-                          <button onClick={() => { setIsTypingComplete(false); onRedo(message.id); }} className="active:scale-95 transition-transform">
-                            <img src="/icons/redo.svg" alt="" className="w-[18px] h-[18px] invert" />
+                          <button onClick={() => onRedo(message.id)} className="active:scale-95 transition-transform">
+                            <img src="/icons/redo.svg" alt="Redo" className="w-[18px] h-[18px] invert" />
                           </button>
                           <button onClick={handleCopy} className="active:scale-95 transition-transform">
-                            <img src={copied ? "/icons/tick.svg" : "/icons/copy.svg"} alt="" className="w-[18px] h-[18px] invert" />
+                            <img src={copied ? "/icons/tick.svg" : "/icons/copy.svg"} alt="Copy" className="w-[18px] h-[18px] invert" />
                           </button>
                         </div>
+
                         <button 
                           onClick={() => setFeedback(feedback === 'like' ? null : 'like')} 
                           className="active:scale-95 transition-transform"
                           style={{ opacity: feedback === 'like' ? 1 : 0.4 }}
                         >
-                          <img src="/icons/like.svg" className="w-[18px] h-[18px]" style={{ filter: feedback === 'like' ? 'invert(58%) sepia(13%) saturate(1067%) hue-rotate(82deg) brightness(96%) contrast(87%)' : 'invert(1)' }} />
+                          <img 
+                            src="/icons/like.svg" 
+                            className="w-[18px] h-[18px]"
+                            style={{ 
+                                filter: feedback === 'like' ? 'invert(58%) sepia(13%) saturate(1067%) hue-rotate(82deg) brightness(96%) contrast(87%)' : 'invert(1)'
+                            }}
+                          />
                         </button>
                         <button 
-                          onClick={() => { setFeedback('dislike'); window.open('https://t.me/swgohbugbot', '_blank'); }} 
+                          onClick={() => {
+                            setFeedback('dislike');
+                            window.open('https://t.me/swgohbugbot', '_blank');
+                          }} 
                           className="active:scale-95 transition-transform"
                           style={{ opacity: feedback === 'dislike' ? 1 : 0.4 }}
                         >
-                          <img src="/icons/dislike.svg" className="w-[18px] h-[18px]" style={{ filter: feedback === 'dislike' ? 'invert(58%) sepia(13%) saturate(1067%) hue-rotate(82deg) brightness(96%) contrast(87%)' : 'invert(1)' }} />
+                          <img 
+                            src="/icons/dislike.svg" 
+                            className="w-[18px] h-[18px]"
+                            style={{ 
+                                filter: feedback === 'dislike' ? 'invert(58%) sepia(13%) saturate(1067%) hue-rotate(82deg) brightness(96%) contrast(87%)' : 'invert(1)'
+                            }}
+                          />
                         </button>
                       </div>
                     </motion.div>
