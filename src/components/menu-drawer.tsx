@@ -18,6 +18,7 @@ type MenuDrawerProps = {
   onSelectChat: (id: string) => void;
   onDeleteChat: (id: string) => void;
   onOpenPlanner: () => void;
+  onNewChat: () => void;
 };
 
 function ChatItem({ chat, isActive, onSelect, onDelete }: { chat: ChatSession, isActive: boolean, onSelect: () => void, onDelete: () => void }) {
@@ -68,7 +69,7 @@ function ChatItem({ chat, isActive, onSelect, onDelete }: { chat: ChatSession, i
   );
 }
 
-export function MenuDrawer({ open, onClose, chats, currentChatId, onSelectChat, onDeleteChat, onOpenPlanner }: MenuDrawerProps) {
+export function MenuDrawer({ open, onClose, chats, currentChatId, onSelectChat, onDeleteChat, onOpenPlanner, onNewChat }: MenuDrawerProps) {
   const [tgUser, setTgUser] = useState<any>(null);
 
   useEffect(() => {
@@ -108,21 +109,31 @@ export function MenuDrawer({ open, onClose, chats, currentChatId, onSelectChat, 
               </button>
             </div>
 
-            <div className="px-4 mb-2 shrink-0">
-              <button 
-                onClick={onOpenPlanner}
-                className="w-full bg-[#2D2C2A] rounded-xl px-4 py-3 flex items-center justify-between border border-white/5 active:scale-[0.98] transition-transform"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-6 h-6 opacity-80">
-                    <img src="/icons/planner.svg" alt="Planner" className="w-full h-full invert" />
+            <div className="px-4 mb-4 shrink-0">
+              <div className="w-full bg-[#2D2C2A] rounded-2xl p-1 flex flex-col overflow-hidden">
+                <button 
+                  onClick={() => { onNewChat(); onClose(); }}
+                  className="w-full px-4 py-3 flex items-center gap-3 active:bg-white/5 transition-colors"
+                >
+                  <img src="/icons/newchat.svg" className="w-[22px] h-[22px] invert opacity-40" alt="New" />
+                  <span className="text-[14px] text-[#F2F1ED] font-sans font-medium">Новый чат</span>
+                </button>
+                
+                <div className="mx-4 border-t border-white/[0.03]" />
+
+                <button 
+                  onClick={() => { onOpenPlanner(); onClose(); }}
+                  className="w-full px-4 py-3 flex items-center justify-between active:bg-white/5 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <img src="/icons/planner.svg" className="w-[22px] h-[22px] invert opacity-40" alt="Planner" />
+                    <span className="text-[14px] text-[#F2F1ED] font-sans font-medium">Начать планировать</span>
                   </div>
-                  <span className="text-[15px] text-[#F2F1ED] font-sans font-medium">Начать планировать</span>
-                </div>
-                <div className="px-2 py-0.5 rounded-md bg-[#5FA86D]/10 border border-[#5FA86D]/20">
-                  <span className="text-[10px] text-[#5FA86D] font-bold uppercase tracking-wider">Новое</span>
-                </div>
-              </button>
+                  <div className="px-2 py-0.5 rounded-md bg-[#5FA86D]/[0.65]">
+                    <span className="text-[10px] text-[#5FA86D] font-bold uppercase tracking-wider brightness-[200%]">Новинка</span>
+                  </div>
+                </button>
+              </div>
             </div>
 
             <div className="flex-1 overflow-y-auto overflow-x-hidden hide-scrollbar py-2 flex flex-col gap-2 px-4">
