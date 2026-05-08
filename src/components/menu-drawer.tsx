@@ -118,8 +118,6 @@ export function MenuDrawer({ open, onClose, chats, currentChatId, onSelectChat, 
                   <img src="/icons/newchat.svg" className="w-[22px] h-[22px] invert opacity-40" alt="New" />
                   <span className="text-[14px] text-[#F2F1ED] font-sans font-medium">Новый чат</span>
                 </button>
-                
-                <div className="mx-4 border-t border-white/[0.03]" />
 
                 <button 
                   onClick={() => { onOpenPlanner(); onClose(); }}
@@ -127,10 +125,10 @@ export function MenuDrawer({ open, onClose, chats, currentChatId, onSelectChat, 
                 >
                   <div className="flex items-center gap-3">
                     <img src="/icons/planner.svg" className="w-[22px] h-[22px] invert opacity-40" alt="Planner" />
-                    <span className="text-[14px] text-[#F2F1ED] font-sans font-medium">Начать планировать</span>
+                    <span className="text-[14px] text-[#F2F1ED] font-sans font-medium">План пачек</span>
                   </div>
-                  <div className="px-2 py-0.5 rounded-md bg-[#5FA86D]/[0.65]">
-                    <span className="text-[10px] text-[#5FA86D] font-bold uppercase tracking-wider brightness-[200%]">Новинка</span>
+                  <div className="px-2.5 py-0.5 rounded-full bg-[#5FA86D]/[0.65] flex items-center justify-center">
+                    <span className="text-[10px] text-[#5FA86D] font-bold tracking-tight leading-none brightness-[200%]">Новинка</span>
                   </div>
                 </button>
               </div>
