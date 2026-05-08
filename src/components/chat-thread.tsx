@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MoreModal } from "@/components/more";
 import { AdminConsole } from "@/components/admin-console";
+import ReactMarkdown from "react-markdown";
 
 export type ChatMessage = {
   id: string;
@@ -39,18 +40,11 @@ function AnimatedAIResponse({ text, onComplete }: { text: string; onComplete: ()
       initial="hidden" 
       animate="visible"
       onAnimationComplete={onComplete}
-      className="text-[#E8E6E3] text-[16px] leading-[1.65] font-serif"
+      className="text-[#E8E6E3] text-[16px] leading-[1.65] font-serif markdown-content"
     >
-      {words.map((word, index) => (
-        <motion.span 
-          key={index} 
-          custom={index}
-          variants={wordAnim} 
-          className="inline-block mr-[0.25em]"
-        >
-          {word}
-        </motion.span>
-      ))}
+      <ReactMarkdown>
+        {text}
+      </ReactMarkdown>
     </motion.div>
   );
 }
@@ -151,9 +145,7 @@ export function ChatThread({
 function MessageItem({ message, onEditSubmit, onRedo }: { message: ChatMessage, onEditSubmit: (id: string, text: string) => void, onRedo: (id: string) => void }) {
   const isUser = message.role === "user";
   const [feedback, setFeedback] = useState<'like' | 'dislike' | null>(null);
-  
   const [isTypingComplete, setIsTypingComplete] = useState(!message.isPlaceholder && message.content.length > 0);
-  
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [isEditingMode, setIsEditingMode] = useState(false);
@@ -280,8 +272,8 @@ function MessageItem({ message, onEditSubmit, onRedo }: { message: ChatMessage, 
                         onComplete={() => setIsTypingComplete(true)} 
                       />
                     ) : (
-                      <div className="text-[#E8E6E3] text-[16px] leading-[1.65] font-serif whitespace-pre-wrap">
-                        {message.content}
+                      <div className="text-[#E8E6E3] text-[16px] leading-[1.65] font-serif markdown-content">
+                        <ReactMarkdown>{message.content}</ReactMarkdown>
                       </div>
                     )}
                   </div>
