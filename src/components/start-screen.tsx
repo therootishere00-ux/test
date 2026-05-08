@@ -245,6 +245,7 @@ export function StartScreen() {
     saveChatsToStorage(updated);
     if (currentChatId === id) {
       handleNewChatClick();
+      setIsMenuOpen(false); // Закрываем меню после удаления активного чата
     }
   };
 
