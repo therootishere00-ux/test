@@ -24,15 +24,13 @@ type ChatThreadProps = {
 };
 
 function AnimatedAIResponse({ text, onComplete }: { text: string; onComplete: () => void }) {
-  const words = useMemo(() => text.split(" "), [text]);
-  
   const wordAnim = {
     hidden: { opacity: 0, filter: "blur(4px)" },
-    visible: (i: number) => ({
+    visible: {
       opacity: 1, 
       filter: "blur(0px)",
-      transition: { delay: Math.floor(i / 4) * 0.08, duration: 0.3, ease: "easeOut" }
-    })
+      transition: { duration: 0.3, ease: "easeOut" }
+    }
   };
 
   return (
@@ -44,7 +42,7 @@ function AnimatedAIResponse({ text, onComplete }: { text: string; onComplete: ()
     >
       <ReactMarkdown
         components={{
-          h3: ({node, ...props}) => <h3 className="text-[18px] font-bold text-[#5FA86D] mt-4 mb-2" {...props} />,
+          h3: ({node, ...props}) => <h3 className="text-[18px] font-bold text-[#5FA86D] mt-4 mb-2 font-sans" {...props} />,
           p: ({node, ...props}) => <p className="mb-3 last:mb-0" {...props} />,
           ul: ({node, ...props}) => <ul className="list-disc ml-4 mb-3 space-y-1" {...props} />,
           blockquote: ({node, ...props}) => <blockquote className="border-l-2 border-[#5FA86D]/50 pl-4 my-3 italic text-white/70" {...props} />,
@@ -283,7 +281,7 @@ function MessageItem({ message, onEditSubmit, onRedo }: { message: ChatMessage, 
                       <div className="text-[#E8E6E3] text-[16px] leading-[1.65] font-serif prose prose-invert max-w-none">
                         <ReactMarkdown
                           components={{
-                            h3: ({node, ...props}) => <h3 className="text-[18px] font-bold text-[#5FA86D] mt-4 mb-2" {...props} />,
+                            h3: ({node, ...props}) => <h3 className="text-[18px] font-bold text-[#5FA86D] mt-4 mb-2 font-sans" {...props} />,
                             p: ({node, ...props}) => <p className="mb-3 last:mb-0" {...props} />,
                             ul: ({node, ...props}) => <ul className="list-disc ml-4 mb-3 space-y-1" {...props} />,
                             blockquote: ({node, ...props}) => <blockquote className="border-l-2 border-[#5FA86D]/50 pl-4 my-3 italic text-white/70" {...props} />,
