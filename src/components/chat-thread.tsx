@@ -127,7 +127,7 @@ export function ChatThread({
           ) : (
             <span 
               onClick={() => setIsEditingTitle(true)}
-              className="text-[14px] text-[#F2F1ED] font-sans truncate cursor-pointer font-medium hover:text-[#5FA86D] transition-colors"
+              className="text-[14px] text-[#F2F1ED] font-sans truncate cursor-pointer font-medium hover:text-[#5FA86D] transition-colors uppercase tracking-widest"
             >
               {chatTitle}
             </span>
@@ -182,11 +182,11 @@ function MessageItem({ message, onEditSubmit, onRedo }: {
   };
 
   const markdownComponents = useMemo(() => ({
-    h3: ({ ...props }) => <h3 className="text-[18px] font-bold text-[#5FA86D] mt-4 mb-2 font-sans" {...props} />,
-    p: ({ ...props }) => <p className="mb-3 last:mb-0" {...props} />,
-    ul: ({ ...props }) => <ul className="list-disc ml-4 mb-3 space-y-1" {...props} />,
-    blockquote: ({ ...props }) => <blockquote className="border-l-2 border-[#5FA86D]/50 pl-4 my-3 italic text-white/70" {...props} />,
-    strong: ({ ...props }) => <strong className="font-bold text-white" {...props} />,
+    h3: ({ ...props }) => <h3 className="text-[19px] font-bold text-[#5FA86D] mt-6 mb-2 font-sans border-l-4 border-[#5FA86D] pl-3" {...props} />,
+    p: ({ ...props }) => <p className="mb-4 last:mb-0" {...props} />,
+    ul: ({ ...props }) => <ul className="list-disc ml-5 mb-4 space-y-2 text-[#CCCAC6]" {...props} />,
+    blockquote: ({ ...props }) => <blockquote className="border-l-2 border-white/20 pl-4 my-4 italic text-white/60 bg-white/5 py-1 rounded-r-lg" {...props} />,
+    strong: ({ ...props }) => <strong className="font-bold text-[#F2F1ED]" {...props} />,
     img: ({ ...props }) => (
       <img 
         {...props} 
@@ -285,11 +285,13 @@ function MessageItem({ message, onEditSubmit, onRedo }: {
               </div>
               
               {message.isPlaceholder ? (
-                <div className="flex gap-1.5 pt-2">
-                  {[0, 150, 300].map((delay) => (
-                    <div key={delay} className="w-1.5 h-1.5 bg-white/20 rounded-full animate-bounce" style={{ animationDelay: `${delay}ms` }} />
-                  ))}
-                </div>
+                <motion.div 
+                  animate={{ opacity: [0.3, 0.7, 0.3] }}
+                  transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+                  className="text-[#F2F1ED] text-[16px] font-serif italic opacity-50 pt-2"
+                >
+                  Думаю...
+                </motion.div>
               ) : (
                 <div className="w-full">
                   {!isTypingComplete && message.content.length > 0 ? (
