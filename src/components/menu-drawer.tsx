@@ -3,7 +3,6 @@
 import { motion, AnimatePresence, useAnimation } from "framer-motion";
 import { useEffect, useState } from "react";
 import type { ChatMessage } from "./chat-thread";
-import PlanerIcon from "../../public/icons/planer";
 
 export type ChatSession = {
   id: string;
@@ -36,6 +35,7 @@ function ChatItem({ chat, isActive, onSelect, onDelete }: { chat: ChatSession, i
 
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
+    e.preventDefault();
     onDelete();
   };
 
@@ -115,7 +115,7 @@ export function MenuDrawer({ open, onClose, chats, currentChatId, onSelectChat, 
               >
                 <div className="flex items-center gap-3">
                   <div className="w-6 h-6 opacity-80">
-                    <PlanerIcon />
+                    <img src="/icons/planner.svg" alt="Planner" className="w-full h-full invert" />
                   </div>
                   <span className="text-[15px] text-[#F2F1ED] font-sans font-medium">Начать планировать</span>
                 </div>
