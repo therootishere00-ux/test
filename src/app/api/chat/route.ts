@@ -2,6 +2,8 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 import { NextResponse } from "next/server";
+import fs from "fs";
+import path from "path";
 
 export async function POST(req: Request) {
   try {
@@ -10,12 +12,20 @@ export async function POST(req: Request) {
 
     const apiKey = process.env.GROQ_API;
 
-    // Ошибка 1: Нет ключа
     if (!apiKey) {
       console.error("CRITICAL ERROR: GROQ_API is EMPTY");
       return NextResponse.json({ 
         error: "Прости, но сервер загружен. Приходи позже!" 
       }, { status: 500 });
+    }
+
+    // Читаем системную инструкцию из файла
+    let systemContent = "Ты — swgoh.ai. Отвечай кратко, как эксперт.";
+    try {
+      const promptPath = path.join(process.cwd(), "system-prompt.txt");
+      systemContent = fs.readFileSync(promptPath, "utf-8");
+    } catch (err) {
+      console.error("System prompt file not found, using default");
     }
 
     const cleanKey = apiKey.replace(/['"]+/g, '').trim();
@@ -29,7 +39,7 @@ export async function POST(req: Request) {
       body: JSON.stringify({
         model: "llama-3.3-70b-versatile",
         messages: [
-          { role: "system", content: "Ты — swgoh.ai. Отвечай кратко, как эксперт." },
+          { role: "system", content: systemContent },
           ...messages
         ],
         temperature: 0.7
@@ -38,7 +48,6 @@ export async function POST(req: Request) {
 
     const data = await response.json();
 
-    // Ошибка 2: Groq вернул ошибку (лимиты, перегрузка)
     if (!response.ok) {
       console.error("GROQ API ERROR:", response.status, data);
       return NextResponse.json({ 
@@ -49,7 +58,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ content: data.choices[0].message.content });
 
   } catch (error: any) {
-    // Ошибка 3: Упал наш сервер
     console.error("SERVER CATCH BLOCK ERROR:", error.message);
     return NextResponse.json({ 
       error: "Прости, но сервер загружен. Приходи позже!" 
