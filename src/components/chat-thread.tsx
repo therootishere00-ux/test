@@ -62,17 +62,15 @@ export function ChatThread({
   onEditSubmit, 
   onRedo, 
   activeChatTitle,
-  currentUserHandle // Сюда должен приходить @username из Telegram
+  currentUserHandle 
 }: ChatThreadProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [chatTitle, setChatTitle] = useState("swgoh.ai");
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [isConsoleOpen, setIsConsoleOpen] = useState(false);
 
-  // СТРОГАЯ ПРОВЕРКА: консоль видна ТОЛЬКО админу
   const isAdmin = currentUserHandle === "@ya_admin7";
 
-  // Синхронизация заголовка с активным чатом
   useEffect(() => {
     if (activeChatTitle) {
       setChatTitle(activeChatTitle);
@@ -92,7 +90,6 @@ export function ChatThread({
 
   return (
     <div className="flex flex-col h-full w-full max-w-[600px] mx-auto relative pt-4">
-      {/* Кнопка консоли: Рендерим ТОЛЬКО если isAdmin === true */}
       {isAdmin && (
         <button 
           onClick={() => setIsConsoleOpen(true)}
@@ -154,10 +151,11 @@ export function ChatThread({
 function MessageItem({ message, onEditSubmit, onRedo }: { message: ChatMessage, onEditSubmit: (id: string, text: string) => void, onRedo: (id: string) => void }) {
   const isUser = message.role === "user";
   const [feedback, setFeedback] = useState<'like' | 'dislike' | null>(null);
-  const [isTypingComplete, setIsTypingComplete] = useState(false);
+  
+  const [isTypingComplete, setIsTypingComplete] = useState(!message.isPlaceholder && message.content.length > 0);
+  
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [copied, setCopied] = useState(false);
-  
   const [isEditingMode, setIsEditingMode] = useState(false);
   const [editValue, setEditValue] = useState(message.content);
 
@@ -276,10 +274,16 @@ function MessageItem({ message, onEditSubmit, onRedo }: { message: ChatMessage, 
               ) : (
                 <>
                   <div className="w-full">
-                    <AnimatedAIResponse 
-                      text={message.content} 
-                      onComplete={() => setIsTypingComplete(true)} 
-                    />
+                    {(!isTypingComplete && message.content.length > 0) ? (
+                      <AnimatedAIResponse 
+                        text={message.content} 
+                        onComplete={() => setIsTypingComplete(true)} 
+                      />
+                    ) : (
+                      <div className="text-[#E8E6E3] text-[16px] leading-[1.65] font-serif whitespace-pre-wrap">
+                        {message.content}
+                      </div>
+                    )}
                   </div>
                   
                   {isTypingComplete && (
