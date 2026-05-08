@@ -1,31 +1,32 @@
 import * as Comlink from "comlink";
 
-let database: {
-  units: any[];
-  abilities: any[];
-  characters: any[];
-} = { units: [], abilities: [], characters: [] };
+let charactersDb: string = "";
+let abilitiesDb: any[] = [];
 
 const swgohEngine = {
-  async initDatabase(units: any, abilities: any, characters: any) {
-    database.units = units;
-    database.abilities = abilities;
-    database.characters = characters;
+  async initDatabase(charsText: string, abilitiesJson: any[]) {
+    charactersDb = charsText;
+    abilitiesDb = abilitiesJson;
   },
 
-  async findUnitData(query: string) {
+  async searchContext(query: string) {
     const q = query.toLowerCase();
-    const unit = database.units.find(u => 
-      u.name.toLowerCase().includes(q) || u.base_id.toLowerCase() === q
-    );
+    
+    const charBlocks = charactersDb.split("---");
+    const foundCharBlock = charBlocks.find(block => block.toLowerCase().includes(q));
+    
+    if (!foundCharBlock) return { charData: null, abilities: [] };
 
-    if (!unit) return null;
+    const idMatch = foundCharBlock.match(/([A-Z0-9_]+)\s-\s/);
+    const baseId = idMatch ? idMatch[1] : null;
 
-    const unitAbilities = database.abilities.filter(a => a.character_base_id === unit.base_id);
+    if (!baseId) return { charData: foundCharBlock, abilities: [] };
+
+    const relatedAbilities = abilitiesDb.filter(a => a.character_base_id === baseId);
 
     return {
-      ...unit,
-      fullAbilities: unitAbilities
+      charData: foundCharBlock,
+      abilities: relatedAbilities
     };
   }
 };
