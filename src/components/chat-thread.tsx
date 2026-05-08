@@ -40,9 +40,17 @@ function AnimatedAIResponse({ text, onComplete }: { text: string; onComplete: ()
       initial="hidden" 
       animate="visible"
       onAnimationComplete={onComplete}
-      className="text-[#E8E6E3] text-[16px] leading-[1.65] font-serif markdown-content"
+      className="text-[#E8E6E3] text-[16px] leading-[1.65] font-serif prose prose-invert max-w-none"
     >
-      <ReactMarkdown>
+      <ReactMarkdown
+        components={{
+          h3: ({node, ...props}) => <h3 className="text-[18px] font-bold text-[#5FA86D] mt-4 mb-2" {...props} />,
+          p: ({node, ...props}) => <p className="mb-3 last:mb-0" {...props} />,
+          ul: ({node, ...props}) => <ul className="list-disc ml-4 mb-3 space-y-1" {...props} />,
+          blockquote: ({node, ...props}) => <blockquote className="border-l-2 border-[#5FA86D]/50 pl-4 my-3 italic text-white/70" {...props} />,
+          strong: ({node, ...props}) => <strong className="font-bold text-white" {...props} />
+        }}
+      >
         {text}
       </ReactMarkdown>
     </motion.div>
@@ -272,8 +280,18 @@ function MessageItem({ message, onEditSubmit, onRedo }: { message: ChatMessage, 
                         onComplete={() => setIsTypingComplete(true)} 
                       />
                     ) : (
-                      <div className="text-[#E8E6E3] text-[16px] leading-[1.65] font-serif markdown-content">
-                        <ReactMarkdown>{message.content}</ReactMarkdown>
+                      <div className="text-[#E8E6E3] text-[16px] leading-[1.65] font-serif prose prose-invert max-w-none">
+                        <ReactMarkdown
+                          components={{
+                            h3: ({node, ...props}) => <h3 className="text-[18px] font-bold text-[#5FA86D] mt-4 mb-2" {...props} />,
+                            p: ({node, ...props}) => <p className="mb-3 last:mb-0" {...props} />,
+                            ul: ({node, ...props}) => <ul className="list-disc ml-4 mb-3 space-y-1" {...props} />,
+                            blockquote: ({node, ...props}) => <blockquote className="border-l-2 border-[#5FA86D]/50 pl-4 my-3 italic text-white/70" {...props} />,
+                            strong: ({node, ...props}) => <strong className="font-bold text-white" {...props} />
+                          }}
+                        >
+                          {message.content}
+                        </ReactMarkdown>
                       </div>
                     )}
                   </div>
