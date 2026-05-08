@@ -3,7 +3,7 @@
 import { motion, AnimatePresence, useAnimation } from "framer-motion";
 import { useEffect, useState } from "react";
 import type { ChatMessage } from "./chat-thread";
-import PlanerIcon from "../../public/icons/planer"; // Импортируем твой .tsx компонент иконки
+import PlanerIcon from "../../public/icons/planer";
 
 export type ChatSession = {
   id: string;
@@ -18,7 +18,7 @@ type MenuDrawerProps = {
   currentChatId: string | null;
   onSelectChat: (id: string) => void;
   onDeleteChat: (id: string) => void;
-  onOpenPlanner: () => void; // Добавляем проп для открытия планировщика
+  onOpenPlanner: () => void;
 };
 
 function ChatItem({ chat, isActive, onSelect, onDelete }: { chat: ChatSession, isActive: boolean, onSelect: () => void, onDelete: () => void }) {
@@ -34,11 +34,16 @@ function ChatItem({ chat, isActive, onSelect, onDelete }: { chat: ChatSession, i
     setTimeout(() => setIsDragging(false), 100);
   };
 
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onDelete();
+  };
+
   return (
     <div className="relative w-full h-[44px] rounded-xl overflow-hidden bg-[#5FA86D] shrink-0">
       <div 
         className="absolute inset-y-0 right-0 w-[60px] flex items-center justify-center cursor-pointer"
-        onClick={onDelete}
+        onClick={handleDelete}
       >
         <img src="/icons/bin.svg" alt="Delete" className="w-5 h-5 invert" />
       </div>
@@ -103,7 +108,6 @@ export function MenuDrawer({ open, onClose, chats, currentChatId, onSelectChat, 
               </button>
             </div>
 
-            {/* НОВЫЙ БЛОК: ПЛАНИРОВЩИК */}
             <div className="px-4 mb-2 shrink-0">
               <button 
                 onClick={onOpenPlanner}
