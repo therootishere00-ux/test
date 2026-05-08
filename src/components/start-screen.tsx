@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useMemo } from "react";
 import { ChatThread, type ChatMessage } from "@/components/chat-thread";
 import { MenuDrawer, type ChatSession } from "@/components/menu-drawer";
 import { motion, AnimatePresence } from "framer-motion";
-import StartBoard from "../planner/start-board"; // Импорт планировщика
+import StartBoard from "../planner/start-board";
 
 const PromptRow = ({ items, direction, speed, onPick }: any) => {
   const scrollClass = direction === 'left' ? 'animate-marquee-left' : 'animate-marquee-right';
@@ -68,7 +68,7 @@ export function StartScreen() {
     if (isNew) {
       const newChat: ChatSession = {
         id: chatId,
-        title: firstMessageContent ? firstMessageContent.slice(0, 20) + '...' : 'Новый чат',
+        title: firstMessageContent ? (firstMessageContent.length > 25 ? firstMessageContent.slice(0, 25) + '...' : firstMessageContent) : 'Новый чат',
         messages: newMessages
       };
       updatedChats = [newChat, ...updatedChats];
@@ -85,7 +85,7 @@ export function StartScreen() {
         const lines = data.split(/\r?\n/).filter(line => line.trim().length > 0);
         setAllPrompts(lines.sort(() => Math.random() - 0.5));
       })
-      .catch(() => setAllPrompts(["Гайд на Гранд-мастера Йоду", "Лучшие модули для Вейдера", "Как пройти 7 уровень"]));
+      .catch(() => setAllPrompts(["Гайд на Гранд-мастера Йоду", "Лучшие модули для Вейдера"]));
   }, []);
 
   const rows = useMemo(() => {
@@ -113,8 +113,6 @@ export function StartScreen() {
         .filter(m => !m.isPlaceholder)
         .map(m => ({ role: m.role, content: m.content }));
 
-      console.log(`[СЕТЬ] Инициирован запрос к /api/chat. Сообщений: ${apiMessages.length}`);
-
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -122,16 +120,9 @@ export function StartScreen() {
         signal: abortCtrl.current.signal
       });
 
-      console.log(`[СЕТЬ] Получен ответ от сервера. Статус: ${res.status}`);
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        console.error(`[СЕТЬ ОШИБКА] Код: ${res.status}. Детали:`, err);
-        throw new Error(`Ошибка: ${err.error || res.status}`);
-      }
+      if (!res.ok) throw new Error(`Ошибка: ${res.status}`);
 
       const data = await res.json();
-      console.log("[СЕТЬ] Данные ИИ успешно получены.");
       
       setMessages(prev => {
         const updated = prev.map(msg => 
@@ -143,17 +134,9 @@ export function StartScreen() {
         return updated;
       });
     } catch (error: any) {
-      if (error.name === 'AbortError') {
-        console.log("[СЕТЬ] Генерация была остановлена пользователем.");
+      if (error.name !== 'AbortError') {
         setMessages(prev => {
-          const updated = prev.map(msg => msg.id === assistantMsgId ? { ...msg, content: "Генерация остановлена.", isPlaceholder: false } : msg);
-          updateCurrentChat(targetChatId, updated, isNewChat, firstMessage);
-          return updated;
-        });
-      } else {
-        console.error("[СЕТЬ КРИТИЧЕСКАЯ ОШИБКА]:", error.message);
-        setMessages(prev => {
-          const updated = prev.map(msg => msg.id === assistantMsgId ? { ...msg, content: `Прости, но сейчас сервера загружены (${error.message})`, isPlaceholder: false } : msg);
+          const updated = prev.map(msg => msg.id === assistantMsgId ? { ...msg, content: `Ошибка связи с сервером.`, isPlaceholder: false } : msg);
           updateCurrentChat(targetChatId, updated, isNewChat, firstMessage);
           return updated;
         });
@@ -168,6 +151,7 @@ export function StartScreen() {
     if (abortCtrl.current) {
       abortCtrl.current.abort();
     }
+    setIsGenerating(false);
   };
 
   const onSend = (text?: string) => {
@@ -241,6 +225,7 @@ export function StartScreen() {
     setChatStarted(false);
     setMessages([]);
     setCurrentChatId(null);
+    setMessage("");
   };
 
   const selectChat = (id: string) => {
@@ -255,10 +240,13 @@ export function StartScreen() {
   };
 
   const deleteChat = (id: string) => {
+    if (isGenerating && currentChatId === id) stopGeneration();
     const updated = chats.filter(c => c.id !== id);
     saveChatsToStorage(updated);
     if (currentChatId === id) {
-      handleNewChatClick();
+      setChatStarted(false);
+      setMessages([]);
+      setCurrentChatId(null);
     }
   };
 
@@ -291,7 +279,7 @@ export function StartScreen() {
         </div>
       </div>
       <p className="mt-3 text-center text-[11px] leading-normal text-[#6A6965] px-4">
-        Хотя мы стараемся сделать ваш опыт общения лучше, это ИИ и он может ошибаться
+        ИИ может ошибаться, проверяйте важную информацию
       </p>
     </div>
   );
@@ -307,7 +295,6 @@ export function StartScreen() {
         .hide-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
       `}</style>
 
-      {/* Позиция иконки меню на старте 1-в-1 как в чате */}
       {!chatStarted && (
         <div className="absolute top-0 left-0 right-0 pt-4 px-8 py-2 flex items-center z-[100] max-w-[600px] mx-auto w-full">
           <button 
@@ -380,6 +367,7 @@ export function StartScreen() {
                 onOpenMenu={() => setIsMenuOpen(true)}
                 onEditSubmit={handleEditMessage}
                 onRedo={handleRedoMessage}
+                activeChatTitle={chats.find(c => c.id === currentChatId)?.title}
               />
             </div>
             
@@ -390,7 +378,6 @@ export function StartScreen() {
         )}
       </AnimatePresence>
 
-      {/* Рендер планировщика поверх всего */}
       {isPlannerOpen && (
         <StartBoard onClose={() => setIsPlannerOpen(false)} />
       )}
