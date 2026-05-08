@@ -244,9 +244,7 @@ export function StartScreen() {
     const updated = chats.filter(c => c.id !== id);
     saveChatsToStorage(updated);
     if (currentChatId === id) {
-      setChatStarted(false);
-      setMessages([]);
-      setCurrentChatId(null);
+      handleNewChatClick();
     }
   };
 
@@ -313,6 +311,7 @@ export function StartScreen() {
         currentChatId={currentChatId}
         onSelectChat={selectChat}
         onDeleteChat={deleteChat}
+        onNewChat={handleNewChatClick}
         onOpenPlanner={() => {
           setIsMenuOpen(false);
           setIsPlannerOpen(true);
