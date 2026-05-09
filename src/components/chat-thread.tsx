@@ -24,20 +24,17 @@ type ChatThreadProps = {
   currentUserHandle?: string;
 };
 
+/**
+ * Анимированный компонент для ответов ИИ. 
+ * Использует Framer Motion для плавного появления текста.
+ */
 function AnimatedAIResponse({ text, onComplete }: { text: string; onComplete: () => void }) {
   const components = useMemo(() => ({
-    h3: ({ ...props }) => <h3 className="text-[19px] font-bold text-[#5FA86D] mt-6 mb-2 font-sans border-l-4 border-[#5FA86D] pl-3" {...props} />,
-    p: ({ ...props }) => <p className="mb-4 last:mb-0" {...props} />,
-    ul: ({ ...props }) => <ul className="list-disc ml-5 mb-4 space-y-2 text-[#CCCAC6]" {...props} />,
-    blockquote: ({ ...props }) => <blockquote className="border-l-2 border-white/20 pl-4 my-4 italic text-white/60 bg-white/5 py-1 rounded-r-lg" {...props} />,
-    strong: ({ ...props }) => <strong className="font-bold text-[#F2F1ED]" {...props} />,
-    img: ({ ...props }) => (
-      <img 
-        {...props} 
-        className="w-12 h-12 rounded-lg inline-block mr-2 mb-1 border border-white/10 shadow-lg object-cover" 
-        onError={(e) => (e.currentTarget.style.display = 'none')}
-      />
-    )
+    h3: ({ ...props }) => <h3 className="text-[18px] font-bold text-[#5FA86D] mt-4 mb-2 font-sans" {...props} />,
+    p: ({ ...props }) => <p className="mb-3 last:mb-0" {...props} />,
+    ul: ({ ...props }) => <ul className="list-disc ml-4 mb-3 space-y-1" {...props} />,
+    blockquote: ({ ...props }) => <blockquote className="border-l-2 border-[#5FA86D]/50 pl-4 my-3 italic text-white/70" {...props} />,
+    strong: ({ ...props }) => <strong className="font-bold text-white" {...props} />
   }), []);
 
   return (
@@ -72,8 +69,9 @@ export function ChatThread({
 
   const isAdmin = currentUserHandle === "@ya_admin7";
 
+  // Инициализация воркера для обработки данных (Comlink)
   useEffect(() => {
-    const worker = new Worker(new URL("../workers/swgoh.worker.ts", import.meta.url));
+    const worker = new Worker(new URL("../lib/worker.ts", import.meta.url));
     workerRef.current = Comlink.wrap(worker);
     return () => worker.terminate();
   }, []);
@@ -109,7 +107,7 @@ export function ChatThread({
       <AdminConsole isOpen={isConsoleOpen} onClose={() => setIsConsoleOpen(false)} />
 
       <header className="w-full flex items-center justify-between px-8 py-2 z-10 bg-[#252422]">
-        <button onClick={onOpenMenu} className="p-1 active:scale-95 transition-transform opacity-40 hover:opacity-100">
+        <button onClick={onOpenMenu} className="p-1 active:scale-95 transition-transform opacity-40">
           <img src="/icons/menu.svg" alt="Menu" className="w-[22px] h-[22px] invert" />
         </button>
 
@@ -127,14 +125,14 @@ export function ChatThread({
           ) : (
             <span 
               onClick={() => setIsEditingTitle(true)}
-              className="text-[14px] text-[#F2F1ED] font-sans truncate cursor-pointer font-medium hover:text-[#5FA86D] transition-colors uppercase tracking-widest"
+              className="text-[14px] text-[#F2F1ED] font-sans truncate cursor-pointer font-medium"
             >
               {chatTitle}
             </span>
           )}
         </div>
 
-        <button onClick={onNewChat} className="p-1 active:scale-95 transition-transform opacity-40 hover:opacity-100">
+        <button onClick={onNewChat} className="p-1 active:scale-95 transition-transform opacity-40">
           <img src="/icons/newchat.svg" alt="New Chat" className="w-[22px] h-[22px] invert" />
         </button>
       </header>
@@ -182,18 +180,11 @@ function MessageItem({ message, onEditSubmit, onRedo }: {
   };
 
   const markdownComponents = useMemo(() => ({
-    h3: ({ ...props }) => <h3 className="text-[19px] font-bold text-[#5FA86D] mt-6 mb-2 font-sans border-l-4 border-[#5FA86D] pl-3" {...props} />,
-    p: ({ ...props }) => <p className="mb-4 last:mb-0" {...props} />,
-    ul: ({ ...props }) => <ul className="list-disc ml-5 mb-4 space-y-2 text-[#CCCAC6]" {...props} />,
-    blockquote: ({ ...props }) => <blockquote className="border-l-2 border-white/20 pl-4 my-4 italic text-white/60 bg-white/5 py-1 rounded-r-lg" {...props} />,
-    strong: ({ ...props }) => <strong className="font-bold text-[#F2F1ED]" {...props} />,
-    img: ({ ...props }) => (
-      <img 
-        {...props} 
-        className="w-12 h-12 rounded-lg inline-block mr-2 mb-1 border border-white/10 shadow-lg object-cover" 
-        onError={(e) => (e.currentTarget.style.display = 'none')}
-      />
-    )
+    h3: ({ ...props }) => <h3 className="text-[18px] font-bold text-[#5FA86D] mt-4 mb-2 font-sans" {...props} />,
+    p: ({ ...props }) => <p className="mb-3 last:mb-0" {...props} />,
+    ul: ({ ...props }) => <ul className="list-disc ml-4 mb-3 space-y-1" {...props} />,
+    blockquote: ({ ...props }) => <blockquote className="border-l-2 border-[#5FA86D]/50 pl-4 my-3 italic text-white/70" {...props} />,
+    strong: ({ ...props }) => <strong className="font-bold text-white" {...props} />
   }), []);
 
   return (
@@ -233,13 +224,15 @@ function MessageItem({ message, onEditSubmit, onRedo }: {
                 </div>
               ) : (
                 <>
-                  <div className="bg-[#2D2C2A] rounded-[20px] px-4 py-3 w-full shadow-sm relative overflow-hidden">
-                    <p className={`text-[16px] leading-relaxed whitespace-pre-wrap font-serif text-[#F2F1ED] opacity-90 text-left ${isLong ? 'max-h-[105px] overflow-hidden' : ''}`}>
-                      {message.content}
-                    </p>
-                    {isLong && (
-                      <div className="absolute bottom-0 left-0 right-0 h-[40px] bg-gradient-to-t from-[#2D2C2A] to-transparent pointer-events-none" />
-                    )}
+                  <div className="bg-[#2D2C2A] rounded-[20px] px-4 py-3 w-full shadow-sm">
+                    <div className="relative w-full">
+                      <p className={`text-[16px] leading-relaxed whitespace-pre-wrap font-serif text-[#F2F1ED] opacity-90 text-left ${isLong ? 'max-h-[105px] overflow-hidden' : ''}`}>
+                        {message.content}
+                      </p>
+                      {isLong && (
+                        <div className="absolute bottom-0 left-0 right-0 h-[40px] bg-gradient-to-t from-[#2D2C2A] to-transparent pointer-events-none" />
+                      )}
+                    </div>
                   </div>
                   
                   <div className="flex justify-end gap-4 mt-2 pr-2 opacity-40">
@@ -285,13 +278,11 @@ function MessageItem({ message, onEditSubmit, onRedo }: {
               </div>
               
               {message.isPlaceholder ? (
-                <motion.div 
-                  animate={{ opacity: [0.3, 0.7, 0.3] }}
-                  transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-                  className="text-[#F2F1ED] text-[16px] font-serif italic opacity-50 pt-2"
-                >
-                  Думаю...
-                </motion.div>
+                <div className="flex gap-1.5 pt-2">
+                  {[0, 150, 300].map((delay) => (
+                    <div key={delay} className="w-1.5 h-1.5 bg-white/20 rounded-full animate-bounce" style={{ animationDelay: `${delay}ms` }} />
+                  ))}
+                </div>
               ) : (
                 <div className="w-full">
                   {!isTypingComplete && message.content.length > 0 ? (
