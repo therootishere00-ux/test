@@ -6,9 +6,11 @@
     "skipLibCheck": true,
     "strict": true,
     "noEmit": true,
-    "baseUrl": "./src",
+    "baseUrl": ".",
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./src/*"],
+      "@/lib/*": ["./src/lib/*"],
+      "@/components/*": ["./src/components/*"]
     },
     "esModuleInterop": true,
     "module": "esnext",

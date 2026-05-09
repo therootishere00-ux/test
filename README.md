@@ -1,64 +1,300 @@
-# SWGOH AI Demo
+# SWGOH.AI - Star Wars: Galaxy of Heroes Expert Assistant
 
-Dark Telegram Mini App demo for a SWGOH AI assistant.
+Профессиональный ассистент для игры **Star Wars: Galaxy of Heroes** с интегрированной базой данных персонажей, способностей и оборудования.
 
-## What is here
+## 📋 Структура проекта
 
-- `src/app` - Next.js app router
-- `src/components` - UI blocks
-- `src/types` - shared TypeScript types
-- `public/icons` - PNG icons used by the app
+```
+swgoh-ai/
+├── public/
+│   ├── data/                    # Базовые данные игры
+│   │   ├── characters.json      # Список всех персонажей
+│   │   ├── abilities.json       # Описания всех способностей
+│   │   ├── gear.json           # Оборудование и компоненты
+│   │   └── units.json          # Информация о юнитах
+│   ├── icons/                   # Иконки персонажей и способностей
+│   └── slovar.txt              # Словарь сокращений
+│
+├── src/
+│   ├── app/
+│   │   ├── api/
+│   │   │   ├── chat/           # Основной чат API с контекстом
+│   │   │   │   └── route.ts
+│   │   │   └── search/         # API поиска персонажей
+│   │   │       └── route.ts
+│   │   ├── layout.tsx
+│   │   ├── page.tsx
+│   │   └── globals.css
+│   │
+│   ├── lib/                     # Утилиты и сервисы
+│   │   ├── dataLoader.ts        # Загрузка и кэширование данных
+│   │   ├── swgohService.ts      # Парсинг swgoh.gg и форматирование
+│   │   └── contextBuilder.ts    # Построение контекста для LLM
+│   │
+│   ├── components/              # React компоненты UI
+│   └── workers/                 # Web Workers для фоновой работы
+│
+├── system-prompt.txt            # Системный промпт для AI
+├── package.json                 # Зависимости проекта
+├── tsconfig.json               # Конфигурация TypeScript
+├── next.config.mjs             # Конфигурация Next.js
+└── README.md                    # Этот файл
+```
 
-## Stack
+## 🔧 Основные компоненты
 
-- Next.js
-- React
-- TypeScript
-- Tailwind CSS setup
-- Vercel deployment ready
+### 1. **dataLoader.ts** - Управление данными
+Модуль для работы с локальными JSON файлами:
+- `loadCharacters()` - Загружает всех персонажей
+- `loadAbilities()` - Загружает все способности
+- `findCharacterByName(name)` - Поиск по имени
+- `getCharacterAbilities(baseId)` - Способности персонажа
+- `getCharacterZetas(baseId)` - Дзеты персонажа
+- `getCharacterOmicrons(baseId)` - Омикроны персонажа
+- `searchCharacters(query)` - Полнотекстовый поиск
 
-## Run locally
+### 2. **swgohService.ts** - Бизнес-логика
+Сервис для обработки игровых данных:
+- `analyzeQuery()` - Анализирует запрос пользователя
+- `formatCharacterDescription()` - Форматирует описание персонажа
+- `formatAbilityInfo()` - Форматирует информацию о способности
+- `translateGameTerms()` - Переводит игровые термины EN→RU
+- `buildSwgohGgUrl()` - Строит URL на swgoh.gg
+- `parseSwgohUrl()` - Парсит URL swgoh.gg
 
+### 3. **contextBuilder.ts** - Построение контекста
+Модуль для создания контекста для LLM:
+- `buildContextForQuery()` - Контекст для обычного запроса
+- `buildAnalyticsContext()` - Контекст для аналитических вопросов
+- `createCharacterContext()` - Контекст для одного персонажа
+- `getAllZetas()` - Все дзеты в игре
+- `getAllOmicrons()` - Все омикроны в игре
+- `getAllUltimates()` - Все ультиматы в игре
+
+### 4. **API маршруты**
+
+#### `/api/chat` (POST)
+Основной чат с контекстом из базы данных.
+
+**Request:**
+```json
+{
+  "messages": [
+    { "role": "user", "content": "Расскажи про Янго Фетта" }
+  ]
+}
+```
+
+**Response:**
+```json
+{
+  "content": "Ответ с контекстом данных...",
+  "usage": { "prompt_tokens": 100, "completion_tokens": 50 }
+}
+```
+
+#### `/api/search` (GET)
+Быстрый поиск персонажей.
+
+**Request:**
+```
+GET /api/search?q=jango&type=search
+```
+
+**Response:**
+```json
+{
+  "total": 3,
+  "characters": [
+    {
+      "name": "Jango Fett",
+      "base_id": "JANGOFETT",
+      "power": 41178,
+      "description": "Notorious Bounty Hunter..."
+    }
+  ]
+}
+```
+
+## 🚀 Как это работает
+
+### Поток обработки запроса:
+
+1. **Пользователь отправляет вопрос** через чат интерфейс
+2. **API /chat/route.ts получает сообщение**
+3. **analyzeQuery()** определяет тип запроса (персонаж, способность, команда, гир)
+4. **buildContextForQuery()** или **buildAnalyticsContext()** собирает релевантные данные из JSON файлов
+5. **Контекст добавляется в промпт** перед отправкой на Groq API
+6. **LLM отвечает** на основе системного промпта + контекста + истории чата
+7. **Ответ возвращается пользователю**
+
+### Пример обработки:
+
+**Запрос:** "Какие дзеты у Янго Фетта?"
+
+```
+1. analyzeQuery() → type: "character", filters: { onlyZetas: true }
+2. searchCharacters("Янго Фетт") → находит JANGOFETT
+3. getCharacterZetas("JANGOFETT") → список дзет способностей
+4. buildContextForQuery() → собирает полное описание с дзетами
+5. LLM отвечает на основе контекста
+```
+
+## 🎮 Типы запросов
+
+### Персонажи
+- "Расскажи про [персонаж]"
+- "Как использовать [персонаж]"
+- "[Персонаж] дзета"
+
+### Способности
+- "Что делает [способность]?"
+- "Описание [способности]"
+
+### Команды/Синергия
+- "Команда для [персонажа]"
+- "Кто лучше синергирует с [персонажем]?"
+
+### Гир
+- "Какой гир нужен [персонажу]?"
+- "Рецепт [компонента]"
+
+## 📝 Системный промпт
+
+Находится в `system-prompt.txt`. Настраивает поведение AI:
+- Язык: Русский
+- Переводит английские термины
+- Ссылается на данные из characters.json и abilities.json
+- Указывает на неуверенность когда данных недостаточно
+- Игровой сленг и профессиональный тон
+
+## 🔄 Кэширование данных
+
+Все данные из JSON файлов кэшируются в памяти при первом загрузке:
+- `charactersCache` - персонажи (одноразовая загрузка)
+- `abilitiesCache` - способности (одноразовая загрузка)
+- `gearsCache` - оборудование (одноразовая загрузка)
+- `unitsCache` - юниты (одноразовая загрузка)
+
+Это снижает нагрузку на диск и ускоряет ответы.
+
+## 🌐 Интеграция с swgoh.gg
+
+Код поддерживает парсинг ссылок с swgoh.gg:
+```javascript
+parseSwgohUrl("https://swgoh.gg/characters/jango-fett/") → "jango-fett"
+buildSwgohGgUrl("JANGOFETT") → "https://swgoh.gg/characters/jangofett/"
+```
+
+В будущем можно добавить web scraping для получения актуальных данных.
+
+## ⚙️ Переменные окружения
+
+```bash
+GROQ_API=your_groq_api_key_here
+```
+
+## 📦 Зависимости
+
+```json
+{
+  "next": "15.1.11",
+  "react": "19.0.0",
+  "react-dom": "19.0.0",
+  "framer-motion": "^11.11.17",
+  "react-markdown": "^9.0.1"
+}
+```
+
+## 🚢 Развёртывание
+
+### Локально
 ```bash
 npm install
 npm run dev
+# Доступна по адресу http://localhost:3000
 ```
 
-## Build
-
+### На Vercel
 ```bash
-npm run build
+vercel deploy
 ```
 
-## Current screens
+## 📚 Примеры запросов
 
-- Start screen only
-- Menu button in the top left
-- Centered greeting, hints, and message input
-- No chat history yet
-- No persistence yet
-- No AI backend yet
+### 1. Информация о персонаже
+```
+User: "Кто такой Янго Фетт?"
+AI: Загружает данные из characters.json и abilities.json,
+    рассказывает о персонаже, его способностях, дзетах и омикронах
+```
 
-## Required icons
+### 2. Синергия
+```
+User: "Какие персонажи синергируют с Янго?"
+AI: Анализирует способности, находит похожие категории,
+    предлагает оптимальные команды
+```
 
-Put these files in `public/icons/`:
+### 3. Построение команды
+```
+User: "Какую команду собрать для рейда?"
+AI: На основе контекста предлагает оптимальный состав
+```
 
-- `menu.PNG`
-- `applogo.PNG`
-- `send.PNG`
+### 4. Омикроны и дзеты
+```
+User: "Что даёт омикрон Янго?"
+AI: Выводит полное описание из abilities.json
+```
 
-Optional future icons:
+## 🔐 Безопасность
 
-- `settings.PNG`
-- `avatar.PNG`
-- `chat.PNG`
-- `back.PNG`
-- `close.PNG`
-- `search.PNG`
-- `newchat.PNG`
+- API ключи хранятся в переменных окружения
+- Не передаются в клиент
+- Все запросы идут через защищённый HTTPS
+- Данные игры (public/data) являются справочниками
 
-## Notes
+## 📊 Производительность
 
-- Viewport scaling is locked for a more app-like TMA feel.
-- Text selection and native browser highlights are restricted globally.
-- The UI is intentionally minimal and dark.
+- Кэширование JSON данных в памяти
+- Ограничение результатов поиска (max 10)
+- Оптимизация контекста для LLM
+- Пакетная обработка способностей
+
+## 🤝 Расширение функционала
+
+### Добавить новые данные
+1. Добавьте JSON файл в `public/data/`
+2. Создайте интерфейс в `dataLoader.ts`
+3. Добавьте функцию загрузки
+4. Используйте в `contextBuilder.ts`
+
+### Улучшить парсинг swgoh.gg
+1. Используйте библиотеку Cheerio или Puppeteer
+2. Добавьте функцию скрейпинга в `swgohService.ts`
+3. Кэшируйте результаты
+
+### Добавить веб интерфейс
+1. Обновите `src/components/`
+2. Используйте React 19 с хуками
+3. Интегрируйте с `/api/chat`
+
+## 📞 Поддержка
+
+Если возникают вопросы:
+1. Проверьте логи консоли (NextJS) 
+2. Убедитесь, что JSON файлы присутствуют в `public/data/`
+3. Проверьте формат GROQ_API ключа
+4. Посмотрите на системный промпт в `system-prompt.txt`
+
+## 📄 Лицензия
+
+Данные игры (characters.json, abilities.json и т.д.) принадлежат Lucasfilm / EA Games.
+Этот проект — фанатский ассистент для анализа игровых данных.
+
+---
+
+**Последнее обновление:** 2026-05-09
+**Версия:** 2.0.0
+**Архитектура:** Next.js 15 + TypeScript + Groq API

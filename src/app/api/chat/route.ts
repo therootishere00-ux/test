@@ -4,6 +4,8 @@ export const runtime = 'nodejs';
 import { NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
+import { buildContextForQuery, buildAnalyticsContext } from "@/lib/contextBuilder";
+import { analyzeQuery } from "@/lib/swgohService";
 
 export async function POST(req: Request) {
   try {
@@ -28,6 +30,48 @@ export async function POST(req: Request) {
       console.error("System prompt file not found, using default");
     }
 
+    // Получаем последнее сообщение пользователя для анализа контекста
+    const lastUserMessage = messages
+      .slice()
+      .reverse()
+      .find((msg: any) => msg.role === "user");
+
+    let contextData = "";
+
+    if (lastUserMessage) {
+      const query = lastUserMessage.content;
+      
+      try {
+        // Анализируем запрос и определяем нужный контекст
+        const queryAnalysis = analyzeQuery(query);
+        
+        // В зависимости от типа запроса, собираем разный контекст
+        if (queryAnalysis.type === "character" || queryAnalysis.type === "ability") {
+          contextData = buildContextForQuery(query);
+        } else if (queryAnalysis.type === "team") {
+          contextData = buildContextForQuery(query);
+        } else {
+          contextData = buildAnalyticsContext(query);
+        }
+
+        console.log("Context Data Generated:", contextData.substring(0, 100) + "...");
+      } catch (contextError) {
+        console.warn("Error building context:", contextError);
+        // Продолжаем без контекста, если произойдёт ошибка
+      }
+    }
+
+    // Подготавливаем сообщения с контекстом
+    const messagesWithContext = messages.map((msg: any) => {
+      if (msg.role === "user" && contextData) {
+        return {
+          ...msg,
+          content: `${contextData}\n\n=== ВОПРОС ПОЛЬЗОВАТЕЛЯ ===\n${msg.content}`,
+        };
+      }
+      return msg;
+    });
+
     const cleanKey = apiKey.replace(/['"]+/g, '').trim();
 
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -40,9 +84,10 @@ export async function POST(req: Request) {
         model: "llama-3.3-70b-versatile",
         messages: [
           { role: "system", content: systemContent },
-          ...messages
+          ...messagesWithContext
         ],
-        temperature: 0.7
+        temperature: 0.7,
+        max_tokens: 2048
       })
     });
 
@@ -55,7 +100,10 @@ export async function POST(req: Request) {
       }, { status: response.status });
     }
 
-    return NextResponse.json({ content: data.choices[0].message.content });
+    return NextResponse.json({ 
+      content: data.choices[0].message.content,
+      usage: data.usage 
+    });
 
   } catch (error: any) {
     console.error("SERVER CATCH BLOCK ERROR:", error.message);
