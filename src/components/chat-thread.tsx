@@ -1,11 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState, useMemo, useCallback } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MoreModal } from "@/components/more";
 import { AdminConsole } from "@/components/admin-console";
 import ReactMarkdown from "react-markdown";
-import * as Comlink from "comlink";
 
 export type ChatMessage = {
   id: string;
@@ -24,28 +23,32 @@ type ChatThreadProps = {
   currentUserHandle?: string;
 };
 
-/**
- * Анимированный компонент для ответов ИИ. 
- * Использует Framer Motion для плавного появления текста.
- */
 function AnimatedAIResponse({ text, onComplete }: { text: string; onComplete: () => void }) {
-  const components = useMemo(() => ({
-    h3: ({ ...props }) => <h3 className="text-[18px] font-bold text-[#5FA86D] mt-4 mb-2 font-sans" {...props} />,
-    p: ({ ...props }) => <p className="mb-3 last:mb-0" {...props} />,
-    ul: ({ ...props }) => <ul className="list-disc ml-4 mb-3 space-y-1" {...props} />,
-    blockquote: ({ ...props }) => <blockquote className="border-l-2 border-[#5FA86D]/50 pl-4 my-3 italic text-white/70" {...props} />,
-    strong: ({ ...props }) => <strong className="font-bold text-white" {...props} />
-  }), []);
+  const wordAnim = {
+    hidden: { opacity: 0, filter: "blur(4px)" },
+    visible: {
+      opacity: 1, 
+      filter: "blur(0px)",
+      transition: { duration: 0.3, ease: "easeOut" }
+    }
+  };
 
   return (
     <motion.div 
-      initial={{ opacity: 0, filter: "blur(4px)" }}
-      animate={{ opacity: 1, filter: "blur(0px)" }}
-      transition={{ duration: 0.4 }}
+      initial="hidden" 
+      animate="visible"
       onAnimationComplete={onComplete}
       className="text-[#E8E6E3] text-[16px] leading-[1.65] font-serif prose prose-invert max-w-none"
     >
-      <ReactMarkdown components={components}>
+      <ReactMarkdown
+        components={{
+          h3: ({node, ...props}) => <h3 className="text-[18px] font-bold text-[#5FA86D] mt-4 mb-2 font-sans" {...props} />,
+          p: ({node, ...props}) => <p className="mb-3 last:mb-0" {...props} />,
+          ul: ({node, ...props}) => <ul className="list-disc ml-4 mb-3 space-y-1" {...props} />,
+          blockquote: ({node, ...props}) => <blockquote className="border-l-2 border-[#5FA86D]/50 pl-4 my-3 italic text-white/70" {...props} />,
+          strong: ({node, ...props}) => <strong className="font-bold text-white" {...props} />
+        }}
+      >
         {text}
       </ReactMarkdown>
     </motion.div>
@@ -65,33 +68,25 @@ export function ChatThread({
   const [chatTitle, setChatTitle] = useState("swgoh.ai");
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [isConsoleOpen, setIsConsoleOpen] = useState(false);
-  const workerRef = useRef<any>(null);
 
   const isAdmin = currentUserHandle === "@ya_admin7";
 
-  // Инициализация воркера для обработки данных (Comlink)
   useEffect(() => {
-    const worker = new Worker(new URL("../lib/worker.ts", import.meta.url));
-    workerRef.current = Comlink.wrap(worker);
-    return () => worker.terminate();
-  }, []);
-
-  useEffect(() => {
-    setChatTitle(activeChatTitle || "swgoh.ai");
+    if (activeChatTitle) {
+      setChatTitle(activeChatTitle);
+    } else {
+      setChatTitle("swgoh.ai");
+    }
   }, [activeChatTitle]);
 
-  const scrollToBottom = useCallback(() => {
+  useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTo({
         top: scrollRef.current.scrollHeight,
         behavior: "smooth",
       });
     }
-  }, []);
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages, scrollToBottom]);
+  }, [messages]);
 
   return (
     <div className="flex flex-col h-full w-full max-w-[600px] mx-auto relative pt-4">
@@ -106,7 +101,7 @@ export function ChatThread({
 
       <AdminConsole isOpen={isConsoleOpen} onClose={() => setIsConsoleOpen(false)} />
 
-      <header className="w-full flex items-center justify-between px-8 py-2 z-10 bg-[#252422]">
+      <div className="w-full flex items-center justify-between px-8 py-2 z-10 bg-[#252422]">
         <button onClick={onOpenMenu} className="p-1 active:scale-95 transition-transform opacity-40">
           <img src="/icons/menu.svg" alt="Menu" className="w-[22px] h-[22px] invert" />
         </button>
@@ -135,9 +130,9 @@ export function ChatThread({
         <button onClick={onNewChat} className="p-1 active:scale-95 transition-transform opacity-40">
           <img src="/icons/newchat.svg" alt="New Chat" className="w-[22px] h-[22px] invert" />
         </button>
-      </header>
+      </div>
 
-      <main ref={scrollRef} className="flex-1 overflow-y-auto overflow-x-hidden hide-scrollbar space-y-10 pb-10 pt-6 px-8">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto overflow-x-hidden hide-scrollbar space-y-10 pb-10 pt-6 px-8">
         <AnimatePresence initial={false}>
           {messages.map((msg) => (
             <MessageItem 
@@ -148,16 +143,12 @@ export function ChatThread({
             />
           ))}
         </AnimatePresence>
-      </main>
+      </div>
     </div>
   );
 }
 
-function MessageItem({ message, onEditSubmit, onRedo }: { 
-  message: ChatMessage; 
-  onEditSubmit: (id: string, text: string) => void; 
-  onRedo: (id: string) => void; 
-}) {
+function MessageItem({ message, onEditSubmit, onRedo }: { message: ChatMessage, onEditSubmit: (id: string, text: string) => void, onRedo: (id: string) => void }) {
   const isUser = message.role === "user";
   const [feedback, setFeedback] = useState<'like' | 'dislike' | null>(null);
   const [isTypingComplete, setIsTypingComplete] = useState(!message.isPlaceholder && message.content.length > 0);
@@ -178,14 +169,6 @@ function MessageItem({ message, onEditSubmit, onRedo }: {
     setIsEditingMode(false);
     onEditSubmit(message.id, editValue);
   };
-
-  const markdownComponents = useMemo(() => ({
-    h3: ({ ...props }) => <h3 className="text-[18px] font-bold text-[#5FA86D] mt-4 mb-2 font-sans" {...props} />,
-    p: ({ ...props }) => <p className="mb-3 last:mb-0" {...props} />,
-    ul: ({ ...props }) => <ul className="list-disc ml-4 mb-3 space-y-1" {...props} />,
-    blockquote: ({ ...props }) => <blockquote className="border-l-2 border-[#5FA86D]/50 pl-4 my-3 italic text-white/70" {...props} />,
-    strong: ({ ...props }) => <strong className="font-bold text-white" {...props} />
-  }), []);
 
   return (
     <>
@@ -237,7 +220,10 @@ function MessageItem({ message, onEditSubmit, onRedo }: {
                   
                   <div className="flex justify-end gap-4 mt-2 pr-2 opacity-40">
                     {isLong ? (
-                      <button onClick={() => setIsModalOpen(true)} className="flex items-center gap-1.5 active:scale-95 transition-transform">
+                      <button 
+                        onClick={() => setIsModalOpen(true)}
+                        className="flex items-center gap-1.5 active:scale-95 transition-transform"
+                      >
                         <span className="text-[13px] font-sans text-[#F2F1ED]">Больше</span>
                         <img src="/icons/more.svg" alt="More" className="w-[16px] h-[16px] invert" />
                       </button>
@@ -279,24 +265,34 @@ function MessageItem({ message, onEditSubmit, onRedo }: {
               
               {message.isPlaceholder ? (
                 <div className="flex gap-1.5 pt-2">
-                  {[0, 150, 300].map((delay) => (
-                    <div key={delay} className="w-1.5 h-1.5 bg-white/20 rounded-full animate-bounce" style={{ animationDelay: `${delay}ms` }} />
-                  ))}
+                  <div className="w-1.5 h-1.5 bg-white/20 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                  <div className="w-1.5 h-1.5 bg-white/20 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                  <div className="w-1.5 h-1.5 bg-white/20 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                 </div>
               ) : (
-                <div className="w-full">
-                  {!isTypingComplete && message.content.length > 0 ? (
-                    <AnimatedAIResponse 
-                      text={message.content} 
-                      onComplete={() => setIsTypingComplete(true)} 
-                    />
-                  ) : (
-                    <div className="text-[#E8E6E3] text-[16px] leading-[1.65] font-serif prose prose-invert max-w-none">
-                      <ReactMarkdown components={markdownComponents}>
-                        {message.content}
-                      </ReactMarkdown>
-                    </div>
-                  )}
+                <>
+                  <div className="w-full">
+                    {(!isTypingComplete && message.content.length > 0) ? (
+                      <AnimatedAIResponse 
+                        text={message.content} 
+                        onComplete={() => setIsTypingComplete(true)} 
+                      />
+                    ) : (
+                      <div className="text-[#E8E6E3] text-[16px] leading-[1.65] font-serif prose prose-invert max-w-none">
+                        <ReactMarkdown
+                          components={{
+                            h3: ({node, ...props}) => <h3 className="text-[18px] font-bold text-[#5FA86D] mt-4 mb-2 font-sans" {...props} />,
+                            p: ({node, ...props}) => <p className="mb-3 last:mb-0" {...props} />,
+                            ul: ({node, ...props}) => <ul className="list-disc ml-4 mb-3 space-y-1" {...props} />,
+                            blockquote: ({node, ...props}) => <blockquote className="border-l-2 border-[#5FA86D]/50 pl-4 my-3 italic text-white/70" {...props} />,
+                            strong: ({node, ...props}) => <strong className="font-bold text-white" {...props} />
+                          }}
+                        >
+                          {message.content}
+                        </ReactMarkdown>
+                      </div>
+                    )}
+                  </div>
                   
                   {isTypingComplete && (
                     <motion.div 
@@ -304,16 +300,16 @@ function MessageItem({ message, onEditSubmit, onRedo }: {
                       animate={{ opacity: 1 }}
                       className="flex items-center gap-4 pt-1"
                     >
-                      <div className="flex items-center gap-4 opacity-40">
-                        <button onClick={() => onRedo(message.id)} className="active:scale-95 transition-transform">
-                          <img src="/icons/redo.svg" alt="Redo" className="w-[18px] h-[18px] invert" />
-                        </button>
-                        <button onClick={handleCopy} className="active:scale-95 transition-transform">
-                          <img src={copied ? "/icons/tick.svg" : "/icons/copy.svg"} alt="Copy" className="w-[18px] h-[18px] invert" />
-                        </button>
-                      </div>
-
                       <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-4 opacity-40">
+                          <button onClick={() => onRedo(message.id)} className="active:scale-95 transition-transform">
+                            <img src="/icons/redo.svg" alt="Redo" className="w-[18px] h-[18px] invert" />
+                          </button>
+                          <button onClick={handleCopy} className="active:scale-95 transition-transform">
+                            <img src={copied ? "/icons/tick.svg" : "/icons/copy.svg"} alt="Copy" className="w-[18px] h-[18px] invert" />
+                          </button>
+                        </div>
+
                         <button 
                           onClick={() => setFeedback(feedback === 'like' ? null : 'like')} 
                           className="active:scale-95 transition-transform"
@@ -321,8 +317,10 @@ function MessageItem({ message, onEditSubmit, onRedo }: {
                         >
                           <img 
                             src="/icons/like.svg" 
-                            className="w-[18px] h-[18px] invert"
-                            style={{ filter: feedback === 'like' ? 'invert(58%) sepia(13%) saturate(1067%) hue-rotate(82deg) brightness(96%) contrast(87%)' : 'invert(1)' }}
+                            className="w-[18px] h-[18px]"
+                            style={{ 
+                                filter: feedback === 'like' ? 'invert(58%) sepia(13%) saturate(1067%) hue-rotate(82deg) brightness(96%) contrast(87%)' : 'invert(1)'
+                            }}
                           />
                         </button>
                         <button 
@@ -335,14 +333,16 @@ function MessageItem({ message, onEditSubmit, onRedo }: {
                         >
                           <img 
                             src="/icons/dislike.svg" 
-                            className="w-[18px] h-[18px] invert"
-                            style={{ filter: feedback === 'dislike' ? 'invert(58%) sepia(13%) saturate(1067%) hue-rotate(82deg) brightness(96%) contrast(87%)' : 'invert(1)' }}
+                            className="w-[18px] h-[18px]"
+                            style={{ 
+                                filter: feedback === 'dislike' ? 'invert(58%) sepia(13%) saturate(1067%) hue-rotate(82deg) brightness(96%) contrast(87%)' : 'invert(1)'
+                            }}
                           />
                         </button>
                       </div>
                     </motion.div>
                   )}
-                </div>
+                </>
               )}
             </div>
           )}
